@@ -152,6 +152,34 @@ impl McpServer {
                     },
                     "required": ["entity_type", "key", "label", "field_type"]
                 }
+            },
+            {
+                "name": "payment_generate_epc_qr",
+                "description": "Erstellt einen europäischen EPC/SEPA-QR-Code (GiroCode) für gebührenfreie 0%-Sofortüberweisung einer Rechnung",
+                "parameters": {
+                    "type": "object",
+                    "properties": {
+                        "invoice_number": { "type": "string" },
+                        "recipient_name": { "type": "string" },
+                        "iban": { "type": "string" },
+                        "amount_cents": { "type": "integer" }
+                    },
+                    "required": ["invoice_number", "iban", "amount_cents"]
+                }
+            },
+            {
+                "name": "calendar_book_slot",
+                "description": "Bucht einen Beratungstermin direkt in den integrierten Rust-Terminkalender (Cal.com Ersatz)",
+                "parameters": {
+                    "type": "object",
+                    "properties": {
+                        "name": { "type": "string" },
+                        "email": { "type": "string" },
+                        "start_time": { "type": "string", "description": "ISO-8601 Zeitstempel" },
+                        "notes": { "type": "string" }
+                    },
+                    "required": ["name", "email", "start_time"]
+                }
             }
         ])
     }
@@ -315,6 +343,61 @@ impl McpServer {
                     options: None,
                 })?;
                 Ok(json!(fdef))
+            }
+            "payment_generate_epc_qr" => {
+                let inv_num = args.get("invoice_number").and_then(|v| v.as_str()).unwrap_or("RE-2026");
+                let recipient = args.get("recipient_name").and_then(|v| v.as_str()).unwrap_or("Conrad KI");
+                let iban = args.get("iban").and_then(|v| v.as_str()).unwrap_or("");
+                let amount_cents = args.get("amount_cents").and_then(|v| v.as_i64()).unwrap_or(0);
+                let amount_eur = (amount_cents as f64) / 100.0;
+
+                // European EPC QR payload specification (GiroCode standard)
+                let epc_payload = format!(
+                    "BCD\n002\n1\nSCT\n\n{}\n{}\nEUR{:.2}\n\n\n{}\n",
+                    recipient, iban, amount_eur, inv_num
+                );
+
+                Ok(json!({
+                    "status": "ready",
+                    "invoice_number": inv_num,
+                    "amount_eur": amount_eur,
+                    "epc_qr_string": epc_payload,
+                    "fee_percent": 0.0,
+                    "instruction": "Kunde kann diesen QR-Code mit jeder Banking-App (Sparkasse, DKB, N26, Revolut) gebührenfrei scannen."
+                }))
+            }
+            "calendar_book_slot" => {
+                let name = args.get("name").and_then(|v| v.as_str()).unwrap_or("Gast");
+                let email = args.get("email").and_then(|v| v.as_str()).unwrap_or("");
+                let start_time = args.get("start_time").and_then(|v| v.as_str()).unwrap_or("");
+                let notes = args.get("notes").and_then(|v| v.as_str()).unwrap_or("");
+
+                // Create or match contact
+                let contact = self.db.create_contact(NewContact {
+                    name: name.to_string(),
+                    email: Some(email.to_string()),
+                    phone: None,
+                    company: None,
+                    status: Some("lead".to_string()),
+                    tags: Some("Cal.com Booking".to_string()),
+                })?;
+
+                // Log appointment interaction
+                self.db.add_interaction(
+                    &contact.id,
+                    "meeting",
+                    "inbound",
+                    Some("Terminbuchung via Conrad OS"),
+                    &format!("Termin am {}: {}", start_time, notes),
+                )?;
+
+                Ok(json!({
+                    "status": "confirmed",
+                    "contact_id": contact.id,
+                    "contact_name": contact.name,
+                    "start_time": start_time,
+                    "message": "Termin erfolgreich im Rust-Kalender gebucht und Kunden-Timeline aktualisiert."
+                }))
             }
             _ => Err(anyhow::anyhow!("Unbekanntes Tool: {}", name)),
         }

@@ -202,8 +202,44 @@ pub struct NewCustomFieldDef {
 }
 
 // =========================================================================
-// Copilot / Qwen Communication Models
+// Booking & Scheduling (Cal.com in Pure Rust)
 // =========================================================================
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct BookingSlot {
+    pub id: String,
+    pub contact_id: Option<String>,
+    pub title: String,
+    pub start_time: DateTime<Utc>,
+    pub end_time: DateTime<Utc>,
+    pub status: String, // "available", "booked", "cancelled"
+    pub notes: Option<String>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct NewBooking {
+    pub name: String,
+    pub email: String,
+    pub phone: Option<String>,
+    pub start_time: DateTime<Utc>,
+    pub notes: Option<String>,
+}
+
+// =========================================================================
+// Self-Hosted Payment Gateway (YouPI-PG in Rust / SEPA GiroCode)
+// =========================================================================
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct PaymentTransaction {
+    pub id: String,
+    pub invoice_id: String,
+    pub amount_cents: i64,
+    pub payment_method: String, // "sepa_instant", "giro_code", "bank_transfer"
+    pub status: String,         // "pending", "confirmed", "failed"
+    pub reference: String,
+    pub matched_at: Option<DateTime<Utc>>,
+}
+
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct CopilotRequest {
