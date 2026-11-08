@@ -34,14 +34,26 @@ impl CopilotEngine {
     pub async fn chat(&self, req: CopilotRequest) -> Result<CopilotResponse> {
         let prompt = req.prompt.trim();
         let mode = req.mode.as_deref().unwrap_or("user");
+        let actor = format!("AI-Copilot ({})", mode);
 
         // 1. Try local Ollama Qwen 1.5B instance
-        if let Ok(ollama_res) = self.call_ollama(prompt, mode).await {
-            return Ok(ollama_res);
+        let resp = if let Ok(ollama_res) = self.call_ollama(prompt, mode).await {
+            ollama_res
+        } else {
+            // 2. Intelligent local fallback engine if Ollama is not yet started
+            self.heuristic_fallback(prompt, mode)?
+        };
+
+        // Audit Trail Log: Revisionssichere Speicherung aller KI-Aktionen im GoBD-Audit-Log
+        if !resp.actions_performed.is_empty() || resp.ui_mutations.is_some() {
+            let details = format!(
+                "Prompt: '{}' | Aktionen: {:?}",
+                prompt, resp.actions_performed
+            );
+            let _ = self.mcp.log_ai_audit(&details, &actor);
         }
 
-        // 2. Intelligent local fallback engine if Ollama is not yet started
-        self.heuristic_fallback(prompt, mode)
+        Ok(resp)
     }
 
     async fn call_ollama(&self, user_prompt: &str, mode: &str) -> Result<CopilotResponse> {
@@ -229,7 +241,7 @@ impl CopilotEngine {
             }
 
             if p_lower.contains("feld") && (p_lower.contains("erstell") || p_lower.contains("hinzuf") || p_lower.contains("neu")) {
-                let _ = self.mcp.execute_tool("custom_fields_add", &json!({
+                let _ = self.mcp.execute_tool("crm_add_custom_field", &json!({
                     "entity_type": "contact",
                     "key": "prioritaet",
                     "label": "Kunden-Priorität",
@@ -361,7 +373,7 @@ impl CopilotEngine {
         // 5. Navigation allein
         if let Some(target) = navigate_to.clone() {
             return Ok(CopilotResponse {
-                reply: format!("🧭 Navigiere zu: **{}**.", target),
+                reply: format!("Ansicht gewechselt zu **{}**.", target),
                 actions_performed: vec![format!("Navigation zu View '{}'", target)],
                 model_used: "Conrad Copilot".to_string(),
                 navigate_to: Some(target),

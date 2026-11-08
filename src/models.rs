@@ -208,21 +208,114 @@ pub struct NewCustomFieldDef {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct BookingSlot {
     pub id: String,
+    pub slug: String,
     pub contact_id: Option<String>,
+    pub guest_name: String,
+    pub guest_email: String,
+    pub guest_phone: Option<String>,
     pub title: String,
     pub start_time: DateTime<Utc>,
     pub end_time: DateTime<Utc>,
-    pub status: String, // "available", "booked", "cancelled"
+    pub timezone: String,
+    pub status: String, // "confirmed", "cancelled"
     pub notes: Option<String>,
+    pub created_at: DateTime<Utc>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct NewBooking {
+    pub slug: Option<String>,
     pub name: String,
     pub email: String,
     pub phone: Option<String>,
-    pub start_time: DateTime<Utc>,
+    pub start_time: String, // ISO-8601
+    pub duration_minutes: Option<i64>,
+    pub timezone: Option<String>,
     pub notes: Option<String>,
+}
+
+// =========================================================================
+// Phase 2: HubSpot Parity — Workflows, Tasks, Webhooks & Auth
+// =========================================================================
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct WorkflowRule {
+    pub id: String,
+    pub name: String,
+    pub trigger_type: String,   // e.g. "deal_stage_changed", "contact_created", "inbound_message"
+    pub trigger_filter: String, // e.g. "proposal", "lead", "whatsapp"
+    pub action_type: String,    // e.g. "create_task_and_email_draft", "assign_tag"
+    pub delay_days: i64,
+    pub template_subject: Option<String>,
+    pub template_body: String,
+    pub active: bool,
+    pub executions_count: i64,
+    pub created_at: DateTime<Utc>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct NewWorkflowRule {
+    pub name: String,
+    pub trigger_type: String,
+    pub trigger_filter: String,
+    pub action_type: String,
+    pub delay_days: Option<i64>,
+    pub template_subject: Option<String>,
+    pub template_body: String,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct NewFollowUpTask {
+    pub contact_id: String,
+    pub deal_id: Option<String>,
+    pub title: String,
+    pub due_date: Option<String>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct UpdateContactPayload {
+    pub name: Option<String>,
+    pub email: Option<String>,
+    pub phone: Option<String>,
+    pub company: Option<String>,
+    pub status: Option<String>,
+    pub tags: Option<String>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct FollowUpTask {
+    pub id: String,
+    pub contact_id: String,
+    pub deal_id: Option<String>,
+    pub title: String,
+    pub due_date: String,
+    pub status: String, // "open", "completed"
+    pub created_at: DateTime<Utc>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct WhatsAppWebhookPayload {
+    pub from: String,        // E.164 phone or name
+    pub sender_name: Option<String>,
+    pub text: String,
+    pub message_id: Option<String>,
+    pub timestamp: Option<String>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct EmailInboundPayload {
+    pub from_email: String,
+    pub from_name: Option<String>,
+    pub subject: String,
+    pub body: String,
+    pub message_id: Option<String>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct AuthSessionPayload {
+    pub role: String, // "admin" or "operator"
+    pub email: Option<String>,
+    pub password: Option<String>,
 }
 
 // =========================================================================

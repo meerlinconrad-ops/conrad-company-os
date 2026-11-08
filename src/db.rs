@@ -9,12 +9,13 @@ use crate::datev::generate_datev_csv;
 use crate::gobd::{calculate_entry_hash, GENESIS_HASH};
 use crate::hubspot::{parse_hubspot_contacts_csv, parse_hubspot_deals_csv};
 use crate::models::{
-    CashflowStats, Contact, CustomFieldDef, DatevExportConfig, Deal, DocumentMeta,
-    FunnelLeadPayload, FunnelLeadResponse, GobdAuditEntry, HubSpotImportResult,
-    InteractionMessage, Invoice, InvoiceItem, MarketingCampaign, MarketingRoiSummary,
-    NewContact, NewCustomFieldDef, NewDeal, NewDocument, NewInvoice, NewMarketingCampaign,
-    NewProductService, NewRetainerSubscription, ProductService, RetainerBillingRunResult,
-    RetainerSubscription,
+    BookingSlot, CashflowStats, Contact, CustomFieldDef, DatevExportConfig, Deal, DocumentMeta,
+    EmailInboundPayload, FollowUpTask, FunnelLeadPayload, FunnelLeadResponse, GobdAuditEntry,
+    HubSpotImportResult, InteractionMessage, Invoice, InvoiceItem, MarketingCampaign,
+    MarketingRoiSummary, NewBooking, NewContact, NewCustomFieldDef, NewDeal, NewDocument,
+    NewFollowUpTask, NewInvoice, NewMarketingCampaign, NewProductService, NewRetainerSubscription,
+    NewWorkflowRule, ProductService, RetainerBillingRunResult, RetainerSubscription,
+    UpdateContactPayload, WhatsAppWebhookPayload, WorkflowRule,
 };
 use crate::zugferd::generate_xrechnung_xml;
 
@@ -192,6 +193,48 @@ impl Database {
                 FOREIGN KEY (contact_id) REFERENCES contacts(id) ON DELETE RESTRICT
             );
 
+            CREATE TABLE IF NOT EXISTS bookings (
+                id TEXT PRIMARY KEY,
+                slug TEXT NOT NULL,
+                contact_id TEXT,
+                guest_name TEXT NOT NULL,
+                guest_email TEXT NOT NULL,
+                guest_phone TEXT,
+                title TEXT NOT NULL,
+                start_time TEXT NOT NULL,
+                end_time TEXT NOT NULL,
+                timezone TEXT NOT NULL DEFAULT 'Europe/Berlin',
+                status TEXT NOT NULL DEFAULT 'confirmed',
+                notes TEXT,
+                created_at TEXT NOT NULL,
+                FOREIGN KEY (contact_id) REFERENCES contacts(id) ON DELETE SET NULL
+            );
+
+            CREATE TABLE IF NOT EXISTS workflow_rules (
+                id TEXT PRIMARY KEY,
+                name TEXT NOT NULL,
+                trigger_type TEXT NOT NULL,
+                trigger_filter TEXT NOT NULL,
+                action_type TEXT NOT NULL,
+                delay_days INTEGER NOT NULL DEFAULT 3,
+                template_subject TEXT,
+                template_body TEXT NOT NULL,
+                active INTEGER NOT NULL DEFAULT 1,
+                executions_count INTEGER NOT NULL DEFAULT 0,
+                created_at TEXT NOT NULL
+            );
+
+            CREATE TABLE IF NOT EXISTS follow_up_tasks (
+                id TEXT PRIMARY KEY,
+                contact_id TEXT NOT NULL,
+                deal_id TEXT,
+                title TEXT NOT NULL,
+                due_date TEXT NOT NULL,
+                status TEXT NOT NULL DEFAULT 'open',
+                created_at TEXT NOT NULL,
+                FOREIGN KEY (contact_id) REFERENCES contacts(id) ON DELETE CASCADE
+            );
+
             CREATE INDEX IF NOT EXISTS idx_contacts_name ON contacts(name);
             CREATE INDEX IF NOT EXISTS idx_deals_stage ON deals(stage);
             CREATE INDEX IF NOT EXISTS idx_invoices_status ON invoices(status);
@@ -199,7 +242,8 @@ impl Database {
             CREATE INDEX IF NOT EXISTS idx_gobd_seq ON gobd_audit_log(seq);
             CREATE INDEX IF NOT EXISTS idx_gobd_entity ON gobd_audit_log(entity_type, entity_id);
             CREATE INDEX IF NOT EXISTS idx_campaigns_platform ON marketing_campaigns(platform);
-            CREATE INDEX IF NOT EXISTS idx_retainers_next_date ON retainer_subscriptions(next_billing_date);",
+            CREATE INDEX IF NOT EXISTS idx_retainers_next_date ON retainer_subscriptions(next_billing_date);
+            CREATE INDEX IF NOT EXISTS idx_bookings_slug ON bookings(slug, start_time);",
         )?;
         Ok(())
     }
@@ -359,10 +403,99 @@ impl Database {
 
             // Seed system settings
             let _ = self.set_setting("company_name", "Conrad KI");
-            let _ = self.set_setting("theme_accent", "#0071E3");
+            let _ = self.set_setting("theme_accent", "#2563EB");
             let _ = self.set_setting("visible_modules", "dashboard,contacts,deals,invoices,retainers,marketing,dms,settings");
             let _ = self.set_setting("active_plugins", "gobd,zugferd,datev,girocode,n8n,calcom");
         }
+
+        // Ensure Retainer Subscriptions are seeded if empty
+        let ret_count: i64 = {
+            let conn = self.conn.lock().unwrap();
+            conn.query_row("SELECT COUNT(*) FROM retainer_subscriptions", [], |r| r.get(0)).unwrap_or(0)
+        };
+        if ret_count == 0 {
+            let first_cid: Option<String> = {
+                let conn = self.conn.lock().unwrap();
+                conn.query_row("SELECT id FROM contacts ORDER BY created_at ASC LIMIT 1", [], |r| r.get(0)).ok()
+            };
+            if let Some(cid) = first_cid {
+                let _ = self.create_retainer(NewRetainerSubscription {
+                    contact_id: cid,
+                    plan_name: "KMU Automatisierungs-Betreuung (n8n + LLM)".to_string(),
+                    amount_cents: 9900,
+                    vat_rate_percent: Some(19.0),
+                    interval_months: Some(1),
+                    next_billing_date: Some("2026-12-01".to_string()),
+                });
+            }
+        }
+
+        // Ensure Marketing Campaigns are seeded if empty
+        let mkt_count: i64 = {
+            let conn = self.conn.lock().unwrap();
+            conn.query_row("SELECT COUNT(*) FROM marketing_campaigns", [], |r| r.get(0)).unwrap_or(0)
+        };
+        if mkt_count == 0 {
+            let _ = self.record_marketing_campaign(NewMarketingCampaign {
+                name: "Meta Ads: Handwerk & KMU Rhein-Neckar".to_string(),
+                platform: "meta".to_string(),
+                spend_cents: 25000,
+                clicks: Some(340),
+                leads: Some(18),
+                customers: Some(2),
+                revenue_cents: Some(198000),
+                status: Some("active".to_string()),
+            });
+
+            let _ = self.record_marketing_campaign(NewMarketingCampaign {
+                name: "Google Search: KI Beratung Mannheim / Heidelberg".to_string(),
+                platform: "google".to_string(),
+                spend_cents: 18000,
+                clicks: Some(145),
+                leads: Some(12),
+                customers: Some(1),
+                revenue_cents: Some(99000),
+                status: Some("active".to_string()),
+            });
+        }
+
+        // Ensure Follow-up Tasks are seeded if empty
+        let task_count: i64 = {
+            let conn = self.conn.lock().unwrap();
+            conn.query_row("SELECT COUNT(*) FROM follow_up_tasks", [], |r| r.get(0)).unwrap_or(0)
+        };
+        if task_count == 0 {
+            let first_cid: Option<String> = {
+                let conn = self.conn.lock().unwrap();
+                conn.query_row("SELECT id FROM contacts ORDER BY created_at DESC LIMIT 1", [], |r| r.get(0)).ok()
+            };
+            if let Some(cid) = first_cid {
+                let _ = self.create_follow_up_task(NewFollowUpTask {
+                    contact_id: cid,
+                    deal_id: None,
+                    title: "Follow-up (Angebot): Instagram DM to WhatsApp Lead Engine".to_string(),
+                    due_date: Some("2026-11-11".to_string()),
+                });
+            }
+        }
+
+        // Seed default workflow rule if empty
+        let wf_count: i64 = {
+            let conn = self.conn.lock().unwrap();
+            conn.query_row("SELECT COUNT(*) FROM workflow_rules", [], |r| r.get(0)).unwrap_or(0)
+        };
+        if wf_count == 0 {
+            let _ = self.create_workflow_rule(NewWorkflowRule {
+                name: "Angebot Follow-up (3 Tage) + E-Mail-Entwurf".to_string(),
+                trigger_type: "deal_stage_changed".to_string(),
+                trigger_filter: "proposal".to_string(),
+                action_type: "create_task_and_email_draft".to_string(),
+                delay_days: Some(3),
+                template_subject: Some("Rückfrage zu unserem Angebot — Conrad KI".to_string()),
+                template_body: "Hallo {{name}},\n\nich wollte mich kurz erkundigen, ob Sie bereits Gelegenheit hatten, unser Angebot zu prüfen. Lassen Sie uns gerne kurz telefonieren, falls noch Fragen offen sind.\n\nBeste Grüße\nMerlin Conrad".to_string(),
+            });
+        }
+
         Ok(())
     }
 
@@ -392,6 +525,15 @@ impl Database {
                 now.to_rfc3339(),
             ],
         )?;
+
+        let _ = Self::log_gobd_internal(
+            &conn,
+            "contact",
+            &id,
+            "CREATE",
+            &format!("Kontakt angelegt: {} ({})", input.name, input.company.as_deref().unwrap_or("Privat")),
+            "System",
+        );
 
         Ok(Contact {
             id,
@@ -497,6 +639,15 @@ impl Database {
             .query_row("SELECT name FROM contacts WHERE id = ?1", [&input.contact_id], |r| r.get(0))
             .ok();
 
+        let _ = Self::log_gobd_internal(
+            &conn,
+            "deal",
+            &id,
+            "CREATE",
+            &format!("Deal angelegt: {} ({:.2} €, Phase: {})", input.title, input.value_cents as f64 / 100.0, stage),
+            "System",
+        );
+
         Ok(Deal {
             id,
             contact_id: input.contact_id,
@@ -541,20 +692,46 @@ impl Database {
     }
 
     pub fn update_deal_stage(&self, deal_id: &str, new_stage: &str) -> Result<()> {
-        let conn = self.conn.lock().unwrap();
-        conn.execute("UPDATE deals SET stage = ?1 WHERE id = ?2", params![new_stage, deal_id])?;
+        let (contact_id, title): (String, String) = {
+            let conn = self.conn.lock().unwrap();
+            let info: (String, String) = conn
+                .query_row(
+                    "SELECT contact_id, title FROM deals WHERE id = ?1",
+                    params![deal_id],
+                    |r| Ok((r.get(0)?, r.get(1)?)),
+                )
+                .unwrap_or_else(|_| ("".to_string(), "Deal".to_string()));
+
+            conn.execute("UPDATE deals SET stage = ?1 WHERE id = ?2", params![new_stage, deal_id])?;
+
+            let _ = Self::log_gobd_internal(
+                &conn,
+                "deal",
+                deal_id,
+                "STAGE_CHANGE",
+                &format!("Deal '{}' verschoben in Phase '{}'", info.1, new_stage),
+                "System",
+            );
+            info
+        };
+
+        // Evaluate automated workflows for this stage transition
+        if !contact_id.is_empty() {
+            let _ = self.evaluate_deal_stage_workflows(deal_id, &contact_id, &title, new_stage);
+        }
+
         Ok(())
     }
 
-    pub fn add_interaction(&self, contact_id: &str, channel: &str, direction: &str, subject: Option<&str>, body: &str) -> Result<InteractionMessage> {
+    pub fn add_interaction_with_status(&self, contact_id: &str, channel: &str, direction: &str, subject: Option<&str>, body: &str, status: &str) -> Result<InteractionMessage> {
         let now = Utc::now();
         let id = Uuid::new_v4().to_string();
 
         let conn = self.conn.lock().unwrap();
         conn.execute(
             "INSERT INTO messages (id, contact_id, channel, direction, subject, body, status, timestamp)
-             VALUES (?1, ?2, ?3, ?4, ?5, ?6, 'delivered', ?7)",
-            params![id, contact_id, channel, direction, subject, body, now.to_rfc3339()],
+             VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8)",
+            params![id, contact_id, channel, direction, subject, body, status, now.to_rfc3339()],
         )?;
 
         Ok(InteractionMessage {
@@ -564,22 +741,31 @@ impl Database {
             direction: direction.to_string(),
             subject: subject.map(String::from),
             body: body.to_string(),
-            status: "delivered".to_string(),
+            status: status.to_string(),
             timestamp: now,
         })
     }
 
+    pub fn add_interaction(&self, contact_id: &str, channel: &str, direction: &str, subject: Option<&str>, body: &str) -> Result<InteractionMessage> {
+        // Sicherheitsregel: Ausgehende E-Mails werden immer zuerst als 'draft' gespeichert!
+        let status = if channel == "email" && direction == "outbound" {
+            "draft"
+        } else {
+            "delivered"
+        };
+        self.add_interaction_with_status(contact_id, channel, direction, subject, body, status)
+    }
+
     pub fn list_interactions(&self, contact_id: Option<&str>) -> Result<Vec<InteractionMessage>> {
         let conn = self.conn.lock().unwrap();
-        let sql = if let Some(cid) = contact_id {
-            format!("SELECT id, contact_id, channel, direction, subject, body, status, timestamp FROM messages WHERE contact_id = '{}' ORDER BY timestamp DESC LIMIT 50", cid)
-        } else {
-            "SELECT id, contact_id, channel, direction, subject, body, status, timestamp FROM messages ORDER BY timestamp DESC LIMIT 50".to_string()
-        };
+        let mut msgs = Vec::new();
 
-        let mut stmt = conn.prepare(&sql)?;
-        let msgs = stmt
-            .query_map([], |row| {
+        if let Some(cid) = contact_id {
+            let mut stmt = conn.prepare(
+                "SELECT id, contact_id, channel, direction, subject, body, status, timestamp
+                 FROM messages WHERE contact_id = ?1 ORDER BY timestamp DESC LIMIT 50",
+            )?;
+            let rows = stmt.query_map(params![cid], |row| {
                 let ts_str: String = row.get(7)?;
                 Ok(InteractionMessage {
                     id: row.get(0)?,
@@ -589,11 +775,34 @@ impl Database {
                     subject: row.get(4)?,
                     body: row.get(5)?,
                     status: row.get(6)?,
-                    timestamp: chrono::DateTime::parse_from_rfc3339(&ts_str).map(|d| d.with_timezone(&Utc)).unwrap_or_else(|_| Utc::now()),
+                    timestamp: chrono::DateTime::parse_from_rfc3339(&ts_str)
+                        .map(|d| d.with_timezone(&Utc))
+                        .unwrap_or_else(|_| Utc::now()),
                 })
-            })?
-            .filter_map(Result::ok)
-            .collect();
+            })?;
+            msgs.extend(rows.filter_map(Result::ok));
+        } else {
+            let mut stmt = conn.prepare(
+                "SELECT id, contact_id, channel, direction, subject, body, status, timestamp
+                 FROM messages ORDER BY timestamp DESC LIMIT 50",
+            )?;
+            let rows = stmt.query_map([], |row| {
+                let ts_str: String = row.get(7)?;
+                Ok(InteractionMessage {
+                    id: row.get(0)?,
+                    contact_id: row.get(1)?,
+                    channel: row.get(2)?,
+                    direction: row.get(3)?,
+                    subject: row.get(4)?,
+                    body: row.get(5)?,
+                    status: row.get(6)?,
+                    timestamp: chrono::DateTime::parse_from_rfc3339(&ts_str)
+                        .map(|d| d.with_timezone(&Utc))
+                        .unwrap_or_else(|_| Utc::now()),
+                })
+            })?;
+            msgs.extend(rows.filter_map(Result::ok));
+        }
 
         Ok(msgs)
     }
@@ -913,15 +1122,14 @@ impl Database {
 
     pub fn list_custom_fields(&self, entity_type: Option<&str>) -> Result<Vec<CustomFieldDef>> {
         let conn = self.conn.lock().unwrap();
-        let sql = if let Some(et) = entity_type {
-            format!("SELECT id, entity_type, key, label, field_type, options_json, created_at FROM custom_fields WHERE entity_type = '{}' ORDER BY label ASC", et)
-        } else {
-            "SELECT id, entity_type, key, label, field_type, options_json, created_at FROM custom_fields ORDER BY entity_type, label ASC".to_string()
-        };
+        let mut fields = Vec::new();
 
-        let mut stmt = conn.prepare(&sql)?;
-        let fields = stmt
-            .query_map([], |row| {
+        if let Some(et) = entity_type {
+            let mut stmt = conn.prepare(
+                "SELECT id, entity_type, key, label, field_type, options_json, created_at
+                 FROM custom_fields WHERE entity_type = ?1 ORDER BY label ASC",
+            )?;
+            let rows = stmt.query_map(params![et], |row| {
                 let c_str: String = row.get(6)?;
                 Ok(CustomFieldDef {
                     id: row.get(0)?,
@@ -930,11 +1138,33 @@ impl Database {
                     label: row.get(3)?,
                     field_type: row.get(4)?,
                     options_json: row.get(5)?,
-                    created_at: chrono::DateTime::parse_from_rfc3339(&c_str).map(|d| d.with_timezone(&Utc)).unwrap_or_else(|_| Utc::now()),
+                    created_at: chrono::DateTime::parse_from_rfc3339(&c_str)
+                        .map(|d| d.with_timezone(&Utc))
+                        .unwrap_or_else(|_| Utc::now()),
                 })
-            })?
-            .filter_map(Result::ok)
-            .collect();
+            })?;
+            fields.extend(rows.filter_map(Result::ok));
+        } else {
+            let mut stmt = conn.prepare(
+                "SELECT id, entity_type, key, label, field_type, options_json, created_at
+                 FROM custom_fields ORDER BY entity_type, label ASC",
+            )?;
+            let rows = stmt.query_map([], |row| {
+                let c_str: String = row.get(6)?;
+                Ok(CustomFieldDef {
+                    id: row.get(0)?,
+                    entity_type: row.get(1)?,
+                    key: row.get(2)?,
+                    label: row.get(3)?,
+                    field_type: row.get(4)?,
+                    options_json: row.get(5)?,
+                    created_at: chrono::DateTime::parse_from_rfc3339(&c_str)
+                        .map(|d| d.with_timezone(&Utc))
+                        .unwrap_or_else(|_| Utc::now()),
+                })
+            })?;
+            fields.extend(rows.filter_map(Result::ok));
+        }
         Ok(fields)
     }
 
@@ -1748,5 +1978,548 @@ impl Database {
             map.insert(row.0, row.1);
         }
         Ok(map)
+    }
+
+    // =========================================================================
+    // Phase 2: HubSpot Parity — WhatsApp, IMAP/Email Sync, Cal.com & Workflows
+    // =========================================================================
+
+    pub fn ingest_whatsapp_webhook(&self, payload: WhatsAppWebhookPayload) -> Result<InteractionMessage> {
+        let phone = payload.from.trim().to_string();
+        let sender_name = payload
+            .sender_name
+            .unwrap_or_else(|| format!("WhatsApp Lead ({})", phone));
+
+        // 1. Find existing contact by phone
+        let existing_id: Option<String> = {
+            let conn = self.conn.lock().unwrap();
+            conn.query_row(
+                "SELECT id FROM contacts WHERE phone = ?1 OR REPLACE(phone, ' ', '') = REPLACE(?1, ' ', '') LIMIT 1",
+                params![phone],
+                |r| r.get(0),
+            )
+            .ok()
+        };
+
+        let contact_id = match existing_id {
+            Some(id) => id,
+            None => {
+                let c = self.create_contact(NewContact {
+                    name: sender_name.clone(),
+                    email: None,
+                    phone: Some(phone.clone()),
+                    company: None,
+                    status: Some("lead".to_string()),
+                    tags: Some("WhatsApp, Inbound".to_string()),
+                })?;
+                c.id
+            }
+        };
+
+        // 2. Log WhatsApp message into contact timeline
+        let msg = self.add_interaction_with_status(
+            &contact_id,
+            "whatsapp",
+            "inbound",
+            Some("WhatsApp Business Nachricht"),
+            &payload.text,
+            "received",
+        )?;
+
+        let _ = self.log_gobd(
+            "contact",
+            &contact_id,
+            "WHATSAPP_WEBHOOK_INBOUND",
+            &format!("WhatsApp Nachricht von {} empfangen: '{}'", phone, payload.text),
+            "WhatsApp-Webhook",
+        );
+
+        Ok(msg)
+    }
+
+    pub fn ingest_inbound_email(&self, payload: EmailInboundPayload) -> Result<InteractionMessage> {
+        let email = payload.from_email.trim().to_lowercase();
+        let name = payload
+            .from_name
+            .unwrap_or_else(|| email.split('@').next().unwrap_or("E-Mail Kontakt").to_string());
+
+        let existing_id: Option<String> = {
+            let conn = self.conn.lock().unwrap();
+            conn.query_row(
+                "SELECT id FROM contacts WHERE LOWER(email) = ?1 LIMIT 1",
+                params![email],
+                |r| r.get(0),
+            )
+            .ok()
+        };
+
+        let contact_id = match existing_id {
+            Some(id) => id,
+            None => {
+                let c = self.create_contact(NewContact {
+                    name,
+                    email: Some(email.clone()),
+                    phone: None,
+                    company: None,
+                    status: Some("lead".to_string()),
+                    tags: Some("IMAP-Sync, E-Mail".to_string()),
+                })?;
+                c.id
+            }
+        };
+
+        let msg = self.add_interaction_with_status(
+            &contact_id,
+            "email",
+            "inbound",
+            Some(&payload.subject),
+            &payload.body,
+            "received",
+        )?;
+
+        let _ = self.log_gobd(
+            "contact",
+            &contact_id,
+            "EMAIL_SYNC_INBOUND",
+            &format!("E-Mail synchronisiert von {}: Betreff '{}'", email, payload.subject),
+            "IMAP-Worker",
+        );
+
+        Ok(msg)
+    }
+
+    pub fn book_calendar_slot(&self, input: NewBooking) -> Result<BookingSlot> {
+        let now = Utc::now();
+        let id = Uuid::new_v4().to_string();
+        let slug = input.slug.unwrap_or_else(|| "merlin".to_string());
+        let duration = input.duration_minutes.unwrap_or(30);
+        let tz = input.timezone.unwrap_or_else(|| "Europe/Berlin".to_string());
+
+        let start_dt = chrono::DateTime::parse_from_rfc3339(&input.start_time)
+            .map(|d| d.with_timezone(&Utc))
+            .unwrap_or_else(|_| now + Duration::hours(24));
+        let end_dt = start_dt + Duration::minutes(duration);
+
+        let email_clean = input.email.trim().to_lowercase();
+
+        // Match or create contact
+        let existing_id: Option<String> = {
+            let conn = self.conn.lock().unwrap();
+            conn.query_row(
+                "SELECT id FROM contacts WHERE LOWER(email) = ?1 LIMIT 1",
+                params![email_clean],
+                |r| r.get(0),
+            )
+            .ok()
+        };
+
+        let contact_id = match existing_id {
+            Some(cid) => cid,
+            None => {
+                let c = self.create_contact(NewContact {
+                    name: input.name.clone(),
+                    email: Some(email_clean.clone()),
+                    phone: input.phone.clone(),
+                    company: None,
+                    status: Some("qualified".to_string()),
+                    tags: Some("Terminbuchung, Cal.com-Rust".to_string()),
+                })?;
+                c.id
+            }
+        };
+
+        let title = format!("Strategiegespräch: {} ↔ Conrad KI", input.name);
+
+        {
+            let conn = self.conn.lock().unwrap();
+            conn.execute(
+                "INSERT INTO bookings (id, slug, contact_id, guest_name, guest_email, guest_phone, title, start_time, end_time, timezone, status, notes, created_at)
+                 VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, 'confirmed', ?11, ?12)",
+                params![
+                    id,
+                    slug,
+                    contact_id,
+                    input.name,
+                    email_clean,
+                    input.phone,
+                    title,
+                    start_dt.to_rfc3339(),
+                    end_dt.to_rfc3339(),
+                    tz,
+                    input.notes,
+                    now.to_rfc3339(),
+                ],
+            )?;
+
+            let _ = Self::log_gobd_internal(
+                &conn,
+                "booking",
+                &id,
+                "CALENDAR_SLOT_BOOKED",
+                &format!("Termin gebucht ({}): {} am {} ({})", slug, input.name, start_dt.format("%d.%m.%Y %H:%M UTC"), tz),
+                "Booking-Engine",
+            );
+        }
+
+        // Timeline interaction + Email Confirmation Draft (per safety rule: never auto-send emails, save as draft!)
+        let _ = self.add_interaction_with_status(
+            &contact_id,
+            "meeting",
+            "inbound",
+            Some(&title),
+            &format!(
+                "Termin gebucht über /book/{}\nStart: {} ({})\nNotizen: {}",
+                slug,
+                start_dt.format("%d.%m.%Y %H:%M"),
+                tz,
+                input.notes.as_deref().unwrap_or("—")
+            ),
+            "confirmed",
+        );
+
+        let draft_body = format!(
+            "Hallo {},\n\nvielen Dank für Ihre Terminbuchung bei Conrad KI.\n\nTermin-Details:\n• Thema: {}\n• Zeitpunkt: {} ({})\n\nDieser Entwurf wurde zur Freigabe bereitgestellt.\n\nBeste Grüße\nMerlin Conrad",
+            input.name,
+            title,
+            start_dt.format("%d.%m.%Y um %H:%M Uhr"),
+            tz
+        );
+        let _ = self.add_interaction_with_status(
+            &contact_id,
+            "email",
+            "outbound",
+            Some(&format!("Terminbestätigung: {}", title)),
+            &draft_body,
+            "draft",
+        );
+
+        Ok(BookingSlot {
+            id,
+            slug,
+            contact_id: Some(contact_id),
+            guest_name: input.name,
+            guest_email: email_clean,
+            guest_phone: input.phone,
+            title,
+            start_time: start_dt,
+            end_time: end_dt,
+            timezone: tz,
+            status: "confirmed".to_string(),
+            notes: input.notes,
+            created_at: now,
+        })
+    }
+
+    pub fn list_bookings(&self, slug: Option<&str>) -> Result<Vec<BookingSlot>> {
+        let conn = self.conn.lock().unwrap();
+        let mut list = Vec::new();
+        let sql = if slug.is_some() {
+            "SELECT id, slug, contact_id, guest_name, guest_email, guest_phone, title, start_time, end_time, timezone, status, notes, created_at FROM bookings WHERE slug = ?1 ORDER BY start_time ASC"
+        } else {
+            "SELECT id, slug, contact_id, guest_name, guest_email, guest_phone, title, start_time, end_time, timezone, status, notes, created_at FROM bookings ORDER BY start_time ASC"
+        };
+
+        let mut stmt = conn.prepare(sql)?;
+        let mapper = |row: &rusqlite::Row| -> rusqlite::Result<BookingSlot> {
+            let s_str: String = row.get(7)?;
+            let e_str: String = row.get(8)?;
+            let c_str: String = row.get(12)?;
+            Ok(BookingSlot {
+                id: row.get(0)?,
+                slug: row.get(1)?,
+                contact_id: row.get(2)?,
+                guest_name: row.get(3)?,
+                guest_email: row.get(4)?,
+                guest_phone: row.get(5)?,
+                title: row.get(6)?,
+                start_time: chrono::DateTime::parse_from_rfc3339(&s_str).map(|d| d.with_timezone(&Utc)).unwrap_or_else(|_| Utc::now()),
+                end_time: chrono::DateTime::parse_from_rfc3339(&e_str).map(|d| d.with_timezone(&Utc)).unwrap_or_else(|_| Utc::now()),
+                timezone: row.get(9)?,
+                status: row.get(10)?,
+                notes: row.get(11)?,
+                created_at: chrono::DateTime::parse_from_rfc3339(&c_str).map(|d| d.with_timezone(&Utc)).unwrap_or_else(|_| Utc::now()),
+            })
+        };
+
+        if let Some(s) = slug {
+            let rows = stmt.query_map(params![s], mapper)?;
+            list.extend(rows.filter_map(Result::ok));
+        } else {
+            let rows = stmt.query_map([], mapper)?;
+            list.extend(rows.filter_map(Result::ok));
+        }
+
+        Ok(list)
+    }
+
+    pub fn create_workflow_rule(&self, input: NewWorkflowRule) -> Result<WorkflowRule> {
+        let now = Utc::now();
+        let id = Uuid::new_v4().to_string();
+        let delay = input.delay_days.unwrap_or(3);
+
+        let conn = self.conn.lock().unwrap();
+        conn.execute(
+            "INSERT INTO workflow_rules (id, name, trigger_type, trigger_filter, action_type, delay_days, template_subject, template_body, active, executions_count, created_at)
+             VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, 1, 0, ?9)",
+            params![
+                id,
+                input.name,
+                input.trigger_type,
+                input.trigger_filter,
+                input.action_type,
+                delay,
+                input.template_subject,
+                input.template_body,
+                now.to_rfc3339(),
+            ],
+        )?;
+
+        Ok(WorkflowRule {
+            id,
+            name: input.name,
+            trigger_type: input.trigger_type,
+            trigger_filter: input.trigger_filter,
+            action_type: input.action_type,
+            delay_days: delay,
+            template_subject: input.template_subject,
+            template_body: input.template_body,
+            active: true,
+            executions_count: 0,
+            created_at: now,
+        })
+    }
+
+    pub fn list_workflow_rules(&self) -> Result<Vec<WorkflowRule>> {
+        let conn = self.conn.lock().unwrap();
+        let mut stmt = conn.prepare(
+            "SELECT id, name, trigger_type, trigger_filter, action_type, delay_days, template_subject, template_body, active, executions_count, created_at
+             FROM workflow_rules ORDER BY created_at DESC",
+        )?;
+
+        let rules = stmt
+            .query_map([], |row| {
+                let c_str: String = row.get(10)?;
+                let active_int: i64 = row.get(8)?;
+                Ok(WorkflowRule {
+                    id: row.get(0)?,
+                    name: row.get(1)?,
+                    trigger_type: row.get(2)?,
+                    trigger_filter: row.get(3)?,
+                    action_type: row.get(4)?,
+                    delay_days: row.get(5)?,
+                    template_subject: row.get(6)?,
+                    template_body: row.get(7)?,
+                    active: active_int != 0,
+                    executions_count: row.get(9)?,
+                    created_at: chrono::DateTime::parse_from_rfc3339(&c_str).map(|d| d.with_timezone(&Utc)).unwrap_or_else(|_| Utc::now()),
+                })
+            })?
+            .filter_map(Result::ok)
+            .collect();
+
+        Ok(rules)
+    }
+
+    pub fn list_follow_up_tasks(&self) -> Result<Vec<FollowUpTask>> {
+        let conn = self.conn.lock().unwrap();
+        let mut stmt = conn.prepare(
+            "SELECT id, contact_id, deal_id, title, due_date, status, created_at FROM follow_up_tasks ORDER BY status DESC, due_date ASC",
+        )?;
+        let tasks = stmt
+            .query_map([], |row| {
+                let c_str: String = row.get(6)?;
+                Ok(FollowUpTask {
+                    id: row.get(0)?,
+                    contact_id: row.get(1)?,
+                    deal_id: row.get(2)?,
+                    title: row.get(3)?,
+                    due_date: row.get(4)?,
+                    status: row.get(5)?,
+                    created_at: chrono::DateTime::parse_from_rfc3339(&c_str).map(|d| d.with_timezone(&Utc)).unwrap_or_else(|_| Utc::now()),
+                })
+            })?
+            .filter_map(Result::ok)
+            .collect();
+        Ok(tasks)
+    }
+
+    pub fn create_follow_up_task(&self, input: NewFollowUpTask) -> Result<FollowUpTask> {
+        let now = Utc::now();
+        let id = Uuid::new_v4().to_string();
+        let due_date = input
+            .due_date
+            .unwrap_or_else(|| (now + Duration::days(3)).format("%Y-%m-%d").to_string());
+
+        let conn = self.conn.lock().unwrap();
+        conn.execute(
+            "INSERT INTO follow_up_tasks (id, contact_id, deal_id, title, due_date, status, created_at)
+             VALUES (?1, ?2, ?3, ?4, ?5, 'open', ?6)",
+            params![id, input.contact_id, input.deal_id, input.title, due_date, now.to_rfc3339()],
+        )?;
+
+        Ok(FollowUpTask {
+            id,
+            contact_id: input.contact_id,
+            deal_id: input.deal_id,
+            title: input.title,
+            due_date,
+            status: "open".to_string(),
+            created_at: now,
+        })
+    }
+
+    pub fn toggle_task_status(&self, task_id: &str) -> Result<String> {
+        let conn = self.conn.lock().unwrap();
+        let current: String = conn
+            .query_row("SELECT status FROM follow_up_tasks WHERE id = ?1", params![task_id], |r| r.get(0))
+            .unwrap_or_else(|_| "open".to_string());
+        let next = if current == "completed" { "open" } else { "completed" };
+        conn.execute(
+            "UPDATE follow_up_tasks SET status = ?1 WHERE id = ?2",
+            params![next, task_id],
+        )?;
+        Ok(next.to_string())
+    }
+
+    pub fn update_contact(&self, id: &str, payload: UpdateContactPayload) -> Result<Contact> {
+        let existing = self.get_contact_by_id(id)?;
+        let name = payload.name.unwrap_or(existing.name);
+        let email = payload.email.or(existing.email);
+        let phone = payload.phone.or(existing.phone);
+        let company = payload.company.or(existing.company);
+        let status = payload.status.unwrap_or(existing.status);
+        let tags = payload.tags.unwrap_or(existing.tags);
+        let now = Utc::now();
+
+        {
+            let conn = self.conn.lock().unwrap();
+            conn.execute(
+                "UPDATE contacts SET name = ?1, email = ?2, phone = ?3, company = ?4, status = ?5, tags = ?6, updated_at = ?7 WHERE id = ?8",
+                params![name, email, phone, company, status, tags, now.to_rfc3339(), id],
+            )?;
+            let _ = Self::log_gobd_internal(
+                &conn,
+                "contact",
+                id,
+                "UPDATE",
+                &format!("Kontakt aktualisiert: {} ({})", name, status),
+                "Operator",
+            );
+        }
+
+        self.get_contact_by_id(id)
+    }
+
+    fn evaluate_deal_stage_workflows(&self, deal_id: &str, contact_id: &str, deal_title: &str, new_stage: &str) -> Result<()> {
+        let rules = self.list_workflow_rules()?;
+        let contact = self.get_contact_by_id(contact_id).ok();
+        let contact_name = contact.as_ref().map(|c| c.name.as_str()).unwrap_or("Kunde");
+
+        for rule in rules.into_iter().filter(|r| r.active && r.trigger_type == "deal_stage_changed" && r.trigger_filter == new_stage) {
+            let now = Utc::now();
+            let due_date = (now + Duration::days(rule.delay_days)).format("%Y-%m-%d").to_string();
+            let task_id = Uuid::new_v4().to_string();
+            let task_title = format!("Follow-up ({}): {}", rule.name, deal_title);
+
+            {
+                let conn = self.conn.lock().unwrap();
+                let _ = conn.execute(
+                    "INSERT INTO follow_up_tasks (id, contact_id, deal_id, title, due_date, status, created_at)
+                     VALUES (?1, ?2, ?3, ?4, ?5, 'open', ?6)",
+                    params![task_id, contact_id, deal_id, task_title, due_date, now.to_rfc3339()],
+                );
+                let _ = conn.execute(
+                    "UPDATE workflow_rules SET executions_count = executions_count + 1 WHERE id = ?1",
+                    params![rule.id],
+                );
+            }
+
+            // Create email draft (never send automatically!)
+            let body_rendered = rule.template_body.replace("{{name}}", contact_name);
+            let subj = rule.template_subject.unwrap_or_else(|| format!("Follow-up: {}", deal_title));
+            let _ = self.add_interaction_with_status(
+                contact_id,
+                "email",
+                "outbound",
+                Some(&subj),
+                &body_rendered,
+                "draft",
+            );
+
+            let _ = self.log_gobd(
+                "workflow",
+                &rule.id,
+                "WORKFLOW_TRIGGERED",
+                &format!("Workflow '{}' ausgelöst für Deal '{}': Folgeaufgabe (Fällig: {}) & E-Mail-Entwurf erstellt", rule.name, deal_title, due_date),
+                "Automation-Engine",
+            );
+        }
+
+        Ok(())
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_gobd_hash_chain_and_workflow_engine() -> Result<()> {
+        let db = Database::new(":memory:")?;
+
+        // 1. Verify initial seeded GoBD chain
+        let (valid, count, _) = db.verify_gobd_integrity()?;
+        assert!(valid);
+        assert!(count >= 1);
+
+        // 2. Test WhatsApp Business Webhook ingestion
+        let wa_msg = db.ingest_whatsapp_webhook(WhatsAppWebhookPayload {
+            from: "+49 171 9988776".to_string(),
+            sender_name: Some("Bäckerei Schmitt".to_string()),
+            text: "Hallo Merlin, wir brauchen Automatisierung für Vorbestellungen.".to_string(),
+            message_id: None,
+            timestamp: None,
+        })?;
+        assert_eq!(wa_msg.channel, "whatsapp");
+        assert_eq!(wa_msg.direction, "inbound");
+
+        // 3. Test Deal stage transition triggering Workflow (Task + Email Draft)
+        let deal = db.create_deal(NewDeal {
+            contact_id: wa_msg.contact_id.clone(),
+            title: "KI-Bestellannahme Bäckerei".to_string(),
+            value_cents: 120000,
+            currency: Some("EUR".to_string()),
+            stage: Some("discovery".to_string()),
+            expected_close_date: None,
+        })?;
+
+        db.update_deal_stage(&deal.id, "proposal")?;
+
+        let tasks = db.list_follow_up_tasks()?;
+        assert!(!tasks.is_empty());
+
+        let timeline = db.list_interactions(Some(&wa_msg.contact_id))?;
+        let has_draft = timeline.iter().any(|m| m.channel == "email" && m.status == "draft");
+        assert!(has_draft, "Workflow muss E-Mail als Entwurf ('draft') anlegen!");
+
+        // 4. Test Cal.com Native Booking Slot
+        let slot = db.book_calendar_slot(NewBooking {
+            slug: Some("merlin".to_string()),
+            name: "Dr. Markus Weber".to_string(),
+            email: "weber@zahnarzt-mannheim.de".to_string(),
+            phone: None,
+            start_time: "2026-11-12T10:00:00Z".to_string(),
+            duration_minutes: Some(30),
+            timezone: Some("Europe/Berlin".to_string()),
+            notes: Some("Praxis-Automatisierung".to_string()),
+        })?;
+        assert_eq!(slot.status, "confirmed");
+
+        // 5. Re-verify GoBD cryptographic ledger after all mutations
+        let (valid_after, count_after, _) = db.verify_gobd_integrity()?;
+        assert!(valid_after);
+        assert!(count_after > count);
+
+        Ok(())
     }
 }

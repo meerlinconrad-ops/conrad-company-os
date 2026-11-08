@@ -1,14 +1,29 @@
 version: '3.8'
 
 services:
+  caddy:
+    image: caddy:2-alpine
+    container_name: conrad-caddy
+    restart: always
+    ports:
+      - "80:80"
+      - "443:443"
+      - "443:443/udp"
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data
+      - caddy_config:/config
+    depends_on:
+      - conrad-crm
+
   conrad-crm:
     build: .
     container_name: conrad-crm
     restart: always
     ports:
-      - "8080:8080"
+      - "8090:8090"
     environment:
-      - PORT=8080
+      - PORT=8090
       - DATABASE_URL=/data/crm.db
       - OLLAMA_HOST=http://ollama:11434
       - OLLAMA_MODEL=qwen2.5:1.5b
@@ -29,3 +44,5 @@ services:
 volumes:
   crm_data:
   ollama_models:
+  caddy_data:
+  caddy_config:

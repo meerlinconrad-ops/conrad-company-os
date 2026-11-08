@@ -1,0 +1,13 @@
+# 🏛️ Conrad OS — Cloudflare Named Tunnel Konfiguration
+# Nutzung: cloudflared --config cloudflare-tunnel.yml tunnel run conrad-crm
+
+tunnel: conrad-crm
+credentials-file: /Users/merlinconrad/.cloudflared/conrad-crm.json
+
+ingress:
+  - hostname: crm.conrad-ki.com
+    service: http://127.0.0.1:8090
+    originRequest:
+      noTLSVerify: true
+      connectTimeout: 10s
+  - service: http_status:404

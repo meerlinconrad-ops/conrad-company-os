@@ -1,0 +1,23 @@
+# 🏛️ Conrad OS — Produktives Routing via Caddy (Hetzner / Bare-Metal)
+# Automatische Let's Encrypt SSL/TLS Zertifizierung & HTTP/3 (QUIC)
+
+crm.conrad-ki.com {
+    encode zstd gzip
+
+    # Reverse Proxy auf das lokale Rust-Binary
+    reverse_proxy 127.0.0.1:8090 {
+        header_up Host {host}
+        header_up X-Real-IP {remote_host}
+        header_up X-Forwarded-For {remote_host}
+        header_up X-Forwarded-Proto {scheme}
+    }
+
+    # Zusätzliche Edge Security Header
+    header {
+        Strict-Transport-Security "max-age=63072000; includeSubDomains; preload"
+        X-Content-Type-Options "nosniff"
+        X-Frame-Options "DENY"
+        Referrer-Policy "strict-origin-when-cross-origin"
+        -Server
+    }
+}

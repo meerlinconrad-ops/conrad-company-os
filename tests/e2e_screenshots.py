@@ -20,6 +20,22 @@ with sync_playwright() as p:
     time.sleep(0.5)
     page.screenshot(path=f"{output_dir}/desktop_02_contacts.png", full_page=True)
     print("✓ Desktop 02 Contacts captured")
+
+    # Open 360° Contact Inspector Drawer & verify properties + timeline
+    page.click('#contactsFullTable tr:first-child')
+    time.sleep(0.6)
+    page.screenshot(path=f"{output_dir}/desktop_02b_contact_drawer_360.png")
+    print("✓ Desktop 02b Contact 360° Inspector Drawer captured")
+    page.keyboard.press("Escape")
+    time.sleep(0.3)
+
+    # Open Cmd+K Command Palette & verify
+    page.click('.cmdk-trigger-btn')
+    time.sleep(0.4)
+    page.screenshot(path=f"{output_dir}/desktop_02c_cmdk_palette.png")
+    print("✓ Desktop 02c Cmd+K Command Palette captured")
+    page.keyboard.press("Escape")
+    time.sleep(0.3)
     
     page.click('#nav-btn-deals')
     time.sleep(0.5)
@@ -54,6 +70,12 @@ with sync_playwright() as p:
     time.sleep(1.2)
     page.screenshot(path=f"{output_dir}/desktop_08_copilot_active.png")
     print("✓ Desktop 08 Copilot Active captured")
+
+    # Booking Page (/book/merlin)
+    page.goto("http://127.0.0.1:8090/book/merlin", wait_until="networkidle")
+    time.sleep(0.6)
+    page.screenshot(path=f"{output_dir}/desktop_09_booking_calcom.png")
+    print("✓ Desktop 09 Native Cal.com Booking Page captured")
     page.close()
     
     # ── 2. Mobile Suite (iPhone 14/15 Pro: 393 x 852) ──

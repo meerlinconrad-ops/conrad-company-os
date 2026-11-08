@@ -5,8 +5,8 @@ use serde_json::{json, Value};
 
 use crate::db::Database;
 use crate::models::{
-    DatevExportConfig, FunnelLeadPayload, InvoiceItem, NewContact, NewCustomFieldDef, NewDeal,
-    NewInvoice, NewMarketingCampaign, NewRetainerSubscription,
+    DatevExportConfig, FunnelLeadPayload, InvoiceItem, NewBooking, NewContact, NewCustomFieldDef,
+    NewDeal, NewInvoice, NewMarketingCampaign, NewRetainerSubscription,
 };
 
 #[derive(Debug, Deserialize)]
@@ -42,6 +42,11 @@ pub struct McpServer {
 impl McpServer {
     pub fn new(db: Database) -> Self {
         Self { db }
+    }
+
+    pub fn log_ai_audit(&self, details: &str, actor: &str) -> Result<()> {
+        let _ = self.db.log_gobd("copilot", "ai_action", "AI_MUTATION", details, actor)?;
+        Ok(())
     }
 
     pub fn get_tools_definition(&self) -> Value {
@@ -505,36 +510,26 @@ impl McpServer {
                 }))
             }
             "calendar_book_slot" => {
-                let name = args.get("name").and_then(|v| v.as_str()).unwrap_or("Gast");
-                let email = args.get("email").and_then(|v| v.as_str()).unwrap_or("");
-                let start_time = args.get("start_time").and_then(|v| v.as_str()).unwrap_or("");
-                let notes = args.get("notes").and_then(|v| v.as_str()).unwrap_or("");
+                let name = args.get("name").and_then(|v| v.as_str()).unwrap_or("Gast").to_string();
+                let email = args.get("email").and_then(|v| v.as_str()).unwrap_or("").to_string();
+                let start_time = args.get("start_time").and_then(|v| v.as_str()).unwrap_or("").to_string();
+                let notes = args.get("notes").and_then(|v| v.as_str()).map(String::from);
 
-                // Create or match contact
-                let contact = self.db.create_contact(NewContact {
-                    name: name.to_string(),
-                    email: Some(email.to_string()),
+                let slot = self.db.book_calendar_slot(NewBooking {
+                    slug: Some("merlin".to_string()),
+                    name,
+                    email,
                     phone: None,
-                    company: None,
-                    status: Some("lead".to_string()),
-                    tags: Some("Cal.com Booking".to_string()),
+                    start_time,
+                    duration_minutes: Some(30),
+                    timezone: Some("Europe/Berlin".to_string()),
+                    notes,
                 })?;
-
-                // Log appointment interaction
-                self.db.add_interaction(
-                    &contact.id,
-                    "meeting",
-                    "inbound",
-                    Some("Terminbuchung via Conrad OS"),
-                    &format!("Termin am {}: {}", start_time, notes),
-                )?;
 
                 Ok(json!({
                     "status": "confirmed",
-                    "contact_id": contact.id,
-                    "contact_name": contact.name,
-                    "start_time": start_time,
-                    "message": "Termin erfolgreich im Rust-Kalender gebucht und Kunden-Timeline aktualisiert."
+                    "booking": slot,
+                    "message": "Termin erfolgreich im Rust-Kalender gebucht, Kunden-Timeline aktualisiert und E-Mail-Entwurf gespeichert."
                 }))
             }
             "gobd_verify_audit_log" => {
