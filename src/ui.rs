@@ -4,47 +4,47 @@ pub fn render_app_html() -> &'static str {
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Conrad OS — Rust CRM, DMS & ERP</title>
+    <title>Conrad OS — Omarchy-Style Pure Rust CRM, DMS & ERP</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
     <style>
         :root {
             --bg: #090d16;
-            --surface: #111827;
-            --surface-elevated: #1a2234;
-            --border: #1f293d;
-            --border-focus: #374151;
+            --surface: #101726;
+            --surface-elevated: #182238;
+            --border: #1e293b;
+            --border-glow: rgba(59, 130, 246, 0.4);
             --primary: #3b82f6;
             --primary-hover: #2563eb;
             --accent: #10b981;
-            --ai-accent: #8b5cf6;
-            --ai-gradient: linear-gradient(135deg, #8b5cf6, #3b82f6);
+            --ai-accent: #a855f7;
+            --ai-gradient: linear-gradient(135deg, #a855f7, #3b82f6);
             --danger: #ef4444;
             --warning: #f59e0b;
-            --text: #f9fafb;
-            --text-secondary: #9ca3af;
-            --sidebar-width: 240px;
+            --text: #f8fafc;
+            --text-secondary: #94a3b8;
+            --sidebar-width: 250px;
         }
 
         * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
         body {
             background: var(--bg);
             color: var(--text);
-            font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+            font-family: 'Plus Jakarta Sans', -apple-system, sans-serif;
             display: flex;
             height: 100vh;
             overflow: hidden;
         }
 
-        /* Layout */
+        /* Omarchy Sidebar */
         .sidebar {
             width: var(--sidebar-width);
             background: var(--surface);
             border-right: 1px solid var(--border);
             display: flex;
             flex-direction: column;
-            padding: 20px 16px;
+            padding: 18px 14px;
             flex-shrink: 0;
             z-index: 20;
         }
@@ -53,33 +53,44 @@ pub fn render_app_html() -> &'static str {
             display: flex;
             align-items: center;
             gap: 12px;
-            padding-bottom: 24px;
+            padding-bottom: 20px;
             border-bottom: 1px solid var(--border);
-            margin-bottom: 20px;
+            margin-bottom: 16px;
         }
         .brand-logo {
             width: 36px;
             height: 36px;
-            border-radius: 10px;
+            border-radius: 8px;
             background: var(--ai-gradient);
             display: flex;
             align-items: center;
             justify-content: center;
             font-weight: 700;
             color: #fff;
-            font-size: 18px;
-            box-shadow: 0 4px 12px rgba(139, 92, 246, 0.3);
+            font-size: 17px;
+            box-shadow: 0 4px 14px rgba(168, 85, 247, 0.35);
         }
-        .brand-text { font-size: 16px; font-weight: 700; letter-spacing: -0.02em; }
-        .brand-sub { font-size: 11px; color: var(--text-secondary); }
+        .brand-text { font-size: 15px; font-weight: 700; letter-spacing: -0.02em; }
+        .brand-sub { font-size: 10px; color: var(--text-secondary); font-family: 'JetBrains Mono', monospace; }
+
+        .kbd-hint {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 10px;
+            background: rgba(255, 255, 255, 0.06);
+            border: 1px solid rgba(255, 255, 255, 0.12);
+            padding: 2px 5px;
+            border-radius: 4px;
+            color: var(--text-secondary);
+            margin-left: auto;
+        }
 
         .nav-items { display: flex; flex-direction: column; gap: 4px; flex: 1; }
         .nav-btn {
             display: flex;
             align-items: center;
-            gap: 12px;
-            padding: 10px 14px;
-            border-radius: 8px;
+            gap: 10px;
+            padding: 10px 12px;
+            border-radius: 6px;
             background: transparent;
             color: var(--text-secondary);
             border: none;
@@ -93,17 +104,35 @@ pub fn render_app_html() -> &'static str {
         .nav-btn:hover { background: var(--surface-elevated); color: var(--text); }
         .nav-btn.active { background: rgba(59, 130, 246, 0.15); color: #60a5fa; border: 1px solid rgba(59, 130, 246, 0.3); }
 
+        .palette-trigger {
+            background: #090e17;
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 9px 12px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            color: var(--text-secondary);
+            font-size: 12px;
+            cursor: pointer;
+            margin-bottom: 16px;
+            transition: all 0.15s;
+        }
+        .palette-trigger:hover { border-color: var(--border-glow); color: var(--text); }
+
         .ai-status-badge {
             margin-top: auto;
-            background: rgba(139, 92, 246, 0.1);
-            border: 1px solid rgba(139, 92, 246, 0.3);
-            border-radius: 10px;
+            background: rgba(168, 85, 247, 0.08);
+            border: 1px solid rgba(168, 85, 247, 0.25);
+            border-radius: 8px;
             padding: 12px;
             display: flex;
             align-items: center;
             gap: 10px;
             cursor: pointer;
+            transition: all 0.2s;
         }
+        .ai-status-badge:hover { background: rgba(168, 85, 247, 0.15); }
         .ai-pulse {
             width: 8px;
             height: 8px;
@@ -112,7 +141,7 @@ pub fn render_app_html() -> &'static str {
             box-shadow: 0 0 8px var(--accent);
             animation: pulse 2s infinite;
         }
-        @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.4; } }
+        @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.3; } }
 
         /* Main Workspace */
         .main-content {
@@ -123,26 +152,40 @@ pub fn render_app_html() -> &'static str {
             position: relative;
         }
         .topbar {
-            height: 64px;
+            height: 56px;
             border-bottom: 1px solid var(--border);
             display: flex;
             align-items: center;
             justify-content: space-between;
-            padding: 0 28px;
-            background: rgba(17, 24, 39, 0.8);
+            padding: 0 24px;
+            background: rgba(16, 23, 38, 0.85);
             backdrop-filter: blur(12px);
             position: sticky;
             top: 0;
             z-index: 10;
         }
-        .view-title { font-size: 18px; font-weight: 700; }
+        .view-title { font-size: 16px; font-weight: 700; display: flex; align-items: center; gap: 8px; }
+        
+        .agent-hud {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 11px;
+            color: #a855f7;
+            background: rgba(168, 85, 247, 0.1);
+            border: 1px solid rgba(168, 85, 247, 0.25);
+            padding: 4px 10px;
+            border-radius: 6px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
         .btn {
             background: var(--primary);
             color: #fff;
             border: none;
-            border-radius: 8px;
-            padding: 8px 16px;
-            font-size: 13px;
+            border-radius: 6px;
+            padding: 8px 14px;
+            font-size: 12px;
             font-weight: 600;
             cursor: pointer;
             display: inline-flex;
@@ -150,55 +193,55 @@ pub fn render_app_html() -> &'static str {
             gap: 6px;
             transition: all 0.15s ease;
         }
-        .btn:hover { background: var(--primary-hover); transform: translateY(-1px); }
+        .btn:hover { background: var(--primary-hover); }
         .btn-secondary { background: var(--surface-elevated); color: var(--text); border: 1px solid var(--border); }
         .btn-secondary:hover { background: #273147; }
         .btn-ai { background: var(--ai-gradient); }
 
-        .view-container { padding: 28px; flex: 1; }
+        .view-container { padding: 24px; flex: 1; }
 
-        /* KPI Grid */
-        .kpi-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px; margin-bottom: 28px; }
+        /* Bento Grid KPI */
+        .kpi-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); gap: 14px; margin-bottom: 24px; }
         .kpi-card {
             background: var(--surface);
             border: 1px solid var(--border);
-            border-radius: 12px;
-            padding: 20px;
+            border-radius: 10px;
+            padding: 18px;
             position: relative;
-            overflow: hidden;
         }
-        .kpi-label { font-size: 12px; color: var(--text-secondary); text-transform: uppercase; font-weight: 600; letter-spacing: 0.04em; margin-bottom: 8px; }
-        .kpi-val { font-size: 26px; font-weight: 700; color: #fff; font-family: 'JetBrains Mono', monospace; }
-        .kpi-sub { font-size: 12px; color: var(--accent); margin-top: 6px; display: flex; align-items: center; gap: 4px; }
+        .kpi-label { font-size: 11px; color: var(--text-secondary); text-transform: uppercase; font-weight: 600; letter-spacing: 0.05em; margin-bottom: 6px; }
+        .kpi-val { font-size: 24px; font-weight: 700; color: #fff; font-family: 'JetBrains Mono', monospace; }
+        .kpi-sub { font-size: 11px; color: var(--accent); margin-top: 4px; font-family: 'JetBrains Mono', monospace; }
 
         /* Tables & Lists */
         .card-table {
             background: var(--surface);
             border: 1px solid var(--border);
-            border-radius: 12px;
+            border-radius: 10px;
             overflow: hidden;
-            margin-bottom: 28px;
+            margin-bottom: 24px;
         }
         .card-header {
-            padding: 16px 20px;
+            padding: 14px 18px;
             border-bottom: 1px solid var(--border);
             display: flex;
             align-items: center;
             justify-content: space-between;
         }
-        .card-title { font-size: 15px; font-weight: 700; }
+        .card-title { font-size: 14px; font-weight: 700; }
         table { width: 100%; border-collapse: collapse; font-size: 13px; }
-        th { background: #0c121e; color: var(--text-secondary); padding: 12px 18px; text-align: left; font-size: 11px; text-transform: uppercase; letter-spacing: 0.05em; border-bottom: 1px solid var(--border); }
-        td { padding: 14px 18px; border-bottom: 1px solid var(--border); color: var(--text); }
+        th { background: #0c121e; color: var(--text-secondary); padding: 10px 16px; text-align: left; font-size: 11px; text-transform: uppercase; letter-spacing: 0.05em; border-bottom: 1px solid var(--border); font-family: 'JetBrains Mono', monospace; }
+        td { padding: 12px 16px; border-bottom: 1px solid var(--border); color: var(--text); }
         tr:last-child td { border-bottom: none; }
         tr:hover td { background: rgba(255, 255, 255, 0.02); }
 
         .badge {
             display: inline-block;
-            padding: 3px 8px;
-            border-radius: 999px;
+            padding: 2px 7px;
+            border-radius: 4px;
             font-size: 11px;
             font-weight: 600;
+            font-family: 'JetBrains Mono', monospace;
         }
         .badge-lead { background: rgba(245, 158, 11, 0.15); color: #fbbf24; border: 1px solid rgba(245, 158, 11, 0.3); }
         .badge-qualified { background: rgba(59, 130, 246, 0.15); color: #60a5fa; border: 1px solid rgba(59, 130, 246, 0.3); }
@@ -210,37 +253,97 @@ pub fn render_app_html() -> &'static str {
         .kanban-grid {
             display: grid;
             grid-template-columns: repeat(4, 1fr);
-            gap: 16px;
+            gap: 14px;
             align-items: start;
         }
         .kanban-col {
             background: #0d1322;
             border: 1px solid var(--border);
-            border-radius: 12px;
-            padding: 16px;
-            min-height: 400px;
+            border-radius: 10px;
+            padding: 14px;
+            min-height: 420px;
         }
         .kanban-head {
-            font-size: 13px;
+            font-size: 12px;
             font-weight: 700;
-            margin-bottom: 14px;
+            margin-bottom: 12px;
             display: flex;
             justify-content: space-between;
             color: var(--text-secondary);
+            font-family: 'JetBrains Mono', monospace;
         }
         .kanban-card {
             background: var(--surface);
             border: 1px solid var(--border);
             border-radius: 8px;
-            padding: 14px;
-            margin-bottom: 10px;
+            padding: 12px;
+            margin-bottom: 8px;
             cursor: pointer;
             transition: all 0.15s ease;
         }
-        .kanban-card:hover { border-color: var(--primary); transform: translateY(-2px); }
-        .kanban-title { font-weight: 600; font-size: 14px; margin-bottom: 6px; }
-        .kanban-company { font-size: 12px; color: var(--text-secondary); margin-bottom: 10px; }
-        .kanban-val { font-family: 'JetBrains Mono', monospace; font-size: 13px; font-weight: 700; color: var(--accent); }
+        .kanban-card:hover { border-color: var(--primary); transform: translateY(-1px); }
+        .kanban-title { font-weight: 600; font-size: 13px; margin-bottom: 4px; }
+        .kanban-company { font-size: 11px; color: var(--text-secondary); margin-bottom: 8px; }
+        .kanban-val { font-family: 'JetBrains Mono', monospace; font-size: 12px; font-weight: 700; color: var(--accent); }
+
+        /* Omarchy Command Palette (Cmd+K) */
+        .palette-overlay {
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0, 0, 0, 0.65);
+            backdrop-filter: blur(6px);
+            display: none;
+            align-items: flex-start;
+            justify-content: center;
+            padding-top: 15vh;
+            z-index: 300;
+        }
+        .palette-box {
+            background: var(--surface);
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            border-radius: 12px;
+            width: 90%;
+            max-width: 580px;
+            box-shadow: 0 25px 50px rgba(0,0,0,0.7), 0 0 20px rgba(168, 85, 247, 0.2);
+            overflow: hidden;
+            animation: slideDown 0.15s ease-out;
+        }
+        @keyframes slideDown { from { transform: translateY(-12px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+        .palette-input-wrap {
+            display: flex;
+            align-items: center;
+            padding: 14px 18px;
+            border-bottom: 1px solid var(--border);
+            gap: 12px;
+            background: #0c121e;
+        }
+        .palette-input {
+            flex: 1;
+            background: transparent;
+            border: none;
+            color: #fff;
+            font-size: 14px;
+            outline: none;
+            font-family: inherit;
+        }
+        .palette-list {
+            max-height: 340px;
+            overflow-y: auto;
+            padding: 8px;
+        }
+        .palette-item {
+            padding: 10px 14px;
+            border-radius: 6px;
+            font-size: 13px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            cursor: pointer;
+            color: var(--text);
+            transition: all 0.1s;
+        }
+        .palette-item:hover, .palette-item.active { background: var(--surface-elevated); color: #60a5fa; }
+        .palette-meta { font-family: 'JetBrains Mono', monospace; font-size: 11px; color: var(--text-secondary); }
 
         /* Floating / Drawer AI Copilot */
         .copilot-drawer {
@@ -259,7 +362,7 @@ pub fn render_app_html() -> &'static str {
         }
         .copilot-drawer.open { right: 0; }
         .copilot-header {
-            padding: 18px 20px;
+            padding: 16px 18px;
             border-bottom: 1px solid var(--border);
             display: flex;
             align-items: center;
@@ -268,15 +371,15 @@ pub fn render_app_html() -> &'static str {
         }
         .copilot-messages {
             flex: 1;
-            padding: 20px;
+            padding: 18px;
             overflow-y: auto;
             display: flex;
             flex-direction: column;
             gap: 12px;
         }
         .chat-bubble {
-            padding: 12px 16px;
-            border-radius: 12px;
+            padding: 11px 15px;
+            border-radius: 10px;
             font-size: 13px;
             line-height: 1.5;
             max-width: 90%;
@@ -295,7 +398,7 @@ pub fn render_app_html() -> &'static str {
             border: 1px solid var(--border);
         }
         .copilot-input-bar {
-            padding: 16px;
+            padding: 14px;
             border-top: 1px solid var(--border);
             display: flex;
             gap: 8px;
@@ -305,8 +408,8 @@ pub fn render_app_html() -> &'static str {
             flex: 1;
             background: var(--bg);
             border: 1px solid var(--border);
-            border-radius: 8px;
-            padding: 10px 14px;
+            border-radius: 6px;
+            padding: 9px 12px;
             color: #fff;
             font-size: 13px;
             outline: none;
@@ -327,16 +430,16 @@ pub fn render_app_html() -> &'static str {
         .modal {
             background: var(--surface);
             border: 1px solid var(--border);
-            border-radius: 14px;
+            border-radius: 12px;
             width: 90%;
-            max-width: 520px;
-            padding: 24px;
+            max-width: 500px;
+            padding: 22px;
             box-shadow: 0 20px 40px rgba(0,0,0,0.6);
         }
-        .modal-head { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
-        .form-group { margin-bottom: 14px; }
-        .form-label { display: block; font-size: 12px; font-weight: 600; color: var(--text-secondary); margin-bottom: 6px; }
-        .form-input { width: 100%; background: var(--bg); border: 1px solid var(--border); border-radius: 8px; padding: 10px 12px; color: #fff; font-size: 13px; outline: none; }
+        .modal-head { display: flex; justify-content: space-between; align-items: center; margin-bottom: 18px; }
+        .form-group { margin-bottom: 12px; }
+        .form-label { display: block; font-size: 11px; font-weight: 600; color: var(--text-secondary); margin-bottom: 5px; }
+        .form-input { width: 100%; background: var(--bg); border: 1px solid var(--border); border-radius: 6px; padding: 9px 11px; color: #fff; font-size: 13px; outline: none; }
         .form-input:focus { border-color: var(--primary); }
 
         /* Mobile Bottom Nav */
@@ -348,7 +451,7 @@ pub fn render_app_html() -> &'static str {
                 display: flex;
                 position: fixed;
                 bottom: 0; left: 0; width: 100%;
-                height: 60px;
+                height: 56px;
                 background: var(--surface);
                 border-top: 1px solid var(--border);
                 z-index: 50;
@@ -370,47 +473,76 @@ pub fn render_app_html() -> &'static str {
             .mobile-nav-btn.active { color: var(--primary); }
             .kanban-grid { grid-template-columns: 1fr; }
             .topbar { padding: 0 16px; }
-            .view-container { padding: 16px; padding-bottom: 80px; }
+            .view-container { padding: 16px; padding-bottom: 74px; }
             .copilot-drawer { width: 100%; right: -100%; }
+            .agent-hud { display: none; }
         }
     </style>
 </head>
 <body>
 
-    <!-- Desktop Sidebar -->
+    <!-- Desktop Sidebar (Omarchy Style) -->
     <aside class="sidebar">
         <div class="brand">
             <div class="brand-logo">⚡</div>
             <div>
                 <div class="brand-text">Conrad OS</div>
-                <div class="brand-sub">Pure Rust CRM & ERP</div>
+                <div class="brand-sub">OMARCHY ARCHITECTURE</div>
             </div>
         </div>
 
+        <div class="palette-trigger" onclick="openPalette()">
+            <span>⌘ Befehle suchen...</span>
+            <span class="kbd-hint">⌘K</span>
+        </div>
+
         <nav class="nav-items">
-            <button class="nav-btn active" onclick="switchTab('dashboard')">📊 Dashboard</button>
-            <button class="nav-btn" onclick="switchTab('contacts')">👥 Kontakte & Leads</button>
-            <button class="nav-btn" onclick="switchTab('deals')">💼 Vertriebs-Pipeline</button>
-            <button class="nav-btn" onclick="switchTab('invoices')">🧾 ERP & Faktura</button>
-            <button class="nav-btn" onclick="switchTab('dms')">📁 DMS Dokumente</button>
-            <button class="nav-btn" onclick="switchTab('settings')">⚙️ Customizer & MCP</button>
+            <button class="nav-btn active" onclick="switchTab('dashboard')">
+                <span>📊 Dashboard</span>
+                <span class="kbd-hint">1</span>
+            </button>
+            <button class="nav-btn" onclick="switchTab('contacts')">
+                <span>👥 Kontakte & Leads</span>
+                <span class="kbd-hint">2</span>
+            </button>
+            <button class="nav-btn" onclick="switchTab('deals')">
+                <span>💼 Vertriebs-Pipeline</span>
+                <span class="kbd-hint">3</span>
+            </button>
+            <button class="nav-btn" onclick="switchTab('invoices')">
+                <span>🧾 ERP & Faktura</span>
+                <span class="kbd-hint">4</span>
+            </button>
+            <button class="nav-btn" onclick="switchTab('dms')">
+                <span>📁 DMS Dokumente</span>
+                <span class="kbd-hint">5</span>
+            </button>
+            <button class="nav-btn" onclick="switchTab('settings')">
+                <span>⚙️ Customizer & MCP</span>
+                <span class="kbd-hint">6</span>
+            </button>
         </nav>
 
         <div class="ai-status-badge" onclick="toggleCopilot()">
             <div class="ai-pulse"></div>
-            <div>
+            <div style="flex: 1;">
                 <div style="font-size: 12px; font-weight: 700; color: #c4b5fd;">Qwen 1.5B Copilot</div>
-                <div style="font-size: 10px; color: var(--text-secondary);">MCP Engine aktiv</div>
+                <div style="font-size: 10px; color: var(--text-secondary); font-family: 'JetBrains Mono';">MCP: ACTIVE [C]</div>
             </div>
+            <span class="kbd-hint">C</span>
         </div>
     </aside>
 
     <!-- Main Workspace -->
     <main class="main-content">
         <header class="topbar">
-            <h1 class="view-title" id="current-view-title">Betriebs-Dashboard</h1>
-            <div style="display: flex; gap: 10px; align-items: center;">
-                <button class="btn btn-ai" onclick="toggleCopilot()">🤖 KI Copilot</button>
+            <h1 class="view-title" id="current-view-title">Betriebs-Cockpit</h1>
+            <div class="agent-hud">
+                <span style="color:var(--accent);">●</span> LOCAL ENGINE // QWEN-1.5B // WAL: 0.2ms
+            </div>
+            <div style="display: flex; gap: 8px; align-items: center;">
+                <button class="btn btn-secondary" onclick="openPalette()">⌘K</button>
+                <button class="btn btn-ai" onclick="toggleCopilot()">🤖 Copilot</button>
                 <button class="btn" onclick="openNewContactModal()">+ Neuer Kontakt</button>
             </div>
         </header>
@@ -486,7 +618,7 @@ pub fn render_app_html() -> &'static str {
         <!-- View 3: Pipeline / Deals -->
         <section id="view-deals" class="view-container" style="display: none;">
             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
-                <p style="color: var(--text-secondary); font-size: 13px;">Drag & Drop oder Status-Wechsel direkt per Klick</p>
+                <p style="color: var(--text-secondary); font-size: 13px;">Klick auf eine Karte schiebt den Deal in die nächste Phase</p>
                 <button class="btn" onclick="openNewDealModal()">+ Neuer Deal</button>
             </div>
             <div class="kanban-grid">
@@ -578,6 +710,55 @@ pub fn render_app_html() -> &'static str {
         </section>
     </main>
 
+    <!-- Omarchy Command Palette (Cmd+K) -->
+    <div class="palette-overlay" id="palette-overlay" onclick="if(event.target===this) closePalette()">
+        <div class="palette-box">
+            <div class="palette-input-wrap">
+                <span style="font-size: 16px;">⚡</span>
+                <input type="text" id="palette-input" class="palette-input" placeholder="Omarchy Quick Command oder Ansicht suchen..." oninput="filterPalette()">
+                <span class="kbd-hint">ESC</span>
+            </div>
+            <div class="palette-list" id="palette-list">
+                <div class="palette-item" onclick="switchTab('dashboard'); closePalette();">
+                    <span>📊 Gehe zu Dashboard</span>
+                    <span class="palette-meta">1</span>
+                </div>
+                <div class="palette-item" onclick="switchTab('contacts'); closePalette();">
+                    <span>👥 Gehe zu Kontakte & Leads</span>
+                    <span class="palette-meta">2</span>
+                </div>
+                <div class="palette-item" onclick="switchTab('deals'); closePalette();">
+                    <span>💼 Gehe zu Vertriebs-Pipeline</span>
+                    <span class="palette-meta">3</span>
+                </div>
+                <div class="palette-item" onclick="switchTab('invoices'); closePalette();">
+                    <span>🧾 Gehe zu ERP & Faktura</span>
+                    <span class="palette-meta">4</span>
+                </div>
+                <div class="palette-item" onclick="switchTab('dms'); closePalette();">
+                    <span>📁 Gehe zu DMS Dokumente</span>
+                    <span class="palette-meta">5</span>
+                </div>
+                <div class="palette-item" onclick="openNewContactModal(); closePalette();">
+                    <span>➕ Neuer Kontakt anlegen</span>
+                    <span class="palette-meta">N C</span>
+                </div>
+                <div class="palette-item" onclick="openNewDealModal(); closePalette();">
+                    <span>➕ Neuer Deal anlegen</span>
+                    <span class="palette-meta">N D</span>
+                </div>
+                <div class="palette-item" onclick="openNewInvoiceModal(); closePalette();">
+                    <span>➕ Neue Rechnung buchen</span>
+                    <span class="palette-meta">N I</span>
+                </div>
+                <div class="palette-item" onclick="toggleCopilot(); closePalette();">
+                    <span>🤖 Qwen 1.5B Copilot Drawer öffnen</span>
+                    <span class="palette-meta">C</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <!-- Mobile Bottom Navigation -->
     <nav class="mobile-nav">
         <button class="mobile-nav-btn active" onclick="switchTab('dashboard')"><span>📊</span>Cockpit</button>
@@ -594,7 +775,7 @@ pub fn render_app_html() -> &'static str {
                 <span style="font-size: 18px;">🤖</span>
                 <div>
                     <div style="font-size: 14px; font-weight: 700;">Conrad Copilot</div>
-                    <div style="font-size: 10px; color: #a78bfa;">Qwen 1.5B via MCP</div>
+                    <div style="font-size: 10px; color: #a78bfa; font-family:'JetBrains Mono';">QWEN 1.5B // MCP ENGINE</div>
                 </div>
             </div>
             <button onclick="toggleCopilot()" style="background:none; border:none; color:var(--text-secondary); font-size:18px; cursor:pointer;">✕</button>
@@ -620,7 +801,7 @@ pub fn render_app_html() -> &'static str {
     <div class="modal-overlay" id="contact-modal">
         <div class="modal">
             <div class="modal-head">
-                <h3 style="font-size: 16px; font-weight: 700;">Neuen Kontakt anlegen</h3>
+                <h3 style="font-size: 15px; font-weight: 700;">Neuen Kontakt anlegen</h3>
                 <button onclick="closeModal('contact-modal')" style="background:none; border:none; color:var(--text-secondary); font-size:18px; cursor:pointer;">✕</button>
             </div>
             <div class="form-group">
@@ -647,7 +828,7 @@ pub fn render_app_html() -> &'static str {
                     <option value="customer">Kunde (Aktiv)</option>
                 </select>
             </div>
-            <div style="display: flex; justify-content: flex-end; gap: 10px; margin-top: 20px;">
+            <div style="display: flex; justify-content: flex-end; gap: 8px; margin-top: 18px;">
                 <button class="btn btn-secondary" onclick="closeModal('contact-modal')">Abbrechen</button>
                 <button class="btn" onclick="submitCreateContact()">Speichern</button>
             </div>
@@ -658,7 +839,7 @@ pub fn render_app_html() -> &'static str {
     <div class="modal-overlay" id="deal-modal">
         <div class="modal">
             <div class="modal-head">
-                <h3 style="font-size: 16px; font-weight: 700;">Neuen Deal / Angebot anlegen</h3>
+                <h3 style="font-size: 15px; font-weight: 700;">Neuen Deal / Angebot anlegen</h3>
                 <button onclick="closeModal('deal-modal')" style="background:none; border:none; color:var(--text-secondary); font-size:18px; cursor:pointer;">✕</button>
             </div>
             <div class="form-group">
@@ -682,7 +863,7 @@ pub fn render_app_html() -> &'static str {
                     <option value="closed_won">4. Gewonnen (Closed Won)</option>
                 </select>
             </div>
-            <div style="display: flex; justify-content: flex-end; gap: 10px; margin-top: 20px;">
+            <div style="display: flex; justify-content: flex-end; gap: 8px; margin-top: 18px;">
                 <button class="btn btn-secondary" onclick="closeModal('deal-modal')">Abbrechen</button>
                 <button class="btn" onclick="submitCreateDeal()">Deal erstellen</button>
             </div>
@@ -693,7 +874,7 @@ pub fn render_app_html() -> &'static str {
     <div class="modal-overlay" id="invoice-modal">
         <div class="modal">
             <div class="modal-head">
-                <h3 style="font-size: 16px; font-weight: 700;">Rechnung erstellen (ERP)</h3>
+                <h3 style="font-size: 15px; font-weight: 700;">Rechnung erstellen (ERP)</h3>
                 <button onclick="closeModal('invoice-modal')" style="background:none; border:none; color:var(--text-secondary); font-size:18px; cursor:pointer;">✕</button>
             </div>
             <div class="form-group">
@@ -708,7 +889,7 @@ pub fn render_app_html() -> &'static str {
                 <label class="form-label">Nettobetrag (€) *</label>
                 <input type="number" id="inv-amount" class="form-input" placeholder="z.B. 99">
             </div>
-            <div style="display: flex; justify-content: flex-end; gap: 10px; margin-top: 20px;">
+            <div style="display: flex; justify-content: flex-end; gap: 8px; margin-top: 18px;">
                 <button class="btn btn-secondary" onclick="closeModal('invoice-modal')">Abbrechen</button>
                 <button class="btn" onclick="submitCreateInvoice()">Rechnung buchen</button>
             </div>
@@ -722,6 +903,67 @@ pub fn render_app_html() -> &'static str {
 
         async function init() {
             await refreshAllData();
+            setupKeyboardShortcuts();
+        }
+
+        // Global Omarchy Keyboard Shortcuts
+        function setupKeyboardShortcuts() {
+            window.addEventListener('keydown', (e) => {
+                // Ignore if focus is in an input or textarea
+                const inInput = ['INPUT', 'TEXTAREA', 'SELECT'].includes(document.activeElement.tagName);
+
+                // Cmd+K or Ctrl+K -> Command Palette
+                if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'k') {
+                    e.preventDefault();
+                    togglePalette();
+                    return;
+                }
+
+                if (e.key === 'Escape') {
+                    closePalette();
+                    closeModal('contact-modal');
+                    closeModal('deal-modal');
+                    closeModal('invoice-modal');
+                    document.getElementById('copilot-drawer').classList.remove('open');
+                    return;
+                }
+
+                if (inInput) return;
+
+                if (e.key === '1') switchTab('dashboard');
+                if (e.key === '2') switchTab('contacts');
+                if (e.key === '3') switchTab('deals');
+                if (e.key === '4') switchTab('invoices');
+                if (e.key === '5') switchTab('dms');
+                if (e.key === '6') switchTab('settings');
+                if (e.key.toLowerCase() === 'c') toggleCopilot();
+                if (e.key === '/') {
+                    e.preventDefault();
+                    switchTab('contacts');
+                    document.getElementById('contact-search')?.focus();
+                }
+            });
+        }
+
+        function openPalette() {
+            document.getElementById('palette-overlay').style.display = 'flex';
+            setTimeout(() => document.getElementById('palette-input').focus(), 50);
+        }
+        function closePalette() {
+            document.getElementById('palette-overlay').style.display = 'none';
+        }
+        function togglePalette() {
+            const el = document.getElementById('palette-overlay');
+            if (el.style.display === 'flex') closePalette(); else openPalette();
+        }
+
+        function filterPalette() {
+            const q = document.getElementById('palette-input').value.toLowerCase();
+            const items = document.querySelectorAll('.palette-item');
+            items.forEach(it => {
+                const text = it.innerText.toLowerCase();
+                it.style.display = text.includes(q) ? 'flex' : 'none';
+            });
         }
 
         async function refreshAllData() {
@@ -783,7 +1025,7 @@ pub fn render_app_html() -> &'static str {
                     <td>${escapeHtml(c.company || '—')}</td>
                     <td>${escapeHtml(c.email || c.phone || '—')}</td>
                     <td><span class="badge badge-${c.status}">${c.status}</span></td>
-                    <td><span style="font-size:11px; color:var(--text-secondary);">${escapeHtml(c.tags || '—')}</span></td>
+                    <td><span style="font-size:11px; color:var(--text-secondary); font-family:'JetBrains Mono';">${escapeHtml(c.tags || '—')}</span></td>
                 </tr>
             `).join('');
         }
@@ -798,7 +1040,7 @@ pub fn render_app_html() -> &'static str {
 
                 sumEl.innerText = sum.toLocaleString('de-DE', { style: 'currency', currency: 'EUR' });
                 colItems.innerHTML = filtered.map(d => `
-                    <div class="kanban-card" onclick="advanceDeal('${d.id}', '${d.stage}')">
+                    <div class="kanban-card" onclick="advanceDeal('${d.id}', '${d.stage}')" title="Klick schiebt den Deal vorwärts">
                         <div class="kanban-title">${escapeHtml(d.title)}</div>
                         <div class="kanban-company">${escapeHtml(d.contact_name || 'Kontakt')}</div>
                         <div class="kanban-val">${(d.value_cents / 100).toLocaleString('de-DE', { style: 'currency', currency: 'EUR' })}</div>
@@ -818,10 +1060,10 @@ pub fn render_app_html() -> &'static str {
                 <tr>
                     <td><strong style="font-family:'JetBrains Mono';">${inv.invoice_number}</strong></td>
                     <td>${escapeHtml(inv.contact_name || 'Kunde')}</td>
-                    <td>${inv.due_date}</td>
-                    <td>${(inv.net_cents / 100).toLocaleString('de-DE', { style: 'currency', currency: 'EUR' })}</td>
-                    <td><strong>${(inv.gross_cents / 100).toLocaleString('de-DE', { style: 'currency', currency: 'EUR' })}</strong></td>
-                    <td><span class="badge badge-${inv.status}" onclick="toggleInvoicePaid('${inv.id}', '${inv.status}')" style="cursor:pointer;">${inv.status}</span></td>
+                    <td style="font-family:'JetBrains Mono';">${inv.due_date}</td>
+                    <td style="font-family:'JetBrains Mono';">${(inv.net_cents / 100).toLocaleString('de-DE', { style: 'currency', currency: 'EUR' })}</td>
+                    <td style="font-family:'JetBrains Mono';"><strong>${(inv.gross_cents / 100).toLocaleString('de-DE', { style: 'currency', currency: 'EUR' })}</strong></td>
+                    <td><span class="badge badge-${inv.status}" onclick="toggleInvoicePaid('${inv.id}', '${inv.status}')" style="cursor:pointer;" title="Klick ändert Status">${inv.status}</span></td>
                 </tr>
             `).join('');
         }
@@ -865,7 +1107,7 @@ pub fn render_app_html() -> &'static str {
             document.querySelectorAll('.mobile-nav-btn').forEach(btn => btn.classList.remove('active'));
 
             const titles = {
-                dashboard: 'Betriebs-Dashboard',
+                dashboard: 'Betriebs-Cockpit',
                 contacts: 'Kontakte & Leads',
                 deals: 'Vertriebs-Pipeline',
                 invoices: 'ERP & Rechnungen',
@@ -877,6 +1119,9 @@ pub fn render_app_html() -> &'static str {
 
         function toggleCopilot() {
             document.getElementById('copilot-drawer').classList.toggle('open');
+            if (document.getElementById('copilot-drawer').classList.contains('open')) {
+                setTimeout(() => document.getElementById('copilot-input').focus(), 150);
+            }
         }
 
         async function sendCopilotMsg() {
@@ -898,7 +1143,7 @@ pub fn render_app_html() -> &'static str {
 
                 let replyHtml = escapeHtml(res.reply).replace(/\n/g, '<br>');
                 if (res.actions_performed && res.actions_performed.length) {
-                    replyHtml += `<div style="margin-top:8px; font-size:11px; color:#34d399; font-weight:600;">⚡ MCP Tool ausgeführt</div>`;
+                    replyHtml += `<div style="margin-top:8px; font-size:11px; color:#34d399; font-weight:600; font-family:'JetBrains Mono';">⚡ MCP TOOL AUSGEFÜHRT</div>`;
                 }
                 box.innerHTML += `<div class="chat-bubble chat-ai">${replyHtml}</div>`;
                 box.scrollTop = box.scrollHeight;
@@ -911,6 +1156,7 @@ pub fn render_app_html() -> &'static str {
 
         function openNewContactModal() {
             document.getElementById('contact-modal').style.display = 'flex';
+            setTimeout(() => document.getElementById('c-name').focus(), 50);
         }
         function openNewDealModal() {
             const sel = document.getElementById('d-contact-select');
@@ -980,6 +1226,14 @@ pub fn render_app_html() -> &'static str {
             });
             closeModal('invoice-modal');
             await refreshAllData();
+        }
+
+        function filterContacts() {
+            const q = document.getElementById('contact-search').value.toLowerCase();
+            const rows = document.querySelectorAll('#contacts-full-table tr');
+            rows.forEach(r => {
+                r.style.display = r.innerText.toLowerCase().includes(q) ? '' : 'none';
+            });
         }
 
         function escapeHtml(text) {
