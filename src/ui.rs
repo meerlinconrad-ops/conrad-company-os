@@ -948,6 +948,9 @@ pub fn render_app_html() -> &'static str {
 
         /* Mobile Adjustments */
         @media (max-width: 768px) {
+            #mobileMenuBtn {
+                display: inline-flex !important;
+            }
             .sidebar {
                 position: fixed;
                 left: -100%;
@@ -955,17 +958,25 @@ pub fn render_app_html() -> &'static str {
                 bottom: 0;
                 width: 280px;
                 box-shadow: var(--shadow-modal);
+                z-index: 100;
             }
             .sidebar.mobile-open {
                 left: 0;
             }
+            .copilot-panel {
+                width: 100% !important;
+                right: -100% !important;
+            }
+            .copilot-panel.open {
+                right: 0 !important;
+            }
             .spotlight-bar-wrapper {
-                left: 16px;
-                right: 16px;
-                bottom: 16px;
+                left: 12px;
+                right: 12px;
+                bottom: 12px;
             }
             .view-content-area {
-                padding: 16px 14px 90px;
+                padding: 14px 12px 90px;
             }
         }
     </style>
@@ -1417,7 +1428,7 @@ pub fn render_app_html() -> &'static str {
         <div class="copilot-input-wrap">
             <div class="copilot-input-box">
                 <input type="text" id="copilotInput" class="copilot-input" placeholder="Befehl oder Frage eingeben..." onkeydown="if(event.key==='Enter') sendCopilotChat()">
-                <button class="btn btn-primary" style="padding:6px 12px; border-radius:8px;" onclick="sendCopilotChat()">Senden</button>
+                <button class="btn btn-primary" id="copilotSendBtn" style="padding:6px 12px; border-radius:8px;" onclick="sendCopilotChat()">Senden</button>
             </div>
         </div>
     </aside>
@@ -1626,6 +1637,8 @@ pub fn render_app_html() -> &'static str {
         // View Switcher
         function switchView(viewId) {
             currentView = viewId;
+            const sidebar = document.getElementById('appSidebar');
+            if (sidebar) sidebar.classList.remove('mobile-open');
             const views = ['dashboard', 'contacts', 'deals', 'invoices', 'retainers', 'marketing', 'dms', 'settings'];
             views.forEach(v => {
                 const el = document.getElementById(`view-${v}`);
