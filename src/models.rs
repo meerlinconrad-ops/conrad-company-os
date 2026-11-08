@@ -300,3 +300,103 @@ pub struct DatevExportConfig {
     pub consultant_number: Option<i64>,
     pub client_number: Option<i64>,
 }
+
+// =========================================================================
+// Funnel Lead & Acquisition Engine
+// =========================================================================
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct FunnelLeadPayload {
+    pub email: String,
+    pub name: Option<String>,
+    pub phone: Option<String>,
+    pub company: Option<String>,
+    pub notes: Option<String>,
+    pub source: Option<String>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct FunnelLeadResponse {
+    pub success: bool,
+    pub contact_id: String,
+    pub deal_id: String,
+    pub message: String,
+}
+
+// =========================================================================
+// Marketing Ad Campaign Tracker
+// =========================================================================
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct MarketingCampaign {
+    pub id: String,
+    pub name: String,
+    pub platform: String, // "meta", "google", "linkedin", "organic"
+    pub spend_cents: i64,
+    pub clicks: i64,
+    pub leads: i64,
+    pub customers: i64,
+    pub revenue_cents: i64,
+    pub status: String, // "active", "paused", "completed"
+    pub created_at: DateTime<Utc>,
+    pub updated_at: DateTime<Utc>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct NewMarketingCampaign {
+    pub name: String,
+    pub platform: String,
+    pub spend_cents: i64,
+    pub clicks: Option<i64>,
+    pub leads: Option<i64>,
+    pub customers: Option<i64>,
+    pub revenue_cents: Option<i64>,
+    pub status: Option<String>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct MarketingRoiSummary {
+    pub total_spend_eur: f64,
+    pub total_leads: i64,
+    pub total_customers: i64,
+    pub total_revenue_eur: f64,
+    pub blended_cpc_eur: f64,
+    pub blended_cac_eur: f64,
+    pub roas: f64,
+}
+
+// =========================================================================
+// Recurring Retainer Billing (ZUGFeRD 2.2 / GoBD Autopilot)
+// =========================================================================
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct RetainerSubscription {
+    pub id: String,
+    pub contact_id: String,
+    pub contact_name: Option<String>,
+    pub plan_name: String,
+    pub amount_cents: i64,
+    pub vat_rate_percent: f64,
+    pub interval_months: i64,
+    pub next_billing_date: String,
+    pub active: bool,
+    pub created_at: DateTime<Utc>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct NewRetainerSubscription {
+    pub contact_id: String,
+    pub plan_name: String,
+    pub amount_cents: i64,
+    pub vat_rate_percent: Option<f64>,
+    pub interval_months: Option<i64>,
+    pub next_billing_date: Option<String>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct RetainerBillingRunResult {
+    pub billed_count: usize,
+    pub generated_invoices: Vec<String>,
+    pub total_amount_eur: f64,
+    pub summary: String,
+}

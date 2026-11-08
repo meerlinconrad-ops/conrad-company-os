@@ -21,8 +21,8 @@ use copilot::CopilotEngine;
 use db::Database;
 use mcp::{JsonRpcRequest, McpServer};
 use models::{
-    CopilotRequest, DatevExportConfig, HubSpotCsvPayload, NewContact, NewCustomFieldDef, NewDeal,
-    NewInvoice,
+    CopilotRequest, DatevExportConfig, FunnelLeadPayload, HubSpotCsvPayload, NewContact,
+    NewCustomFieldDef, NewDeal, NewInvoice, NewMarketingCampaign, NewRetainerSubscription,
 };
 use serde::Deserialize;
 use serde_json::json;
@@ -59,6 +59,11 @@ async fn main() -> anyhow::Result<()> {
         .route("/health", get(health_handler))
         .route("/mcp", post(mcp_handler))
         .route("/api/copilot/chat", post(copilot_chat_handler))
+        .route("/api/funnel/lead", post(funnel_lead_handler))
+        .route("/api/marketing/campaigns", get(list_marketing_campaigns_handler).post(create_marketing_campaign_handler))
+        .route("/api/marketing/roi", get(marketing_roi_handler))
+        .route("/api/retainers", get(list_retainers_handler).post(create_retainer_handler))
+        .route("/api/retainers/trigger-run", post(trigger_retainer_billing_run_handler))
         .route("/api/contacts", get(list_contacts_handler).post(create_contact_handler))
         .route("/api/deals", get(list_deals_handler).post(create_deal_handler))
         .route("/api/invoices", get(list_invoices_handler).post(create_invoice_handler))
@@ -342,4 +347,73 @@ async fn consulting_savings_report_handler() -> impl IntoResponse {
             "HubSpot CSV 1-Click Migrations-Engine"
         ]
     }))
+}
+
+async fn funnel_lead_handler(
+    State(state): State<AppState>,
+    Json(payload): Json<FunnelLeadPayload>,
+) -> impl IntoResponse {
+    match state.db.ingest_funnel_lead(payload) {
+        Ok(res) => (StatusCode::OK, Json(serde_json::to_value(res).unwrap())).into_response(),
+        Err(err) => (StatusCode::INTERNAL_SERVER_ERROR, Json(json!({ "error": err.to_string() }))).into_response(),
+    }
+}
+
+async fn list_marketing_campaigns_handler(State(state): State<AppState>) -> impl IntoResponse {
+    match state.db.list_marketing_campaigns() {
+        Ok(list) => (StatusCode::OK, Json(serde_json::to_value(list).unwrap())).into_response(),
+        Err(err) => (StatusCode::INTERNAL_SERVER_ERROR, Json(json!({ "error": err.to_string() }))).into_response(),
+    }
+}
+
+async fn create_marketing_campaign_handler(
+    State(state): State<AppState>,
+    Json(payload): Json<NewMarketingCampaign>,
+) -> impl IntoResponse {
+    match state.db.record_marketing_campaign(payload) {
+        Ok(c) => (StatusCode::CREATED, Json(serde_json::to_value(c).unwrap())).into_response(),
+        Err(err) => (StatusCode::BAD_REQUEST, Json(json!({ "error": err.to_string() }))).into_response(),
+    }
+}
+
+async fn marketing_roi_handler(State(state): State<AppState>) -> impl IntoResponse {
+    match state.db.get_marketing_roi_summary() {
+        Ok(roi) => (StatusCode::OK, Json(serde_json::to_value(roi).unwrap())).into_response(),
+        Err(err) => (StatusCode::INTERNAL_SERVER_ERROR, Json(json!({ "error": err.to_string() }))).into_response(),
+    }
+}
+
+async fn list_retainers_handler(State(state): State<AppState>) -> impl IntoResponse {
+    match state.db.list_retainers() {
+        Ok(list) => (StatusCode::OK, Json(serde_json::to_value(list).unwrap())).into_response(),
+        Err(err) => (StatusCode::INTERNAL_SERVER_ERROR, Json(json!({ "error": err.to_string() }))).into_response(),
+    }
+}
+
+async fn create_retainer_handler(
+    State(state): State<AppState>,
+    Json(payload): Json<NewRetainerSubscription>,
+) -> impl IntoResponse {
+    match state.db.create_retainer(payload) {
+        Ok(r) => (StatusCode::CREATED, Json(serde_json::to_value(r).unwrap())).into_response(),
+        Err(err) => (StatusCode::BAD_REQUEST, Json(json!({ "error": err.to_string() }))).into_response(),
+    }
+}
+
+#[derive(Deserialize)]
+struct TriggerBillingPayload {
+    actor: Option<String>,
+}
+
+async fn trigger_retainer_billing_run_handler(
+    State(state): State<AppState>,
+    payload: Option<Json<TriggerBillingPayload>>,
+) -> impl IntoResponse {
+    let actor = payload
+        .and_then(|p| p.0.actor)
+        .unwrap_or_else(|| "Automated Retainer Service".to_string());
+    match state.db.trigger_retainer_billing_run(&actor) {
+        Ok(res) => (StatusCode::OK, Json(serde_json::to_value(res).unwrap())).into_response(),
+        Err(err) => (StatusCode::INTERNAL_SERVER_ERROR, Json(json!({ "error": err.to_string() }))).into_response(),
+    }
 }

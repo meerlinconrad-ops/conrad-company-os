@@ -9,9 +9,12 @@ use crate::datev::generate_datev_csv;
 use crate::gobd::{calculate_entry_hash, GENESIS_HASH};
 use crate::hubspot::{parse_hubspot_contacts_csv, parse_hubspot_deals_csv};
 use crate::models::{
-    CashflowStats, Contact, CustomFieldDef, DatevExportConfig, Deal, DocumentMeta, GobdAuditEntry,
-    HubSpotImportResult, InteractionMessage, Invoice, InvoiceItem, NewContact, NewCustomFieldDef,
-    NewDeal, NewDocument, NewInvoice, NewProductService, ProductService,
+    CashflowStats, Contact, CustomFieldDef, DatevExportConfig, Deal, DocumentMeta,
+    FunnelLeadPayload, FunnelLeadResponse, GobdAuditEntry, HubSpotImportResult,
+    InteractionMessage, Invoice, InvoiceItem, MarketingCampaign, MarketingRoiSummary,
+    NewContact, NewCustomFieldDef, NewDeal, NewDocument, NewInvoice, NewMarketingCampaign,
+    NewProductService, NewRetainerSubscription, ProductService, RetainerBillingRunResult,
+    RetainerSubscription,
 };
 use crate::zugferd::generate_xrechnung_xml;
 
@@ -156,12 +159,41 @@ impl Database {
                 entry_hash TEXT NOT NULL
             );
 
+            CREATE TABLE IF NOT EXISTS marketing_campaigns (
+                id TEXT PRIMARY KEY,
+                name TEXT NOT NULL,
+                platform TEXT NOT NULL,
+                spend_cents INTEGER NOT NULL DEFAULT 0,
+                clicks INTEGER NOT NULL DEFAULT 0,
+                leads INTEGER NOT NULL DEFAULT 0,
+                customers INTEGER NOT NULL DEFAULT 0,
+                revenue_cents INTEGER NOT NULL DEFAULT 0,
+                status TEXT NOT NULL DEFAULT 'active',
+                created_at TEXT NOT NULL,
+                updated_at TEXT NOT NULL
+            );
+
+            CREATE TABLE IF NOT EXISTS retainer_subscriptions (
+                id TEXT PRIMARY KEY,
+                contact_id TEXT NOT NULL,
+                plan_name TEXT NOT NULL,
+                amount_cents INTEGER NOT NULL DEFAULT 0,
+                vat_rate_percent REAL NOT NULL DEFAULT 19.0,
+                interval_months INTEGER NOT NULL DEFAULT 1,
+                next_billing_date TEXT NOT NULL,
+                active INTEGER NOT NULL DEFAULT 1,
+                created_at TEXT NOT NULL,
+                FOREIGN KEY (contact_id) REFERENCES contacts(id) ON DELETE RESTRICT
+            );
+
             CREATE INDEX IF NOT EXISTS idx_contacts_name ON contacts(name);
             CREATE INDEX IF NOT EXISTS idx_deals_stage ON deals(stage);
             CREATE INDEX IF NOT EXISTS idx_invoices_status ON invoices(status);
             CREATE INDEX IF NOT EXISTS idx_docs_category ON documents(category);
             CREATE INDEX IF NOT EXISTS idx_gobd_seq ON gobd_audit_log(seq);
-            CREATE INDEX IF NOT EXISTS idx_gobd_entity ON gobd_audit_log(entity_type, entity_id);",
+            CREATE INDEX IF NOT EXISTS idx_gobd_entity ON gobd_audit_log(entity_type, entity_id);
+            CREATE INDEX IF NOT EXISTS idx_campaigns_platform ON marketing_campaigns(platform);
+            CREATE INDEX IF NOT EXISTS idx_retainers_next_date ON retainer_subscriptions(next_billing_date);",
         )?;
         Ok(())
     }
@@ -285,6 +317,39 @@ impl Database {
                 field_type: "text".to_string(),
                 options: None,
             })?;
+
+            // Seed sample retainer subscription
+            let _ = self.create_retainer(NewRetainerSubscription {
+                contact_id: c1.id.clone(),
+                plan_name: "KMU Automatisierungs-Betreuung".to_string(),
+                amount_cents: 9900,
+                vat_rate_percent: Some(19.0),
+                interval_months: Some(1),
+                next_billing_date: Some("2026-12-01".to_string()),
+            });
+
+            // Seed sample marketing ad campaigns
+            let _ = self.record_marketing_campaign(NewMarketingCampaign {
+                name: "Meta Ads: Handwerk & KMU Rhein-Neckar".to_string(),
+                platform: "meta".to_string(),
+                spend_cents: 25000,
+                clicks: Some(340),
+                leads: Some(18),
+                customers: Some(2),
+                revenue_cents: Some(198000),
+                status: Some("active".to_string()),
+            });
+
+            let _ = self.record_marketing_campaign(NewMarketingCampaign {
+                name: "Google Search: KI Beratung Mannheim / Heidelberg".to_string(),
+                platform: "google".to_string(),
+                spend_cents: 18000,
+                clicks: Some(145),
+                leads: Some(12),
+                customers: Some(1),
+                revenue_cents: Some(99000),
+                status: Some("active".to_string()),
+            });
         }
         Ok(())
     }
@@ -1282,5 +1347,360 @@ impl Database {
         );
 
         Ok(res)
+    }
+
+    // =========================================================================
+    // Funnel Lead & Autonomous Business Engine
+    // =========================================================================
+
+    pub fn ingest_funnel_lead(&self, payload: FunnelLeadPayload) -> Result<FunnelLeadResponse> {
+        let email = payload.email.trim().to_lowercase();
+        let name = payload.name.unwrap_or_else(|| "Interessent".to_string()).trim().to_string();
+        let company = payload.company.map(|c| c.trim().to_string());
+        let phone = payload.phone.map(|p| p.trim().to_string());
+        let source = payload.source.unwrap_or_else(|| "homepage_rechner_funnel".to_string());
+        let notes = payload.notes.unwrap_or_default();
+
+        // 1. Find or create contact
+        let contact_id: String = {
+            let conn = self.conn.lock().unwrap();
+            let existing: Option<String> = conn
+                .query_row("SELECT id FROM contacts WHERE LOWER(email) = ?1", [&email], |r| r.get(0))
+                .ok();
+            existing.unwrap_or_default()
+        };
+
+        let contact_id = if contact_id.is_empty() {
+            let new_c = self.create_contact(NewContact {
+                name: if name.is_empty() { "Interessent".to_string() } else { name.clone() },
+                email: Some(email.clone()),
+                phone,
+                company,
+                status: Some("lead".to_string()),
+                tags: Some(format!("Funnel, {}", source)),
+            })?;
+            new_c.id
+        } else {
+            let conn = self.conn.lock().unwrap();
+            let _ = conn.execute(
+                "UPDATE contacts SET tags = tags || ', Rechner-Lead', updated_at = ?1 WHERE id = ?2",
+                params![Utc::now().to_rfc3339(), contact_id],
+            );
+            contact_id
+        };
+
+        // 2. Automatically create a high-priority Deal in stage "discovery"
+        let deal_title = format!("KI-Audit & Hebel-Check: {}", name);
+        let deal = self.create_deal(NewDeal {
+            contact_id: contact_id.clone(),
+            title: deal_title,
+            value_cents: 99000,
+            currency: Some("EUR".to_string()),
+            stage: Some("discovery".to_string()),
+            expected_close_date: Some((Utc::now() + Duration::days(14)).format("%Y-%m-%d").to_string()),
+        })?;
+
+        // 3. Record interaction note
+        let note_body = format!(
+            "Neuer Lead über Web-Funnel erfasst.\nQuelle: {}\nDetails: {}",
+            source, notes
+        );
+        let _ = self.add_interaction(&contact_id, "web_funnel", "inbound", Some("Website-Funnel Lead"), &note_body);
+
+        // 4. Log GoBD audit entry
+        let _ = self.log_gobd(
+            "contact",
+            &contact_id,
+            "FUNNEL_LEAD_INGEST",
+            &format!("Web-Funnel Lead erfasst: {} ({}), Deal: {}", email, name, deal.id),
+            "Funnel-API",
+        );
+
+        Ok(FunnelLeadResponse {
+            success: true,
+            contact_id,
+            deal_id: deal.id,
+            message: "Lead erfolgreich im Conrad OS erfasst und Deal im Pipeline-Board eröffnet.".to_string(),
+        })
+    }
+
+    // =========================================================================
+    // Marketing Ad Campaign Methods
+    // =========================================================================
+
+    pub fn list_marketing_campaigns(&self) -> Result<Vec<MarketingCampaign>> {
+        let conn = self.conn.lock().unwrap();
+        let mut stmt = conn.prepare(
+            "SELECT id, name, platform, spend_cents, clicks, leads, customers, revenue_cents, status, created_at, updated_at
+             FROM marketing_campaigns ORDER BY created_at DESC"
+        )?;
+
+        let campaigns = stmt
+            .query_map([], |row| {
+                let c_str: String = row.get(9)?;
+                let u_str: String = row.get(10)?;
+                Ok(MarketingCampaign {
+                    id: row.get(0)?,
+                    name: row.get(1)?,
+                    platform: row.get(2)?,
+                    spend_cents: row.get(3)?,
+                    clicks: row.get(4)?,
+                    leads: row.get(5)?,
+                    customers: row.get(6)?,
+                    revenue_cents: row.get(7)?,
+                    status: row.get(8)?,
+                    created_at: chrono::DateTime::parse_from_rfc3339(&c_str).map(|d| d.with_timezone(&Utc)).unwrap_or_else(|_| Utc::now()),
+                    updated_at: chrono::DateTime::parse_from_rfc3339(&u_str).map(|d| d.with_timezone(&Utc)).unwrap_or_else(|_| Utc::now()),
+                })
+            })?
+            .filter_map(Result::ok)
+            .collect();
+
+        Ok(campaigns)
+    }
+
+    pub fn record_marketing_campaign(&self, input: NewMarketingCampaign) -> Result<MarketingCampaign> {
+        let now = Utc::now();
+        let id = Uuid::new_v4().to_string();
+        let clicks = input.clicks.unwrap_or(0);
+        let leads = input.leads.unwrap_or(0);
+        let customers = input.customers.unwrap_or(0);
+        let revenue_cents = input.revenue_cents.unwrap_or(0);
+        let status = input.status.unwrap_or_else(|| "active".to_string());
+
+        let conn = self.conn.lock().unwrap();
+        conn.execute(
+            "INSERT INTO marketing_campaigns (id, name, platform, spend_cents, clicks, leads, customers, revenue_cents, status, created_at, updated_at)
+             VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11)",
+            params![
+                id,
+                input.name,
+                input.platform,
+                input.spend_cents,
+                clicks,
+                leads,
+                customers,
+                revenue_cents,
+                status,
+                now.to_rfc3339(),
+                now.to_rfc3339(),
+            ],
+        )?;
+
+        let _ = Self::log_gobd_internal(
+            &conn,
+            "marketing",
+            &id,
+            "CAMPAIGN_RECORDED",
+            &format!("Werbekampagne protokolliert: {} ({}, Ausgaben: {:.2} €)", input.name, input.platform, input.spend_cents as f64 / 100.0),
+            "System",
+        );
+
+        Ok(MarketingCampaign {
+            id,
+            name: input.name,
+            platform: input.platform,
+            spend_cents: input.spend_cents,
+            clicks,
+            leads,
+            customers,
+            revenue_cents,
+            status,
+            created_at: now,
+            updated_at: now,
+        })
+    }
+
+    pub fn get_marketing_roi_summary(&self) -> Result<MarketingRoiSummary> {
+        let campaigns = self.list_marketing_campaigns()?;
+        let total_spend_cents: i64 = campaigns.iter().map(|c| c.spend_cents).sum();
+        let total_clicks: i64 = campaigns.iter().map(|c| c.clicks).sum();
+        let total_leads: i64 = campaigns.iter().map(|c| c.leads).sum();
+        let total_customers: i64 = campaigns.iter().map(|c| c.customers).sum();
+        let total_revenue_cents: i64 = campaigns.iter().map(|c| c.revenue_cents).sum();
+
+        let total_spend_eur = total_spend_cents as f64 / 100.0;
+        let total_revenue_eur = total_revenue_cents as f64 / 100.0;
+
+        let blended_cpc_eur = if total_clicks > 0 {
+            total_spend_eur / total_clicks as f64
+        } else {
+            0.0
+        };
+
+        let blended_cac_eur = if total_customers > 0 {
+            total_spend_eur / total_customers as f64
+        } else if total_leads > 0 {
+            total_spend_eur / total_leads as f64
+        } else {
+            0.0
+        };
+
+        let roas = if total_spend_eur > 0.0 {
+            total_revenue_eur / total_spend_eur
+        } else {
+            0.0
+        };
+
+        Ok(MarketingRoiSummary {
+            total_spend_eur,
+            total_leads,
+            total_customers,
+            total_revenue_eur,
+            blended_cpc_eur,
+            blended_cac_eur,
+            roas,
+        })
+    }
+
+    // =========================================================================
+    // Recurring Retainer Billing Methods (ZUGFeRD 2.2 / GoBD)
+    // =========================================================================
+
+    pub fn list_retainers(&self) -> Result<Vec<RetainerSubscription>> {
+        let conn = self.conn.lock().unwrap();
+        let mut stmt = conn.prepare(
+            "SELECT r.id, r.contact_id, c.name, r.plan_name, r.amount_cents, r.vat_rate_percent, r.interval_months, r.next_billing_date, r.active, r.created_at
+             FROM retainer_subscriptions r
+             LEFT JOIN contacts c ON r.contact_id = c.id
+             ORDER BY r.next_billing_date ASC"
+        )?;
+
+        let retainers = stmt
+            .query_map([], |row| {
+                let c_str: String = row.get(9)?;
+                let active_int: i64 = row.get(8)?;
+                Ok(RetainerSubscription {
+                    id: row.get(0)?,
+                    contact_id: row.get(1)?,
+                    contact_name: row.get(2)?,
+                    plan_name: row.get(3)?,
+                    amount_cents: row.get(4)?,
+                    vat_rate_percent: row.get(5)?,
+                    interval_months: row.get(6)?,
+                    next_billing_date: row.get(7)?,
+                    active: active_int != 0,
+                    created_at: chrono::DateTime::parse_from_rfc3339(&c_str).map(|d| d.with_timezone(&Utc)).unwrap_or_else(|_| Utc::now()),
+                })
+            })?
+            .filter_map(Result::ok)
+            .collect();
+
+        Ok(retainers)
+    }
+
+    pub fn create_retainer(&self, input: NewRetainerSubscription) -> Result<RetainerSubscription> {
+        let now = Utc::now();
+        let id = Uuid::new_v4().to_string();
+        let vat = input.vat_rate_percent.unwrap_or(19.0);
+        let interval = input.interval_months.unwrap_or(1);
+        let next_date = input.next_billing_date.unwrap_or_else(|| now.format("%Y-%m-%d").to_string());
+
+        let conn = self.conn.lock().unwrap();
+        conn.execute(
+            "INSERT INTO retainer_subscriptions (id, contact_id, plan_name, amount_cents, vat_rate_percent, interval_months, next_billing_date, active, created_at)
+             VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, 1, ?8)",
+            params![
+                id,
+                input.contact_id,
+                input.plan_name,
+                input.amount_cents,
+                vat,
+                interval,
+                next_date,
+                now.to_rfc3339(),
+            ],
+        )?;
+
+        let contact_name: Option<String> = conn
+            .query_row("SELECT name FROM contacts WHERE id = ?1", [&input.contact_id], |r| r.get(0))
+            .ok();
+
+        let _ = Self::log_gobd_internal(
+            &conn,
+            "retainer",
+            &id,
+            "CREATE_RETAINER",
+            &format!("Monats-Abo/Retainer angelegt: {} für Kontakt {} ({:.2} € / Monat)", input.plan_name, input.contact_id, input.amount_cents as f64 / 100.0),
+            "System",
+        );
+
+        Ok(RetainerSubscription {
+            id,
+            contact_id: input.contact_id,
+            contact_name,
+            plan_name: input.plan_name,
+            amount_cents: input.amount_cents,
+            vat_rate_percent: vat,
+            interval_months: interval,
+            next_billing_date: next_date,
+            active: true,
+            created_at: now,
+        })
+    }
+
+    pub fn trigger_retainer_billing_run(&self, actor: &str) -> Result<RetainerBillingRunResult> {
+        let today_str = Utc::now().format("%Y-%m-%d").to_string();
+        let retainers = self.list_retainers()?;
+        let mut billed_count = 0;
+        let mut total_cents: i64 = 0;
+        let mut generated_invoices = Vec::new();
+
+        for r in retainers.into_iter().filter(|r| r.active && r.next_billing_date <= today_str) {
+            let inv_input = NewInvoice {
+                contact_id: r.contact_id.clone(),
+                deal_id: None,
+                invoice_number: None,
+                items: vec![InvoiceItem {
+                    description: format!("Monatspauschale: {} (Abrechnungszeitraum {})", r.plan_name, today_str),
+                    quantity: 1.0,
+                    unit_price_cents: r.amount_cents,
+                    total_cents: r.amount_cents,
+                }],
+                due_days: Some(14),
+            };
+
+            let inv = self.create_invoice(inv_input)?;
+            let _ = self.update_invoice_status(&inv.id, "sent");
+
+            billed_count += 1;
+            total_cents += inv.gross_cents;
+            generated_invoices.push(inv.invoice_number.clone());
+
+            let next_billing = match chrono::NaiveDate::parse_from_str(&r.next_billing_date, "%Y-%m-%d") {
+                Ok(d) => {
+                    let next = d + Duration::days(r.interval_months * 30);
+                    next.format("%Y-%m-%d").to_string()
+                }
+                Err(_) => (Utc::now() + Duration::days(30)).format("%Y-%m-%d").to_string(),
+            };
+
+            let conn = self.conn.lock().unwrap();
+            let _ = conn.execute(
+                "UPDATE retainer_subscriptions SET next_billing_date = ?1 WHERE id = ?2",
+                params![next_billing, r.id],
+            );
+        }
+
+        let total_amount_eur = total_cents as f64 / 100.0;
+        let summary = format!(
+            "Abrechnungslauf abgeschlossen: {} Rechnungen generiert. Gesamtsumme: {:.2} €",
+            billed_count, total_amount_eur
+        );
+
+        let _ = self.log_gobd(
+            "retainer",
+            "billing_batch",
+            "RETAINER_BILLING_RUN",
+            &summary,
+            actor,
+        );
+
+        Ok(RetainerBillingRunResult {
+            billed_count,
+            generated_invoices,
+            total_amount_eur,
+            summary,
+        })
     }
 }

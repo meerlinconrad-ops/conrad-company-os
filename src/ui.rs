@@ -513,13 +513,21 @@ pub fn render_app_html() -> &'static str {
                 <span>🧾 ERP & Faktura</span>
                 <span class="kbd-hint">4</span>
             </button>
+            <button class="nav-btn" onclick="switchTab('retainers')">
+                <span>🔄 Retainer & Abos</span>
+                <span class="kbd-hint">5</span>
+            </button>
+            <button class="nav-btn" onclick="switchTab('marketing')">
+                <span>📈 Marketing & ROI</span>
+                <span class="kbd-hint">6</span>
+            </button>
             <button class="nav-btn" onclick="switchTab('dms')">
                 <span>📁 DMS Dokumente</span>
-                <span class="kbd-hint">5</span>
+                <span class="kbd-hint">7</span>
             </button>
             <button class="nav-btn" onclick="switchTab('settings')">
                 <span>⚙️ Customizer & MCP</span>
-                <span class="kbd-hint">6</span>
+                <span class="kbd-hint">8</span>
             </button>
         </nav>
 
@@ -730,6 +738,89 @@ pub fn render_app_html() -> &'static str {
                     <button class="btn" onclick="saveCustomField()">Feld hinzufügen</button>
                 </div>
                 <div id="custom-fields-list" style="font-size: 13px; color: var(--text-secondary);"></div>
+            </div>
+        </section>
+
+        <!-- View 7: Retainer & Recurring Billing -->
+        <section id="view-retainers" class="view-container" style="display: none;">
+            <div style="background: rgba(16,185,129,0.08); border: 1px solid rgba(16,185,129,0.3); border-radius: 10px; padding: 16px 20px; margin-bottom: 20px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 14px;">
+                <div>
+                    <h3 style="color:#6ee7b7; font-size:15px; margin-bottom:4px;">🔄 Automatisiertes Monats-Retainer Abrechnungssystem</h3>
+                    <p style="font-size:12px; color:var(--text-secondary);">
+                        Erzeugt vollautomatisch revisionssichere GoBD-Rechnungen mit ZUGFeRD 2.2 XML und aktualisiert die Abrechnungszyklen.
+                    </p>
+                </div>
+                <button class="btn btn-ai" onclick="triggerRetainerRun()">⚡ Abrechnungslauf jetzt ausführen</button>
+            </div>
+
+            <div class="card-table">
+                <div class="card-header">
+                    <div class="card-title">Laufende Retainer-Abonnements</div>
+                </div>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Kunde</th>
+                            <th>Plan / Leistung</th>
+                            <th>Monatlicher Betrag</th>
+                            <th>Intervall</th>
+                            <th>Nächste Abrechnung</th>
+                            <th>Status</th>
+                        </tr>
+                    </thead>
+                    <tbody id="retainers-table">
+                        <tr><td colspan="6" style="text-align:center; color:var(--text-secondary);">Lade Retainer...</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </section>
+
+        <!-- View 8: Marketing & Ad Campaign ROI -->
+        <section id="view-marketing" class="view-container" style="display: none;">
+            <div class="kpi-grid">
+                <div class="kpi-card">
+                    <div class="kpi-label">Gesamtausgaben (Ad Spend)</div>
+                    <div class="kpi-val" id="kpi-ad-spend" style="color: #60a5fa;">0,00 €</div>
+                    <div class="kpi-sub">Meta & Google Ads</div>
+                </div>
+                <div class="kpi-card">
+                    <div class="kpi-label">Generierte Leads</div>
+                    <div class="kpi-val" id="kpi-m-leads">0</div>
+                    <div class="kpi-sub">Durch Ad-Kampagnen</div>
+                </div>
+                <div class="kpi-card">
+                    <div class="kpi-label">Blended CAC</div>
+                    <div class="kpi-val" id="kpi-m-cac" style="color: var(--accent);">0,00 €</div>
+                    <div class="kpi-sub">Kosten pro Kunde/Lead</div>
+                </div>
+                <div class="kpi-card">
+                    <div class="kpi-label">ROAS (Return on Ad Spend)</div>
+                    <div class="kpi-val" id="kpi-m-roas" style="color: #c084fc;">0,0x</div>
+                    <div class="kpi-sub">Umsatz / Ad Spend</div>
+                </div>
+            </div>
+
+            <div class="card-table">
+                <div class="card-header">
+                    <div class="card-title">Aktive Werbekampagnen</div>
+                </div>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Kampagne</th>
+                            <th>Plattform</th>
+                            <th>Ausgaben</th>
+                            <th>Klicks</th>
+                            <th>Leads</th>
+                            <th>Kunden</th>
+                            <th>Umsatz</th>
+                            <th>Status</th>
+                        </tr>
+                    </thead>
+                    <tbody id="marketing-campaigns-table">
+                        <tr><td colspan="8" style="text-align:center; color:var(--text-secondary);">Lade Kampagnen...</td></tr>
+                    </tbody>
+                </table>
             </div>
         </section>
     </main>
@@ -1285,7 +1376,7 @@ pub fn render_app_html() -> &'static str {
         }
 
         function switchTab(viewId) {
-            const views = ['dashboard', 'contacts', 'deals', 'invoices', 'dms', 'settings'];
+            const views = ['dashboard', 'contacts', 'deals', 'invoices', 'retainers', 'marketing', 'dms', 'settings'];
             views.forEach(v => {
                 const el = document.getElementById(`view-${v}`);
                 if (el) el.style.display = v === viewId ? 'block' : 'none';
@@ -1298,10 +1389,96 @@ pub fn render_app_html() -> &'static str {
                 contacts: 'Kontakte & Leads',
                 deals: 'Vertriebs-Pipeline',
                 invoices: 'ERP & Rechnungen',
+                retainers: 'Retainer & Monats-Abrechnung',
+                marketing: 'Marketing & Ad Spend ROI',
                 dms: 'DMS Dokumente',
                 settings: 'Customizer & MCP'
             };
             document.getElementById('current-view-title').innerText = titles[viewId] || 'Workspace';
+
+            if (viewId === 'retainers') loadRetainersData();
+            if (viewId === 'marketing') loadMarketingData();
+        }
+
+        async function loadRetainersData() {
+            try {
+                const list = await fetch('/api/retainers').then(r => r.json());
+                const tbody = document.getElementById('retainers-table');
+                if (!list.length) {
+                    tbody.innerHTML = '<tr><td colspan="6" style="text-align:center; color:var(--text-secondary);">Keine Retainer hinterlegt.</td></tr>';
+                    return;
+                }
+                tbody.innerHTML = list.map(r => `
+                    <tr>
+                        <td><strong>${escapeHtml(r.contact_name || r.contact_id)}</strong></td>
+                        <td>${escapeHtml(r.plan_name)}</td>
+                        <td><strong style="color:var(--accent);">${(r.amount_cents / 100).toLocaleString('de-DE', {style:'currency', currency:'EUR'})}</strong></td>
+                        <td>Alle ${r.interval_months} Mon.</td>
+                        <td><code>${escapeHtml(r.next_billing_date)}</code></td>
+                        <td><span class="badge ${r.active ? 'badge-success' : 'badge-warning'}">${r.active ? 'Aktiv' : 'Pausiert'}</span></td>
+                    </tr>
+                `).join('');
+            } catch (e) {
+                console.error("Retainers load error:", e);
+            }
+        }
+
+        async function triggerRetainerRun() {
+            if (!confirm('Möchten Sie den automatischen Abrechnungslauf für alle fälligen Retainer jetzt ausführen?')) return;
+            try {
+                const res = await fetch('/api/retainers/trigger-run', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ actor: 'Admin UI' })
+                }).then(r => r.json());
+                alert(`✅ ${res.summary}`);
+                await loadRetainersData();
+                await refreshAllData();
+            } catch (e) {
+                alert('Fehler beim Abrechnungslauf: ' + e);
+            }
+        }
+
+        async function loadMarketingData() {
+            try {
+                const [campaigns, roi] = await Promise.all([
+                    fetch('/api/marketing/campaigns').then(r => r.json()),
+                    fetch('/api/marketing/roi').then(r => r.json())
+                ]);
+
+                // Update KPIs
+                if (roi) {
+                    document.getElementById('kpi-ad-spend').innerText = roi.total_spend_eur.toLocaleString('de-DE', {style:'currency', currency:'EUR'});
+                    document.getElementById('kpi-m-leads').innerText = roi.total_leads;
+                    document.getElementById('kpi-m-cac').innerText = roi.blended_cac_eur.toLocaleString('de-DE', {style:'currency', currency:'EUR'});
+                    document.getElementById('kpi-m-roas').innerText = `${roi.roas.toFixed(1)}x`;
+                }
+
+                const tbody = document.getElementById('marketing-campaigns-table');
+                if (!campaigns.length) {
+                    tbody.innerHTML = '<tr><td colspan="8" style="text-align:center; color:var(--text-secondary);">Keine Kampagnen vorhanden.</td></tr>';
+                    return;
+                }
+                tbody.innerHTML = campaigns.map(c => {
+                    const spendEur = (c.spend_cents / 100).toLocaleString('de-DE', {style:'currency', currency:'EUR'});
+                    const revEur = (c.revenue_cents / 100).toLocaleString('de-DE', {style:'currency', currency:'EUR'});
+                    const cpc = c.clicks > 0 ? ((c.spend_cents / c.clicks) / 100).toFixed(2) + ' €' : '-';
+                    return `
+                        <tr>
+                            <td><strong>${escapeHtml(c.name)}</strong></td>
+                            <td><span class="badge" style="background:rgba(59,130,246,0.15); color:#60a5fa;">${escapeHtml(c.platform.toUpperCase())}</span></td>
+                            <td>${spendEur}</td>
+                            <td>${c.clicks} (${cpc})</td>
+                            <td>${c.leads}</td>
+                            <td><strong style="color:var(--accent);">${c.customers}</strong></td>
+                            <td>${revEur}</td>
+                            <td><span class="badge ${c.status === 'active' ? 'badge-success' : 'badge-warning'}">${escapeHtml(c.status)}</span></td>
+                        </tr>
+                    `;
+                }).join('');
+            } catch (e) {
+                console.error("Marketing load error:", e);
+            }
         }
 
         function toggleCopilot() {

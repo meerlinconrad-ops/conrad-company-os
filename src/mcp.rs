@@ -5,7 +5,8 @@ use serde_json::{json, Value};
 
 use crate::db::Database;
 use crate::models::{
-    DatevExportConfig, InvoiceItem, NewContact, NewCustomFieldDef, NewDeal, NewInvoice,
+    DatevExportConfig, FunnelLeadPayload, InvoiceItem, NewContact, NewCustomFieldDef, NewDeal,
+    NewInvoice, NewMarketingCampaign, NewRetainerSubscription,
 };
 
 #[derive(Debug, Deserialize)]
@@ -241,6 +242,81 @@ impl McpServer {
                 "parameters": {
                     "type": "object",
                     "properties": {}
+                }
+            },
+            {
+                "name": "funnel_ingest_lead",
+                "description": "Erfasst einen neuen Web-Funnel Lead, legt Kontakt und Discovery-Deal an und erzeugt GoBD Audit-Eintrag",
+                "parameters": {
+                    "type": "object",
+                    "properties": {
+                        "email": { "type": "string", "description": "E-Mail-Adresse" },
+                        "name": { "type": "string", "description": "Name / Ansprechpartner" },
+                        "phone": { "type": "string", "description": "Telefon / WhatsApp" },
+                        "company": { "type": "string", "description": "Firmenname" },
+                        "notes": { "type": "string", "description": "Berechnete Stunden / Einsparpotenzial" },
+                        "source": { "type": "string", "description": "Funnel-Quelle" }
+                    },
+                    "required": ["email"]
+                }
+            },
+            {
+                "name": "marketing_get_roi",
+                "description": "Berechnet den Marketing-ROI, CPC, CAC und ROAS über alle Meta- und Google Ads Kampagnen",
+                "parameters": {
+                    "type": "object",
+                    "properties": {}
+                }
+            },
+            {
+                "name": "marketing_record_ad_spend",
+                "description": "Protokolliert Ad Spend und Performance-Kennzahlen für eine Kampagne (Meta / Google)",
+                "parameters": {
+                    "type": "object",
+                    "properties": {
+                        "name": { "type": "string", "description": "Kampagnenname" },
+                        "platform": { "type": "string", "enum": ["meta", "google", "linkedin", "organic"] },
+                        "spend_cents": { "type": "integer", "description": "Ausgaben in Cent (z.B. 25000 für 250,00 €)" },
+                        "clicks": { "type": "integer" },
+                        "leads": { "type": "integer" },
+                        "customers": { "type": "integer" },
+                        "revenue_cents": { "type": "integer" }
+                    },
+                    "required": ["name", "platform", "spend_cents"]
+                }
+            },
+            {
+                "name": "retainer_list_subscriptions",
+                "description": "Listet alle aktiven monatlichen Kunden-Retainer und Abonnements auf",
+                "parameters": {
+                    "type": "object",
+                    "properties": {}
+                }
+            },
+            {
+                "name": "retainer_create_subscription",
+                "description": "Erstellt ein neues monatliches Abonnement / Retainer für einen Kunden",
+                "parameters": {
+                    "type": "object",
+                    "properties": {
+                        "contact_id": { "type": "string" },
+                        "plan_name": { "type": "string" },
+                        "amount_cents": { "type": "integer", "description": "Monatlicher Betrag in Cent (z.B. 9900 für 99,00 €)" },
+                        "vat_rate_percent": { "type": "number", "default": 19.0 },
+                        "interval_months": { "type": "integer", "default": 1 },
+                        "next_billing_date": { "type": "string", "description": "Erstes Abrechnungsdatum (YYYY-MM-DD)" }
+                    },
+                    "required": ["contact_id", "plan_name", "amount_cents"]
+                }
+            },
+            {
+                "name": "retainer_trigger_monthly_billing",
+                "description": "Führt den automatisierten Abrechnungslauf durch: erzeugt GoBD-festgeschriebene Monatsrechnungen mit ZUGFeRD 2.2 XML für fällige Abos",
+                "parameters": {
+                    "type": "object",
+                    "properties": {
+                        "actor": { "type": "string", "description": "Name des aufrufenden Agenten oder Nutzers" }
+                    }
                 }
             }
         ])
@@ -545,6 +621,57 @@ impl McpServer {
                         "girocode": "0% SEPA Instant Payment ohne Zahlungsdienstleister-Abzug"
                     }
                 }))
+            }
+            "funnel_ingest_lead" => {
+                let payload = FunnelLeadPayload {
+                    email: args.get("email").and_then(|v| v.as_str()).unwrap_or("").to_string(),
+                    name: args.get("name").and_then(|v| v.as_str()).map(String::from),
+                    phone: args.get("phone").and_then(|v| v.as_str()).map(String::from),
+                    company: args.get("company").and_then(|v| v.as_str()).map(String::from),
+                    notes: args.get("notes").and_then(|v| v.as_str()).map(String::from),
+                    source: args.get("source").and_then(|v| v.as_str()).map(String::from),
+                };
+                let res = self.db.ingest_funnel_lead(payload)?;
+                Ok(json!(res))
+            }
+            "marketing_get_roi" => {
+                let roi = self.db.get_marketing_roi_summary()?;
+                Ok(json!(roi))
+            }
+            "marketing_record_ad_spend" => {
+                let input = NewMarketingCampaign {
+                    name: args.get("name").and_then(|v| v.as_str()).unwrap_or("Campaign").to_string(),
+                    platform: args.get("platform").and_then(|v| v.as_str()).unwrap_or("meta").to_string(),
+                    spend_cents: args.get("spend_cents").and_then(|v| v.as_i64()).unwrap_or(0),
+                    clicks: args.get("clicks").and_then(|v| v.as_i64()),
+                    leads: args.get("leads").and_then(|v| v.as_i64()),
+                    customers: args.get("customers").and_then(|v| v.as_i64()),
+                    revenue_cents: args.get("revenue_cents").and_then(|v| v.as_i64()),
+                    status: args.get("status").and_then(|v| v.as_str()).map(String::from),
+                };
+                let c = self.db.record_marketing_campaign(input)?;
+                Ok(json!(c))
+            }
+            "retainer_list_subscriptions" => {
+                let list = self.db.list_retainers()?;
+                Ok(json!(list))
+            }
+            "retainer_create_subscription" => {
+                let input = NewRetainerSubscription {
+                    contact_id: args.get("contact_id").and_then(|v| v.as_str()).unwrap_or("").to_string(),
+                    plan_name: args.get("plan_name").and_then(|v| v.as_str()).unwrap_or("Retainer").to_string(),
+                    amount_cents: args.get("amount_cents").and_then(|v| v.as_i64()).unwrap_or(0),
+                    vat_rate_percent: args.get("vat_rate_percent").and_then(|v| v.as_f64()),
+                    interval_months: args.get("interval_months").and_then(|v| v.as_i64()),
+                    next_billing_date: args.get("next_billing_date").and_then(|v| v.as_str()).map(String::from),
+                };
+                let r = self.db.create_retainer(input)?;
+                Ok(json!(r))
+            }
+            "retainer_trigger_monthly_billing" => {
+                let actor = args.get("actor").and_then(|v| v.as_str()).unwrap_or("MCP Copilot Agent");
+                let res = self.db.trigger_retainer_billing_run(actor)?;
+                Ok(json!(res))
             }
             _ => Err(anyhow::anyhow!("Unbekanntes Tool: {}", name)),
         }
