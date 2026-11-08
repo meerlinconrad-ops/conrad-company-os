@@ -3,7 +3,7 @@ name = "conrad-crm"
 version = "0.1.0"
 edition = "2021"
 authors = ["Merlin Conrad <merlin@conrad-ki.com>"]
-description = "Ultra-lightweight, high-volume self-hosted CRM & DMS in pure Rust with native Model Context Protocol (MCP) server."
+description = "Ultra-lightweight, high-volume self-hosted CRM, DMS & ERP in pure Rust with native MCP server and local Qwen 1.5B copilot."
 license = "MIT"
 
 [dependencies]
@@ -19,3 +19,4 @@ tracing = "0.1"
 tracing-subscriber = { version = "0.3", features = ["env-filter"] }
 async-trait = "0.1"
 anyhow = "1.0"
+reqwest = { version = "0.12", default-features = false, features = ["json", "rustls-tls"] }
