@@ -98,6 +98,11 @@ with sync_playwright() as p:
     time.sleep(0.5)
     save_shot(page, "desktop_03_deals.png", full_page=True)
 
+    # Native Calendar & Terminbuchung View
+    page.click("#nav-btn-calendar")
+    time.sleep(0.5)
+    save_shot(page, "desktop_03b_calendar.png", full_page=True)
+
     # Invoices & GoBD
     page.click("#nav-btn-invoices")
     time.sleep(0.5)
@@ -118,7 +123,7 @@ with sync_playwright() as p:
     time.sleep(0.5)
     save_shot(page, "desktop_06b_workflows.png", full_page=True)
 
-    # Plugin Studio (Odoo x DeepSeek Harness)
+    # Native Modul-Architektur
     page.click("#nav-btn-plugins")
     time.sleep(0.5)
     save_shot(page, "desktop_06c_plugin_studio.png", full_page=True)
@@ -133,10 +138,22 @@ with sync_playwright() as p:
     time.sleep(0.5)
     save_shot(page, "desktop_06e_plugin_projects.png", full_page=True)
 
+    # DMS Dokumenten-Tresor & GoBD Audit Journal
+    page.click("#nav-btn-dms")
+    time.sleep(0.5)
+    save_shot(page, "desktop_06f_dms_gobd.png", full_page=True)
+
     # System & Schema
     page.click("#nav-btn-settings")
     time.sleep(0.5)
     save_shot(page, "desktop_07_system.png", full_page=True)
+
+    # Unified Single Sign-On (SSO) & Session Modal
+    page.click(".sidebar-footer")
+    time.sleep(0.4)
+    save_shot(page, "desktop_07b_sso_session.png")
+    page.keyboard.press("Escape")
+    time.sleep(0.3)
 
     # AI Copilot via Omni-Bar (Self-Building Plugin / Query)
     page.fill("#aiOmniInput", "Zeige mir alle Immobilien und Projekte")

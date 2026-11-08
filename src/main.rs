@@ -24,10 +24,10 @@ use db::Database;
 use mcp::{JsonRpcRequest, McpServer};
 use models::{
     AuthSessionPayload, CopilotRequest, DatevExportConfig, EmailInboundPayload, FunnelLeadPayload,
-    HubSpotCsvPayload, NewBooking, NewContact, NewCustomFieldDef, NewDeal, NewFollowUpTask,
-    NewHarnessPlugin, NewInteraction, NewInvoice, NewMarketingCampaign, NewPluginRecord,
-    NewRetainerSubscription, NewWorkflowRule, UpdateContactPayload, UpdatePluginRecord,
-    WhatsAppWebhookPayload,
+    HubSpotCsvPayload, NewBooking, NewContact, NewCustomFieldDef, NewDeal, NewDocument,
+    NewFollowUpTask, NewHarnessPlugin, NewInteraction, NewInvoice, NewMarketingCampaign,
+    NewPluginRecord, NewRetainerSubscription, NewWorkflowRule, UpdateContactPayload,
+    UpdatePluginRecord, WhatsAppWebhookPayload,
 };
 use serde::Deserialize;
 use serde_json::json;
@@ -195,6 +195,7 @@ async fn main() -> anyhow::Result<()> {
         .route("/manifest.json", get(pwa_manifest_handler))
         .route("/sw.js", get(pwa_service_worker_handler))
         .route("/book/:slug", get(booking_page_ui_handler))
+        .route("/api/bookings", get(list_all_bookings_handler))
         .route("/api/bookings/:slug/slots", get(list_booking_slots_handler))
         .route("/api/bookings/:slug", post(create_booking_handler))
         .route("/api/webhooks/whatsapp", post(whatsapp_webhook_handler))
@@ -230,7 +231,7 @@ async fn main() -> anyhow::Result<()> {
         .route("/api/import/hubspot/contacts", post(import_hubspot_contacts_handler))
         .route("/api/import/hubspot/deals", post(import_hubspot_deals_handler))
         .route("/api/consulting/savings-report", get(consulting_savings_report_handler))
-        .route("/api/documents", get(list_documents_handler))
+        .route("/api/documents", get(list_documents_handler).post(create_document_handler))
         .route("/api/custom-fields", get(list_custom_fields_handler).post(add_custom_field_handler))
         .route("/api/settings", get(get_settings_handler).post(update_setting_handler))
         .layer(middleware::from_fn_with_state(
@@ -638,10 +639,27 @@ async fn update_invoice_status_handler(
     }
 }
 
+async fn list_all_bookings_handler(State(state): State<AppState>) -> impl IntoResponse {
+    match state.db.list_bookings(None) {
+        Ok(list) => (StatusCode::OK, Json(serde_json::to_value(list).unwrap())).into_response(),
+        Err(err) => (StatusCode::INTERNAL_SERVER_ERROR, err.to_string()).into_response(),
+    }
+}
+
 async fn list_documents_handler(State(state): State<AppState>) -> impl IntoResponse {
     match state.db.list_documents() {
         Ok(docs) => (StatusCode::OK, Json(serde_json::to_value(docs).unwrap())).into_response(),
         Err(err) => (StatusCode::INTERNAL_SERVER_ERROR, err.to_string()).into_response(),
+    }
+}
+
+async fn create_document_handler(
+    State(state): State<AppState>,
+    Json(payload): Json<NewDocument>,
+) -> impl IntoResponse {
+    match state.db.add_document(payload) {
+        Ok(doc) => (StatusCode::CREATED, Json(serde_json::to_value(doc).unwrap())).into_response(),
+        Err(err) => (StatusCode::BAD_REQUEST, err.to_string()).into_response(),
     }
 }
 
@@ -684,7 +702,7 @@ async fn get_invoice_xrechnung_handler(
     State(state): State<AppState>,
     Path(id): Path<String>,
 ) -> impl IntoResponse {
-    let company_name = std::env::var("COMPANY_NAME").unwrap_or_else(|_| "Holzhey Consulting GmbH".to_string());
+    let company_name = std::env::var("COMPANY_NAME").unwrap_or_else(|_| "Conrad KI".to_string());
     let vat_id = std::env::var("VAT_ID").unwrap_or_else(|_| "DE312345678".to_string());
     let iban = std::env::var("IBAN").unwrap_or_else(|_| "DE02100100100123456789".to_string());
     let bic = std::env::var("BIC").unwrap_or_else(|_| "PBNKDEFFXXX".to_string());
@@ -741,7 +759,7 @@ async fn datev_export_handler(
     State(state): State<AppState>,
     Query(q): Query<DatevQuery>,
 ) -> impl IntoResponse {
-    let company_name = std::env::var("COMPANY_NAME").unwrap_or_else(|_| "Holzhey Consulting GmbH".to_string());
+    let company_name = std::env::var("COMPANY_NAME").unwrap_or_else(|_| "Conrad KI".to_string());
     let cfg = DatevExportConfig {
         year: q.year.unwrap_or(2026),
         month: None,

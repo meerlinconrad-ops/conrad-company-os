@@ -296,7 +296,7 @@ impl Database {
                 "system",
                 "genesis",
                 "INIT_GOBD_LEDGER",
-                "Revisionssicheres GoBD-Audit-Journal initialisiert (Holzhey Consulting Company OS)",
+                "Revisionssicheres GoBD-Audit-Journal initialisiert (Conrad OS Native Rust Kernel)",
                 "System",
             );
             let conn = self.conn.lock().unwrap();
@@ -306,7 +306,7 @@ impl Database {
                 params![
                     genesis_id,
                     genesis_now,
-                    "Revisionssicheres GoBD-Audit-Journal initialisiert (Holzhey Consulting Company OS)",
+                    "Revisionssicheres GoBD-Audit-Journal initialisiert (Conrad OS Native Rust Kernel)",
                     GENESIS_HASH,
                     genesis_hash
                 ],
@@ -325,7 +325,7 @@ impl Database {
                 phone: Some("+49 6202 920000".to_string()),
                 company: Some("Der Ohrladen Hörgeräte".to_string()),
                 status: Some("customer".to_string()),
-                tags: Some("Akustiker, Retainer, n8n".to_string()),
+                tags: Some("Akustiker, Retainer, KI-Workflows".to_string()),
             })?;
 
             let c2 = self.create_contact(NewContact {
@@ -341,7 +341,7 @@ impl Database {
             self.create_product(NewProductService {
                 sku: "WORKFLOW-RETAINER-M".to_string(),
                 name: "Monatlicher Workflow & KI-Betrieb".to_string(),
-                description: Some("Laufende Betreuung von n8n-Workflows, Bugfixes und Modell-Updates".to_string()),
+                description: Some("Laufende Betreuung von Conrad OS Automatisierungen, Bugfixes und Modell-Updates".to_string()),
                 unit_price_cents: 9900,
                 vat_rate_percent: Some(19.0),
                 unit: Some("Monat".to_string()),
@@ -382,7 +382,7 @@ impl Database {
                 invoice_number: Some("RE-2026-001".to_string()),
                 items: vec![
                     InvoiceItem {
-                        description: "Betreuung & Hosting lokales n8n (November 2026)".to_string(),
+                        description: "Betreuung & Hosting Conrad OS Workflow-Engine (November 2026)".to_string(),
                         quantity: 1.0,
                         unit_price_cents: 9900,
                         total_cents: 9900,
@@ -436,8 +436,8 @@ impl Database {
             // Seed system settings
             let _ = self.set_setting("company_name", "Conrad KI");
             let _ = self.set_setting("theme_accent", "#2563EB");
-            let _ = self.set_setting("visible_modules", "dashboard,contacts,deals,invoices,retainers,marketing,dms,settings");
-            let _ = self.set_setting("active_plugins", "gobd,zugferd,datev,girocode,n8n,calcom");
+            let _ = self.set_setting("visible_modules", "dashboard,contacts,deals,calendar,invoices,retainers,marketing,workflows,plugins,dms,settings");
+            let _ = self.set_setting("active_plugins", "gobd,zugferd,datev,girocode,workflows,scheduler");
         }
 
         // Ensure Retainer Subscriptions are seeded if empty
@@ -453,7 +453,7 @@ impl Database {
             if let Some(cid) = first_cid {
                 let _ = self.create_retainer(NewRetainerSubscription {
                     contact_id: cid,
-                    plan_name: "KMU Automatisierungs-Betreuung (n8n + LLM)".to_string(),
+                    plan_name: "KMU Automatisierungs-Betreuung (Conrad OS + LLM)".to_string(),
                     amount_cents: 9900,
                     vat_rate_percent: Some(19.0),
                     interval_months: Some(1),
@@ -528,7 +528,71 @@ impl Database {
             });
         }
 
-        // Seed Odoo × DeepSeek Harness Plugin Registry if empty
+        // Seed Native Conrad OS Documents (DMS Tresor) if empty
+        let doc_count: i64 = {
+            let conn = self.conn.lock().unwrap();
+            conn.query_row("SELECT COUNT(*) FROM documents", [], |r| r.get(0)).unwrap_or(0)
+        };
+        if doc_count == 0 {
+            let first_cid: Option<String> = {
+                let conn = self.conn.lock().unwrap();
+                conn.query_row("SELECT id FROM contacts ORDER BY created_at ASC LIMIT 1", [], |r| r.get(0)).ok()
+            };
+            let _ = self.add_document(NewDocument {
+                contact_id: first_cid.clone(),
+                invoice_id: None,
+                title: "Rahmenvertrag KI-Automatisierung & Retainer (Der Ohrladen)".to_string(),
+                filename: "RV_ConradKI_Ohrladen_2026.pdf".to_string(),
+                file_path: "/vault/contracts/RV_ConradKI_Ohrladen_2026.pdf".to_string(),
+                file_size_bytes: 284_600,
+                mime_type: "application/pdf".to_string(),
+                category: Some("contract".to_string()),
+                tags: Some("GoBD, Rahmenvertrag, Retainer".to_string()),
+                extracted_text: Some("Monatlicher Leistungsrahmen: 99,00 EUR netto, Kündigungsfrist 30 Tage zum Monatsende.".to_string()),
+            });
+            let _ = self.add_document(NewDocument {
+                contact_id: None,
+                invoice_id: None,
+                title: "Kaufvertrag & Teilungserklärung Halmhuberstraße 10, Mannheim".to_string(),
+                filename: "Notarurkunde_Halmhuberstr10_Mannheim.pdf".to_string(),
+                file_path: "/vault/realestate/Notarurkunde_Halmhuberstr10_Mannheim.pdf".to_string(),
+                file_size_bytes: 1_420_000,
+                mime_type: "application/pdf".to_string(),
+                category: Some("contract".to_string()),
+                tags: Some("Immobilie, Mannheim, AfA".to_string()),
+                extracted_text: Some("Kaufpreis 86.000 EUR, Eigenkapital 21.000 EUR, Mieter Sebastian Gruia.".to_string()),
+            });
+        }
+
+        // Seed Native Conrad OS Calendar Bookings if empty
+        let book_count: i64 = {
+            let conn = self.conn.lock().unwrap();
+            conn.query_row("SELECT COUNT(*) FROM bookings", [], |r| r.get(0)).unwrap_or(0)
+        };
+        if book_count == 0 {
+            let _ = self.book_calendar_slot(NewBooking {
+                slug: Some("merlin".to_string()),
+                name: "Jens Ohrladen".to_string(),
+                email: "info@der-ohrladen.de".to_string(),
+                phone: Some("+49 6202 920000".to_string()),
+                start_time: "2026-11-10T10:00:00Z".to_string(),
+                duration_minutes: Some(30),
+                timezone: Some("Europe/Berlin".to_string()),
+                notes: Some("Quartals-Review Hörtest-Simulator & Sprach-Assistent".to_string()),
+            });
+            let _ = self.book_calendar_slot(NewBooking {
+                slug: Some("merlin".to_string()),
+                name: "Alexandra Imkerin".to_string(),
+                email: "alex@schlossgarten-honig.de".to_string(),
+                phone: Some("+49 171 4455667".to_string()),
+                start_time: "2026-11-12T15:00:00Z".to_string(),
+                duration_minutes: Some(30),
+                timezone: Some("Europe/Berlin".to_string()),
+                notes: Some("Abnahme Angebot: Instagram DM Lead-Pipeline".to_string()),
+            });
+        }
+
+        // Seed Conrad OS Native Modular Kernel Registry if empty
         let plugin_count: i64 = {
             let conn = self.conn.lock().unwrap();
             conn.query_row("SELECT COUNT(*) FROM harness_plugins", [], |r| r.get(0)).unwrap_or(0)
@@ -610,7 +674,7 @@ impl Database {
                     "core.workflows",
                     "Workflows & Trigger",
                     "workflows",
-                    "AI & Harness",
+                    "AI & Automation",
                     "Ereignisgesteuerte Automatisierung für Aufgaben, Follow-ups und sichere E-Mail-Entwürfe.",
                     "3.0.0",
                     60,
@@ -625,8 +689,8 @@ impl Database {
                     "Projekte & Zeiterfassung",
                     "projects",
                     "Operations & ERP",
-                    "Odoo-inspiriertes Projekt-, Sprint- und Stunden-Tracking für Kundenmandate von Conrad KI.",
-                    "2.4.0",
+                    "Integriertes Projekt-, Sprint- und Stunden-Tracking für alle Kundenmandate von Conrad KI.",
+                    "3.0.0",
                     110,
                     1,
                     0,
@@ -640,7 +704,7 @@ impl Database {
                     "realestate",
                     "Immobilien & Assets",
                     "Objekt-, Mieter- und Cashflow-Cockpit für Bestandswohnungen und die MFH-Akquise-Pipeline.",
-                    "2.1.0",
+                    "3.0.0",
                     120,
                     1,
                     0,
@@ -653,8 +717,8 @@ impl Database {
                     "Service-Desk & SLA-Tickets",
                     "helpdesk",
                     "Operations & ERP",
-                    "Kunden-Support, Wartungsanfragen und SLA-Überwachung für betreute KI- und n8n-Systeme.",
-                    "1.9.0",
+                    "Kunden-Support, Wartungsanfragen und SLA-Überwachung für betreute KI-Systeme.",
+                    "3.0.0",
                     130,
                     1,
                     0,
@@ -668,7 +732,7 @@ impl Database {
                     "inventory",
                     "Finance & GoBD",
                     "Zentrales Artikel-, Lizenz- und Dienstleistungsverzeichnis mit SKR03/04 Erlöskonten-Mapping.",
-                    "2.0.0",
+                    "3.0.0",
                     140,
                     1,
                     0,
@@ -693,7 +757,7 @@ impl Database {
             let _ = self.create_plugin_record(
                 "plugin.projects",
                 NewPluginRecord {
-                    title: "Der Ohrladen — Hörtest-Simulator v2 & n8n Triage".to_string(),
+                    title: "Der Ohrladen — Hörtest-Simulator v2 & Postfach-Triage".to_string(),
                     status: Some("Aktiv".to_string()),
                     amount_cents: Some(240000),
                     owner: Some("Merlin Conrad".to_string()),
@@ -784,7 +848,7 @@ impl Database {
                     amount_cents: Some(0),
                     owner: Some("Conrad KI Support".to_string()),
                     data: Some(serde_json::json!({
-                        "customer": "Holzhey Consulting GmbH",
+                        "customer": "Schlossgarten Imkerei",
                         "priority": "Normal",
                         "sla": "EN 16931 verifiziert"
                     })),
@@ -794,7 +858,7 @@ impl Database {
             let _ = self.create_plugin_record(
                 "plugin.inventory",
                 NewPluginRecord {
-                    title: "Monatlicher KI- & n8n-Automatisierungs-Retainer".to_string(),
+                    title: "Monatlicher KI- & Workflow-Automatisierungs-Retainer".to_string(),
                     status: Some("Aktiv".to_string()),
                     amount_cents: Some(9900),
                     owner: Some("Conrad KI".to_string()),
@@ -818,6 +882,35 @@ impl Database {
                         "skr03": "8400 (Erlöse 19% USt.)"
                     })),
                 },
+            );
+        }
+
+        // Clean any legacy third-party references in existing DB rows so the OS is 100% unified
+        {
+            let conn = self.conn.lock().unwrap();
+            let _ = conn.execute(
+                "UPDATE harness_plugins SET description = 'Integriertes Projekt-, Sprint- und Stunden-Tracking für alle Kundenmandate von Conrad KI.' WHERE id = 'plugin.projects'",
+                [],
+            );
+            let _ = conn.execute(
+                "UPDATE harness_plugins SET description = 'Kunden-Support, Wartungsanfragen und SLA-Überwachung für betreute KI-Systeme.' WHERE id = 'plugin.helpdesk'",
+                [],
+            );
+            let _ = conn.execute(
+                "UPDATE harness_plugins SET category = 'AI & Automation' WHERE id = 'core.workflows'",
+                [],
+            );
+            let _ = conn.execute(
+                "UPDATE plugin_records SET title = REPLACE(title, 'n8n', 'Conrad OS') WHERE title LIKE '%n8n%'",
+                [],
+            );
+            let _ = conn.execute(
+                "UPDATE plugin_records SET data_json = REPLACE(data_json, 'Holzhey Consulting GmbH', 'Schlossgarten Imkerei') WHERE data_json LIKE '%Holzhey%'",
+                [],
+            );
+            let _ = conn.execute(
+                "UPDATE contacts SET tags = REPLACE(tags, 'n8n', 'KI-Workflows') WHERE tags LIKE '%n8n%'",
+                [],
             );
         }
 

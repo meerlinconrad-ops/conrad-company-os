@@ -180,10 +180,12 @@ impl CopilotEngine {
             navigate_to = Some("plugin:plugin.projects".to_string());
         } else if p_lower.contains("helpdesk") || p_lower.contains("ticket") || p_lower.contains("sla") {
             navigate_to = Some("plugin:plugin.helpdesk".to_string());
+        } else if p_lower.contains("termin") || p_lower.contains("kalender") || p_lower.contains("buchung") {
+            navigate_to = Some("calendar".to_string());
         } else if p_lower.contains("plugin") || p_lower.contains("harness") || p_lower.contains("app store") || p_lower.contains("modul") {
             navigate_to = Some("plugins".to_string());
-        } else if p_lower.contains("dokument") || p_lower.contains("dms") || p_lower.contains("ablage") {
-            navigate_to = Some("settings".to_string());
+        } else if p_lower.contains("dokument") || p_lower.contains("dms") || p_lower.contains("ablage") || p_lower.contains("gobd") {
+            navigate_to = Some("dms".to_string());
         } else if p_lower.contains("einstellung") || p_lower.contains("customizer") || p_lower.contains("mcp") || p_lower.contains("konfig") || p_lower.contains("architektur") {
             navigate_to = Some("settings".to_string());
         }

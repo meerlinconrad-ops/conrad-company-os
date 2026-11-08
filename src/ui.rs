@@ -8,12 +8,12 @@ pub fn render_app_html() -> &'static str {
     <meta name="apple-mobile-web-app-status-bar-style" content="default">
     <meta name="apple-mobile-web-app-title" content="Conrad OS">
     <link rel="manifest" href="/manifest.json">
-    <title>Conrad OS — AI-First Modular Company OS (Odoo × DeepSeek Harness)</title>
+    <title>Conrad OS — AI-First Enterprise Operating System (Pure Rust)</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
     <style>
-        /* ── Apple HIG × Microsoft Fluent × Odoo × DeepSeek Harness Design System ── */
+        /* ── Conrad OS Unified Design System (100% Pure Rust, Single-DB, Zero External Dependencies) ── */
         :root {
             --font-sans: "Plus Jakarta Sans", -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", sans-serif;
             --font-mono: "JetBrains Mono", SFMono-Regular, Menlo, monospace;
@@ -1275,6 +1275,13 @@ pub fn render_app_html() -> &'static str {
                     <span class="nav-count" id="badge-deals-count">0</span>
                 </button>
             </li>
+            <li>
+                <button class="nav-item-btn" id="nav-btn-calendar" onclick="switchView('calendar')">
+                    <svg class="icon" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+                    <span>Kalender &amp; Termine</span>
+                    <span class="nav-count" id="badge-bookings-count">2</span>
+                </button>
+            </li>
         </ul>
 
         <div class="nav-group-title">ERP &amp; Finanzen</div>
@@ -1306,24 +1313,24 @@ pub fn render_app_html() -> &'static str {
         </ul>
 
         <div class="nav-group-title" style="display:flex; justify-content:space-between; align-items:center;">
-            <span>Harness Plugins</span>
-            <span style="cursor:pointer; color:var(--accent);" onclick="openNewPluginModal()" title="Eigenes Plugin bauen">+ Studio</span>
+            <span>Conrad OS Module</span>
+            <span style="cursor:pointer; color:var(--accent);" onclick="openNewPluginModal()" title="Neues Modul konstruieren">+ Baukasten</span>
         </div>
         <ul class="nav-list" id="sidebarDynamicPluginsList"></ul>
 
-        <div class="nav-group-title">Compliance &amp; System</div>
+        <div class="nav-group-title">Tresor &amp; System</div>
         <ul class="nav-list">
             <li>
                 <button class="nav-item-btn" id="nav-btn-plugins" onclick="switchView('plugins')">
                     <svg class="icon" viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/></svg>
-                    <span>Plugin Store (Harness)</span>
+                    <span>Modul-Architektur</span>
                     <span class="nav-count" id="badge-plugins-count">10</span>
                 </button>
             </li>
             <li>
                 <button class="nav-item-btn" id="nav-btn-dms" onclick="switchView('dms')">
                     <svg class="icon" viewBox="0 0 24 24"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
-                    <span>GoBD Journal</span>
+                    <span>DMS &amp; GoBD Tresor</span>
                 </button>
             </li>
             <li>
@@ -1338,7 +1345,7 @@ pub fn render_app_html() -> &'static str {
             <div class="avatar-sm" id="ui-user-avatar">MC</div>
             <div style="overflow:hidden; flex:1;">
                 <div style="font-weight:600; font-size:12px;" id="ui-user-name">Merlin Conrad</div>
-                <div style="font-size:11px; color:var(--text-muted);" id="ui-user-role">Administrator</div>
+                <div style="font-size:11px; color:var(--text-muted);" id="ui-user-role">CEO · SSO Aktiv</div>
             </div>
         </div>
     </aside>
@@ -1348,7 +1355,7 @@ pub fn render_app_html() -> &'static str {
         <header class="topbar">
             <div class="topbar-left">
                 <button class="btn" style="display:none; padding:0 8px;" id="mobileMenuBtn" onclick="toggleMobileSidebar()">☰</button>
-                <button class="app-launcher-btn" id="odooAppLauncherBtn" onclick="openAppMatrixModal()" title="Odoo App-Matrix &amp; Harness Launcher (9-Dot)">
+                <button class="app-launcher-btn" id="odooAppLauncherBtn" onclick="openAppMatrixModal()" title="Conrad OS App-Matrix (Alle Module)">
                     <svg class="icon" viewBox="0 0 24 24"><circle cx="5" cy="5" r="1.5"/><circle cx="12" cy="5" r="1.5"/><circle cx="19" cy="5" r="1.5"/><circle cx="5" cy="12" r="1.5"/><circle cx="12" cy="12" r="1.5"/><circle cx="19" cy="12" r="1.5"/><circle cx="5" cy="19" r="1.5"/><circle cx="12" cy="19" r="1.5"/><circle cx="19" cy="19" r="1.5"/></svg>
                 </button>
                 <span class="breadcrumb-root">Conrad OS</span>
@@ -1363,12 +1370,12 @@ pub fn render_app_html() -> &'static str {
             <div class="topbar-right">
                 <div class="ai-omni-bar" id="aiOmniBar">
                     <span style="color:var(--accent); font-weight:700; font-size:11px;">AI</span>
-                    <input type="text" id="aiOmniInput" class="ai-omni-input" placeholder="KI-Befehl oder „Baue Plugin ...“ (↵)" onkeydown="if(event.key==='Enter') executeOmniBarCommand()">
+                    <input type="text" id="aiOmniInput" class="ai-omni-input" placeholder="KI-Befehl oder „Baue Modul ...“ (↵)" onkeydown="if(event.key==='Enter') executeOmniBarCommand()">
                 </div>
-                <a href="/book/merlin" id="btnBookingTopbar" target="_blank" class="btn" style="text-decoration:none;" title="Öffentliche Terminbuchungsseite">
+                <button class="btn" id="btnBookingTopbar" onclick="switchView('calendar')" title="Integrierter Kalender &amp; Terminbuchung">
                     <svg class="icon" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
-                    <span>Buchungs-Link</span>
-                </a>
+                    <span>Kalender</span>
+                </button>
                 <button class="btn" onclick="toggleTheme()" title="Erscheinungsbild umschalten">
                     <span id="themeToggleIcon">◐</span>
                 </button>
@@ -1616,15 +1623,65 @@ pub fn render_app_html() -> &'static str {
                 </div>
             </section>
 
-            <!-- VIEW 7: GOBD AUDIT JOURNAL -->
+            <!-- VIEW 6B: KALENDER & TERMINBUCHUNG (100% Native Conrad OS Scheduler) -->
+            <section id="view-calendar" style="display:none;">
+                <div class="sub-toolbar">
+                    <div style="display:flex; align-items:center; gap:10px; font-size:12px; color:var(--text-secondary);">
+                        <span>Integrierter Termin- &amp; Buchungskalender · Automatische CRM-Kontaktzuordnung</span>
+                        <a href="/book/merlin" target="_blank" class="badge info" style="text-decoration:none;">Öffentlicher Buchungslink: /book/merlin ↗</a>
+                    </div>
+                    <button class="btn btn-primary" onclick="openNewBookingModal()">+ Termin eintragen</button>
+                </div>
+                <div class="sheet-wrapper">
+                    <table class="data-grid">
+                        <thead>
+                            <tr>
+                                <th>Termin &amp; Uhrzeit</th>
+                                <th>Teilnehmer / Kontakt</th>
+                                <th>E-Mail &amp; Telefon</th>
+                                <th>Thema / Notiz</th>
+                                <th>Kalender-Host</th>
+                                <th>Zeitzone</th>
+                                <th>Status</th>
+                            </tr>
+                        </thead>
+                        <tbody id="bookingsFullTable"></tbody>
+                    </table>
+                </div>
+            </section>
+
+            <!-- VIEW 7: DMS DOKUMENTEN-TRESOR & GOBD AUDIT JOURNAL -->
             <section id="view-dms" style="display:none;">
                 <div class="sub-toolbar">
                     <div style="font-size:12px; color:var(--text-secondary);">
-                        Kryptografisches SHA-256 Transaktionsregister gemäß GoBD
+                        Revisionssicherer Dokumenten-Tresor (DMS) &amp; Kryptografisches SHA-256 Transaktionsregister gemäß GoBD
                     </div>
-                    <button class="btn" onclick="verifyGobdChain()">Kryptografische Integrität prüfen</button>
+                    <div style="display:flex; gap:8px;">
+                        <button class="btn" onclick="verifyGobdChain()">SHA-256 Kette prüfen</button>
+                        <button class="btn btn-primary" onclick="openNewDocumentModal()">+ Dokument archivieren</button>
+                    </div>
                 </div>
                 <div id="gobdVerifyResult" style="padding:10px 20px; font-size:12px; display:none; border-bottom:1px solid var(--border-color);"></div>
+                <div style="padding:14px 20px 6px; font-size:11px; font-weight:700; text-transform:uppercase; letter-spacing:0.05em; color:var(--text-muted);">
+                    Verschlüsselter Dokumenten-Tresor (Verträge, Belege &amp; Akten)
+                </div>
+                <div class="sheet-wrapper" style="border-bottom:1px solid var(--border-color);">
+                    <table class="data-grid">
+                        <thead>
+                            <tr>
+                                <th>Dokumenten-Titel</th>
+                                <th>Kategorie</th>
+                                <th>SHA-256 Prüfsumme</th>
+                                <th>Größe</th>
+                                <th>Archiviert am</th>
+                            </tr>
+                        </thead>
+                        <tbody id="dmsDocumentsTable"></tbody>
+                    </table>
+                </div>
+                <div style="padding:16px 20px 6px; font-size:11px; font-weight:700; text-transform:uppercase; letter-spacing:0.05em; color:var(--text-muted);">
+                    Unveränderliches GoBD SHA-256 Transaktions-Journal
+                </div>
                 <div class="sheet-wrapper">
                     <table class="data-grid">
                         <thead>
@@ -1642,7 +1699,7 @@ pub fn render_app_html() -> &'static str {
                 </div>
             </section>
 
-            <!-- VIEW 8: DATENMODELL & SYSTEM (Twenty Schema Builder) -->
+            <!-- VIEW 8: DATENMODELL & SYSTEM -->
             <section id="view-settings" class="view-padded" style="display:none;">
                 <div style="display:grid; grid-template-columns: 1fr 1fr; gap:16px;">
                     <div class="card-panel" style="padding:16px;">
@@ -1655,11 +1712,11 @@ pub fn render_app_html() -> &'static str {
                             </div>
                         </div>
                         <div class="form-group" style="margin-top:14px;">
-                            <label class="form-label">Markenakzent</label>
+                            <label class="form-label">System-Farbakzent</label>
                             <div style="display:flex; gap:6px;">
-                                <button class="btn" onclick="setThemeAccent('#2563eb')">Twenty Blue</button>
-                                <button class="btn" onclick="setThemeAccent('#0f766e')">Teal</button>
-                                <button class="btn" onclick="setThemeAccent('#c8531a')">HubSpot Orange</button>
+                                <button class="btn" onclick="setThemeAccent('#2563eb')">Conrad Blue</button>
+                                <button class="btn" onclick="setThemeAccent('#0f766e')">Emerald Teal</button>
+                                <button class="btn" onclick="setThemeAccent('#c8531a')">Copper</button>
                                 <button class="btn" onclick="setThemeAccent('#4f46e5')">Indigo</button>
                             </div>
                         </div>
@@ -1677,7 +1734,7 @@ pub fn render_app_html() -> &'static str {
                 </div>
 
                 <div class="card-panel" style="padding:16px;">
-                    <h3 style="font-size:13px; font-weight:600; margin-bottom:10px;">Aktive Schnittstellen, Webhooks &amp; Automations-Regeln</h3>
+                    <h3 style="font-size:13px; font-weight:600; margin-bottom:10px;">Native System-Endpunkte &amp; Kernel-Schnittstellen</h3>
                     <div style="display:grid; grid-template-columns:repeat(3, 1fr); gap:12px; font-size:12px;">
                         <div style="padding:12px; border:1px solid var(--border-color); border-radius:6px; background:var(--bg-subtle);">
                             <div style="font-weight:600; margin-bottom:4px;">Model Context Protocol (MCP)</div>
@@ -1688,7 +1745,7 @@ pub fn render_app_html() -> &'static str {
                             <code class="mono-val">POST /api/webhooks/whatsapp</code>
                         </div>
                         <div style="padding:12px; border:1px solid var(--border-color); border-radius:6px; background:var(--bg-subtle);">
-                            <div style="font-weight:600; margin-bottom:4px;">Pipeline Automation</div>
+                            <div style="font-weight:600; margin-bottom:4px;">Native Workflow-Engine</div>
                             <span style="color:var(--text-secondary);">Deal → Angebot = +Task (3T) &amp; E-Mail-Entwurf</span>
                         </div>
                     </div>
@@ -1721,18 +1778,18 @@ pub fn render_app_html() -> &'static str {
                 </div>
             </section>
 
-            <!-- VIEW 10: ODOO × DEEPSEEK HARNESS PLUGIN STORE ("Everything is a Plugin") -->
+            <!-- VIEW 10: CONRAD OS NATIVE MODUL-ARCHITEKTUR -->
             <section id="view-plugins" class="view-padded" style="display:none;">
                 <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px; flex-wrap:wrap; gap:10px;">
                     <div>
-                        <h2 style="font-size:16px; font-weight:700;">Odoo × DeepSeek Harness — Plugin Layer Architecture</h2>
+                        <h2 style="font-size:16px; font-weight:700;">Conrad OS — Native Modul-Architektur &amp; Schema-Baukasten</h2>
                         <p style="font-size:12px; color:var(--text-secondary); margin-top:2px;">
-                            Geordneter Stack von Plugin-Layern. Jedes Modul besitzt ein eigenes JSON-Schema, SQLite-Persistenz und MCP-Tools.
+                            Alle Fachmodule laufen in derselben Rust-Binärdatei, derselben SQLite-WAL-Datenbank und demselben Design-System.
                         </p>
                     </div>
                     <div style="display:flex; gap:8px;">
                         <button class="btn" onclick="toggleCopilot(); document.getElementById('copilotInput').value='Baue mir ein neues Plugin Fuhrpark & Leasing';">KI-Architekt fragen</button>
-                        <button class="btn btn-primary" id="btnOpenPluginStudio" onclick="openNewPluginModal()">+ Eigenes Plugin bauen (Studio)</button>
+                        <button class="btn btn-primary" id="btnOpenPluginStudio" onclick="openNewPluginModal()">+ Eigenes Modul bauen</button>
                     </div>
                 </div>
                 <div class="plugin-grid" id="pluginsRegistryGrid"></div>
@@ -1742,8 +1799,8 @@ pub fn render_app_html() -> &'static str {
             <section id="view-plugin-dynamic" style="display:none;">
                 <div class="sub-toolbar">
                     <div style="display:flex; align-items:center; gap:10px;">
-                        <span class="plugin-layer-pill" id="dynPluginLayerPill">LAYER #110</span>
-                        <span style="font-size:12px; color:var(--text-secondary);" id="dynPluginDesc">Plugin Beschreibung</span>
+                        <span class="plugin-layer-pill" id="dynPluginLayerPill">MODUL #110</span>
+                        <span style="font-size:12px; color:var(--text-secondary);" id="dynPluginDesc">Modul Beschreibung</span>
                     </div>
                     <div style="display:flex; gap:8px; align-items:center;">
                         <input type="text" id="dynPluginSearch" class="form-input" style="height:28px; width:200px; font-size:12px;" placeholder="Einträge filtern..." oninput="renderActivePluginRecords()">
@@ -1760,22 +1817,22 @@ pub fn render_app_html() -> &'static str {
 
         </div>
 
-        <!-- ── DeepSeek Harness Status Telemetry Strip ── -->
+        <!-- ── Conrad OS Kernel Status Telemetry Strip ── -->
         <footer class="harness-footer" id="harnessStatusFooter">
             <div style="display:flex; align-items:center; gap:14px;">
-                <span><strong style="color:var(--text-primary);">HARNESS:</strong> production-enterprise</span>
-                <span id="footerMountedLayers">LAYERS: 10 ACTIVE</span>
-                <span>ENGINE: Pure Rust / SQLite WAL (&lt;0.4ms)</span>
+                <span><strong style="color:var(--text-primary);">KERNEL:</strong> Conrad OS v3.0</span>
+                <span id="footerMountedLayers">MODULE: 10 AKTIV</span>
+                <span>ENGINE: 100% Pure Rust / Single SQLite WAL (&lt;0.4ms)</span>
                 <span style="color:var(--status-green-fg);">● GoBD SHA-256 VERIFIED</span>
             </div>
             <div style="display:flex; align-items:center; gap:12px;">
-                <span style="cursor:pointer;" onclick="switchView('plugins')">Plugin-Architektur ↗</span>
+                <span style="cursor:pointer;" onclick="switchView('plugins')">Modul-Architektur ↗</span>
                 <span style="cursor:pointer;" onclick="openCmdKModal()">⌘K Spotlight</span>
             </div>
         </footer>
     </div>
 
-    <!-- ── HubSpot / Twenty 360° Contact Record Inspector Drawer ── -->
+    <!-- ── 360° Contact Record Inspector Drawer ── -->
     <div class="record-drawer-backdrop" id="contactInspectorDrawer" onclick="if(event.target===this) closeContactDrawer()">
         <div class="record-drawer">
             <div class="drawer-header">
@@ -1889,32 +1946,117 @@ pub fn render_app_html() -> &'static str {
         </div>
     </div>
 
-    <!-- ── Modal: Workspace & Role Switcher ── -->
+    <!-- ── Modal: Conrad OS Single Sign-On (SSO) & Session Center ── -->
     <div class="modal-backdrop" id="loginModal">
-        <div class="modal-card">
+        <div class="modal-card" style="width: 460px;">
             <div class="modal-header">
-                <span class="modal-title">Benutzerrolle &amp; Session</span>
+                <div>
+                    <span class="modal-title">Conrad OS · Single Sign-On &amp; Session</span>
+                    <div style="font-size:11px; color:var(--text-muted); margin-top:2px;">Einheitliche Authentifizierung für CRM, ERP, DMS &amp; alle Fachmodule</div>
+                </div>
                 <button class="modal-close-btn" onclick="closeModal('loginModal')">✕</button>
             </div>
-            <div style="display:flex; flex-direction:column; gap:8px; margin-bottom:16px;">
-                <div style="border:1px solid var(--border-color); border-radius:6px; padding:12px; cursor:pointer;" onclick="setDemoUser('admin'); closeModal('loginModal');">
-                    <div style="display:flex; justify-content:space-between;">
-                        <strong>Merlin Conrad (Administrator)</strong>
-                        <span class="badge warning">Architekt</span>
-                    </div>
-                    <div style="font-size:12px; color:var(--text-secondary); margin-top:4px;">admin@conrad-ki.com · Vollzugriff auf Schema &amp; GoBD</div>
+            <div style="padding:10px 12px; border-radius:6px; background:var(--bg-subtle); border:1px solid var(--border-color); margin-bottom:14px; font-size:12px;">
+                <div style="display:flex; justify-content:space-between; align-items:center;">
+                    <span>Aktive HttpOnly-Session: <strong id="demoAccountLabel">admin@conrad-ki.com</strong></span>
+                    <span class="badge success"><span class="badge-dot"></span>Verifiziert</span>
                 </div>
-                <div style="border:1px solid var(--border-color); border-radius:6px; padding:12px; cursor:pointer;" onclick="setDemoUser('team'); closeModal('loginModal');">
+            </div>
+            <div class="form-group">
+                <label class="form-label">E-Mail / Conrad-ID</label>
+                <input type="email" id="sso-email" class="form-input" value="merlin@conrad-ki.com">
+            </div>
+            <div class="form-group">
+                <label class="form-label">Passwort / Passkey-Token</label>
+                <input type="password" id="sso-password" class="form-input" value="••••••••••••••••">
+            </div>
+            <div style="margin-bottom:14px;">
+                <button class="btn btn-primary" style="width:100%; justify-content:center;" onclick="submitSsoLogin()">Mit Conrad-ID anmelden &amp; Session erneuern</button>
+            </div>
+            <div style="font-size:11px; font-weight:700; text-transform:uppercase; color:var(--text-muted); margin-bottom:8px;">Schnellwechsel · Berechtigungs-Profil</div>
+            <div style="display:flex; flex-direction:column; gap:8px; margin-bottom:14px;">
+                <div style="border:1px solid var(--border-color); border-radius:6px; padding:10px 12px; cursor:pointer;" onclick="setDemoUser('admin'); closeModal('loginModal');">
+                    <div style="display:flex; justify-content:space-between;">
+                        <strong>Merlin Conrad (System-Architekt)</strong>
+                        <span class="badge warning">Vollzugriff</span>
+                    </div>
+                    <div style="font-size:11.5px; color:var(--text-secondary); margin-top:2px;">admin@conrad-ki.com · Alle Module, Schema-Baukasten &amp; GoBD</div>
+                </div>
+                <div style="border:1px solid var(--border-color); border-radius:6px; padding:10px 12px; cursor:pointer;" onclick="setDemoUser('team'); closeModal('loginModal');">
                     <div style="display:flex; justify-content:space-between;">
                         <strong>Operations Team</strong>
                         <span class="badge info">Operativ</span>
                     </div>
-                    <div style="font-size:12px; color:var(--text-secondary); margin-top:4px;">team@conrad-ki.com · Vertrieb, Kontakte &amp; Faktura</div>
+                    <div style="font-size:11.5px; color:var(--text-secondary); margin-top:2px;">team@conrad-ki.com · Vertrieb, Kontakte, Kalender &amp; Faktura</div>
                 </div>
             </div>
-            <div style="display:none;" id="demoAccountLabel">admin@conrad-ki.com</div>
             <div style="text-align:right;">
                 <button class="btn" onclick="closeModal('loginModal')">Schließen</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ── Modal: Neuer Kalender-Termin ── -->
+    <div class="modal-backdrop" id="modalNewBooking">
+        <div class="modal-card">
+            <div class="modal-header">
+                <span class="modal-title">Neuen Termin im Kalender eintragen</span>
+                <button class="modal-close-btn" onclick="closeModal('modalNewBooking')">✕</button>
+            </div>
+            <div class="form-group">
+                <label class="form-label">Teilnehmer / Kontakt *</label>
+                <input type="text" id="nb-name" class="form-input" placeholder="z.B. Jens (Der Ohrladen)">
+            </div>
+            <div class="form-group">
+                <label class="form-label">E-Mail *</label>
+                <input type="email" id="nb-email" class="form-input" placeholder="jens@ohrladen.de">
+            </div>
+            <div class="form-group">
+                <label class="form-label">Telefon</label>
+                <input type="tel" id="nb-phone" class="form-input" placeholder="+49 621 987654">
+            </div>
+            <div class="form-group">
+                <label class="form-label">Datum &amp; Uhrzeit (ISO / Lokal) *</label>
+                <input type="datetime-local" id="nb-datetime" class="form-input" value="2026-11-12T10:00">
+            </div>
+            <div class="form-group">
+                <label class="form-label">Thema / Agenda</label>
+                <input type="text" id="nb-notes" class="form-input" placeholder="z.B. KI-Review &amp; Quartalsplanung">
+            </div>
+            <div style="display:flex; justify-content:flex-end; gap:8px; margin-top:16px;">
+                <button class="btn" onclick="closeModal('modalNewBooking')">Abbrechen</button>
+                <button class="btn btn-primary" onclick="submitCreateBooking()">Termin verbindlich speichern</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ── Modal: Neues Dokument im DMS archivieren ── -->
+    <div class="modal-backdrop" id="modalNewDocument">
+        <div class="modal-card">
+            <div class="modal-header">
+                <span class="modal-title">Dokument GoBD-konform archivieren</span>
+                <button class="modal-close-btn" onclick="closeModal('modalNewDocument')">✕</button>
+            </div>
+            <div class="form-group">
+                <label class="form-label">Dokumenten-Titel *</label>
+                <input type="text" id="ndoc-title" class="form-input" placeholder="z.B. Auftragsverarbeitung (AVV) — Conrad KI">
+            </div>
+            <div class="form-group">
+                <label class="form-label">Kategorie</label>
+                <select id="ndoc-category" class="form-input">
+                    <option value="Vertrag">Vertrag &amp; Vereinbarung</option>
+                    <option value="Immobilien">Immobilien &amp; Grundbuch</option>
+                    <option value="Steuer & Beleg">Steuer &amp; Buchhaltungsbeleg</option>
+                    <option value="Compliance">DSGVO &amp; Compliance</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label class="form-label">Dateigröße (Bytes)</label>
+                <input type="number" id="ndoc-size" class="form-input" value="256000">
+            </div>
+            <div style="display:flex; justify-content:flex-end; gap:8px; margin-top:16px;">
+                <button class="btn" onclick="closeModal('modalNewDocument')">Abbrechen</button>
+                <button class="btn btn-primary" onclick="submitCreateDocument()">SHA-256 signieren &amp; archivieren</button>
             </div>
         </div>
     </div>
@@ -2033,29 +2175,29 @@ pub fn render_app_html() -> &'static str {
         </div>
     </div>
 
-    <!-- ── Modal: Odoo 9-Dot App Matrix Launcher ── -->
+    <!-- ── Modal: Conrad OS App Matrix Launcher ── -->
     <div class="modal-backdrop" id="odooAppMatrixModal" onclick="if(event.target===this)closeModal('odooAppMatrixModal')">
         <div class="modal-card" style="width: 680px; max-width: 96vw;">
             <div class="modal-header">
                 <div>
-                    <span class="modal-title">Conrad OS · App &amp; Plugin Matrix</span>
-                    <div style="font-size:11.5px; color:var(--text-muted); margin-top:2px;">Wähle eine gemountete Harness-App oder baue neue Plugins im Studio</div>
+                    <span class="modal-title">Conrad OS · System-Module &amp; Workspaces</span>
+                    <div style="font-size:11.5px; color:var(--text-muted); margin-top:2px;">Alle Fachmodule laufen nativ in einer Rust-Engine und einer SQLite-Datenbank</div>
                 </div>
                 <button class="modal-close-btn" onclick="closeModal('odooAppMatrixModal')">✕</button>
             </div>
             <div class="app-matrix-grid" id="appMatrixGridContainer"></div>
             <div style="display:flex; justify-content:space-between; align-items:center; margin-top:16px; padding-top:12px; border-top:1px solid var(--border-color);">
-                <span style="font-size:11.5px; color:var(--text-muted);">Odoo × DeepSeek Harness Architecture · Zero-Lock-in Rust Engine</span>
-                <button class="btn btn-primary" onclick="closeModal('odooAppMatrixModal'); switchView('plugins');">+ Plugin Studio öffnen</button>
+                <span style="font-size:11.5px; color:var(--text-muted);">Conrad OS Native Modul-Architektur · 100 % Pure Rust · Single-DB</span>
+                <button class="btn btn-primary" onclick="closeModal('odooAppMatrixModal'); switchView('plugins');">+ Modul-Architektur öffnen</button>
             </div>
         </div>
     </div>
 
-    <!-- ── Modal: Neues Plugin bauen (DeepSeek Harness Builder) ── -->
+    <!-- ── Modal: Neues Modul bauen ── -->
     <div class="modal-backdrop" id="modalNewPlugin">
         <div class="modal-card" style="width: 540px;">
             <div class="modal-header">
-                <span class="modal-title">Neues Harness-Plugin konstruieren</span>
+                <span class="modal-title">Neues Fachmodul in Conrad OS anlegen</span>
                 <button class="modal-close-btn" onclick="closeModal('modalNewPlugin')">✕</button>
             </div>
             <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px;">
@@ -2270,6 +2412,8 @@ pub fn render_app_html() -> &'static str {
         let tasksData = [];
         let pluginsData = [];
         let workflowsData = [];
+        let bookingsData = [];
+        let documentsData = [];
         let activePlugin = null;
         let activePluginRecords = [];
         let settingsData = {};
@@ -2303,6 +2447,7 @@ pub fn render_app_html() -> &'static str {
                 draft: ['neutral', 'Entwurf'],
                 cancelled: ['danger', 'Storniert'],
                 active: ['success', 'Aktiv'],
+                confirmed: ['success', 'Bestätigt'],
                 in_progress: ['info', 'In Arbeit'],
                 planned: ['warning', 'Geplant'],
                 completed: ['neutral', 'Erledigt']
@@ -2346,7 +2491,7 @@ pub fn render_app_html() -> &'static str {
             }
 
             currentView = viewId;
-            const views = ['dashboard', 'contacts', 'deals', 'invoices', 'retainers', 'marketing', 'workflows', 'plugins', 'plugin-dynamic', 'dms', 'settings'];
+            const views = ['dashboard', 'contacts', 'deals', 'calendar', 'invoices', 'retainers', 'marketing', 'workflows', 'plugins', 'plugin-dynamic', 'dms', 'settings'];
             views.forEach(v => {
                 const el = document.getElementById(`view-${v}`);
                 if (el) el.style.display = v === viewId ? 'block' : 'none';
@@ -2359,16 +2504,18 @@ pub fn render_app_html() -> &'static str {
                 dashboard: 'Cockpit & Aufgaben',
                 contacts: 'Personen & Firmen',
                 deals: 'Deals Pipeline',
+                calendar: 'Kalender & Terminbuchung',
                 invoices: 'Faktura & E-Rechnung',
                 retainers: 'Retainer & Abos',
                 marketing: 'Marketing Attribution',
                 workflows: 'Workflows & Automationen',
-                plugins: 'Plugin Studio (Odoo × DeepSeek Harness)',
-                dms: 'GoBD Audit Journal',
+                plugins: 'Conrad OS Modul-Architektur',
+                dms: 'DMS Dokumenten-Tresor & GoBD Journal',
                 settings: 'Datenmodell & System'
             };
             document.getElementById('currentViewTitle').innerText = titles[viewId] || 'Workspace';
 
+            if (viewId === 'calendar') loadCalendarView();
             if (viewId === 'marketing') loadMarketingView();
             if (viewId === 'retainers') loadRetainersView();
             if (viewId === 'workflows') loadWorkflowsView();
@@ -2379,7 +2526,7 @@ pub fn render_app_html() -> &'static str {
 
         async function refreshData() {
             try {
-                const [statsRes, contacts, deals, invoices, tasks, plugins, workflows] = await Promise.all([
+                const [statsRes, contacts, deals, invoices, tasks, plugins, workflows, bookings, documents] = await Promise.all([
                     fetch('/mcp', {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
@@ -2390,7 +2537,9 @@ pub fn render_app_html() -> &'static str {
                     fetch('/api/invoices').then(r => r.json()),
                     fetch('/api/tasks').then(r => r.json()).catch(() => []),
                     fetch('/api/plugins').then(r => r.json()).catch(() => []),
-                    fetch('/api/workflows').then(r => r.json()).catch(() => [])
+                    fetch('/api/workflows').then(r => r.json()).catch(() => []),
+                    fetch('/api/bookings').then(r => r.json()).catch(() => []),
+                    fetch('/api/documents').then(r => r.json()).catch(() => [])
                 ]);
 
                 contactsData = contacts || [];
@@ -2399,15 +2548,19 @@ pub fn render_app_html() -> &'static str {
                 tasksData = tasks || [];
                 pluginsData = plugins || [];
                 workflowsData = workflows || [];
+                bookingsData = bookings || [];
+                documentsData = documents || [];
 
                 document.getElementById('badge-contacts-count').innerText = contactsData.length;
                 document.getElementById('badge-deals-count').innerText = dealsData.length;
+                const badgeCal = document.getElementById('badge-bookings-count');
+                if (badgeCal) badgeCal.innerText = bookingsData.length;
 
                 const installedCount = pluginsData.filter(p => p.installed).length;
                 const badgePlug = document.getElementById('badge-plugins-count');
                 if (badgePlug) badgePlug.innerText = `${installedCount} aktiv`;
                 const footerLayers = document.getElementById('footerMountedLayers');
-                if (footerLayers) footerLayers.innerText = `Layers: ${installedCount}/${pluginsData.length} mounted`;
+                if (footerLayers) footerLayers.innerText = `MODULE: ${installedCount}/${pluginsData.length} AKTIV`;
 
                 if (statsRes?.result?.content?.[0]?.text) {
                     const stats = JSON.parse(statsRes.result.content[0].text);
@@ -2422,6 +2575,8 @@ pub fn render_app_html() -> &'static str {
                 renderContactsTable();
                 renderDealsKanban();
                 renderInvoicesTable();
+                if (currentView === 'calendar') loadCalendarView();
+                if (currentView === 'dms') loadGobdAuditView();
                 if (currentView === 'plugins') renderPluginsStore();
                 if (currentView === 'workflows') loadWorkflowsView();
                 if (currentView === 'plugin-dynamic' && activePlugin) {
@@ -2545,7 +2700,7 @@ pub fn render_app_html() -> &'static str {
             currentView = 'plugin-dynamic';
             const layer = plug.layer_order || plug.harness_layer || 100;
 
-            const views = ['dashboard', 'contacts', 'deals', 'invoices', 'retainers', 'marketing', 'workflows', 'plugins', 'plugin-dynamic', 'dms', 'settings'];
+            const views = ['dashboard', 'contacts', 'deals', 'calendar', 'invoices', 'retainers', 'marketing', 'workflows', 'plugins', 'plugin-dynamic', 'dms', 'settings'];
             views.forEach(v => {
                 const el = document.getElementById(`view-${v}`);
                 if (el) el.style.display = v === 'plugin-dynamic' ? 'block' : 'none';
@@ -2555,9 +2710,9 @@ pub fn render_app_html() -> &'static str {
             document.querySelectorAll('.dyn-plugin-nav-btn').forEach(b => b.classList.remove('active'));
             document.getElementById(`nav-btn-plug-${plug.slug}`)?.classList.add('active');
 
-            document.getElementById('currentViewTitle').innerText = `${plug.name} (Plugin #${layer})`;
+            document.getElementById('currentViewTitle').innerText = `${plug.name} (Modul #${layer})`;
             const pillEl = document.getElementById('dynPluginLayerPill') || document.getElementById('dyn-plugin-layer-badge');
-            if (pillEl) pillEl.innerText = `LAYER #${layer} · ${plug.id}`;
+            if (pillEl) pillEl.innerText = `MODUL #${layer} · ${plug.id}`;
             const descEl = document.getElementById('dynPluginDesc') || document.getElementById('dyn-plugin-desc');
             if (descEl) descEl.innerText = plug.description;
 
@@ -2677,22 +2832,24 @@ pub fn render_app_html() -> &'static str {
             if (activePlugin) await openPluginWorkspace(activePlugin.id);
         }
 
-        // ── Odoo 9-Dot App Matrix Modal ──
+        // ── Conrad OS 9-Dot App Matrix Modal ──
         function openAppMatrixModal() {
             const container = document.getElementById('appMatrixGridContainer');
             const coreItems = [
                 { title: 'Cockpit', sub: 'Core #10', view: 'dashboard', icon: '📊' },
                 { title: 'Kontakte & Akten', sub: 'Core #20', view: 'contacts', icon: '👥' },
                 { title: 'Deals Pipeline', sub: 'Core #30', view: 'deals', icon: '💼' },
+                { title: 'Kalender & Termine', sub: 'Core #35', view: 'calendar', icon: '📅' },
                 { title: 'Faktura & GoBD', sub: 'Core #40', view: 'invoices', icon: '🧾' },
                 { title: 'Retainer & MRR', sub: 'Core #50', view: 'retainers', icon: '🔄' },
                 { title: 'Marketing ROI', sub: 'Core #55', view: 'marketing', icon: '📈' },
                 { title: 'Workflows', sub: 'Core #60', view: 'workflows', icon: '⚡' },
-                { title: 'Plugin Studio', sub: 'Harness Builder', view: 'plugins', icon: '🧩' }
+                { title: 'DMS & GoBD Tresor', sub: 'Core #70', view: 'dms', icon: '🔒' },
+                { title: 'Modul-Architektur', sub: 'Schema-Baukasten', view: 'plugins', icon: '🧩' }
             ];
             const dynItems = pluginsData.filter(p => !p.is_core && p.installed).map(p => ({
                 title: p.name,
-                sub: `Plugin #${p.layer_order || p.harness_layer || 100}`,
+                sub: `Modul #${p.layer_order || p.harness_layer || 100}`,
                 view: `plugin:${p.id}`,
                 icon: p.slug === 'realestate' ? '🏢' : p.slug === 'projects' ? '📁' : p.slug === 'helpdesk' ? '🎧' : '📦'
             }));
@@ -3246,18 +3403,112 @@ pub fn render_app_html() -> &'static str {
             `).join('');
         }
 
+        async function loadCalendarView() {
+            bookingsData = await fetch('/api/bookings').then(r => r.json()).catch(() => []);
+            const badgeCal = document.getElementById('badge-bookings-count');
+            if (badgeCal) badgeCal.innerText = bookingsData.length;
+            const tbody = document.getElementById('bookingsFullTable');
+            if (!tbody) return;
+            if (!bookingsData.length) {
+                tbody.innerHTML = '<tr><td colspan="7" style="text-align:center; color:var(--text-muted); padding:24px;">Noch keine Termine eingetragen.</td></tr>';
+                return;
+            }
+            tbody.innerHTML = bookingsData.map(b => {
+                const gName = b.guest_name || b.name || 'Mandant';
+                const gEmail = b.guest_email || b.email || '';
+                const gPhone = b.guest_phone || b.phone || '';
+                return `
+                <tr>
+                    <td class="mono-val"><strong>${new Date(b.start_time).toLocaleString('de-DE', { dateStyle: 'medium', timeStyle: 'short' })}</strong></td>
+                    <td><strong>${escapeHtml(gName)}</strong></td>
+                    <td class="mono-val" style="color:var(--text-secondary);">${escapeHtml(gEmail)} ${gPhone ? '· ' + escapeHtml(gPhone) : ''}</td>
+                    <td>${escapeHtml(b.notes || b.title || 'Strategiegespräch')}</td>
+                    <td><span class="badge info">${escapeHtml(b.slug)}</span></td>
+                    <td class="mono-val" style="color:var(--text-muted);">${escapeHtml(b.timezone || 'Europe/Berlin')}</td>
+                    <td>${statusBadge(b.status || 'confirmed')}</td>
+                </tr>
+            `;}).join('');
+        }
+
+        function openNewBookingModal() {
+            openModal('modalNewBooking');
+            setTimeout(() => document.getElementById('nb-name')?.focus(), 50);
+        }
+
+        async function submitCreateBooking() {
+            const name = document.getElementById('nb-name').value.trim();
+            const email = document.getElementById('nb-email').value.trim();
+            if (!name || !email) return;
+            const phone = document.getElementById('nb-phone').value.trim() || null;
+            const rawDt = document.getElementById('nb-datetime').value || '2026-11-12T10:00';
+            const start_time = new Date(rawDt).toISOString();
+            const notes = document.getElementById('nb-notes').value.trim() || null;
+
+            await fetch('/api/bookings/merlin', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ name, email, phone, start_time, timezone: 'Europe/Berlin', notes })
+            });
+            closeModal('modalNewBooking');
+            await refreshData();
+            await loadCalendarView();
+        }
+
         async function loadGobdAuditView() {
-            const list = await fetch('/api/gobd/audit-log').then(r => r.json()).catch(() => []);
-            document.getElementById('gobdAuditTable').innerHTML = list.map(entry => `
+            const [docs, list] = await Promise.all([
+                fetch('/api/documents').then(r => r.json()).catch(() => []),
+                fetch('/api/gobd/audit-log').then(r => r.json()).catch(() => [])
+            ]);
+            documentsData = docs || [];
+            const docBody = document.getElementById('dmsDocumentsTable');
+            if (docBody) {
+                docBody.innerHTML = documentsData.length ? documentsData.map(d => {
+                    const hashStr = (d.file_path || d.sha256_hash || '').replace(/^dms:\/\/sha256\//, '');
+                    const sizeBytes = d.file_size_bytes || d.size_bytes || 248000;
+                    const dtStr = d.created_at || d.uploaded_at;
+                    return `
+                    <tr>
+                        <td><strong>${escapeHtml(d.title)}</strong></td>
+                        <td><span class="badge info">${escapeHtml(d.category)}</span></td>
+                        <td class="mono-val" style="color:var(--status-green-fg); font-size:11px;">sha256:${escapeHtml(hashStr.substring(0, 28))}…</td>
+                        <td class="mono-val">${Math.max(1, Math.round(sizeBytes / 1024))} KB</td>
+                        <td class="mono-val" style="color:var(--text-secondary);">${dtStr ? new Date(dtStr).toLocaleString('de-DE') : '—'}</td>
+                    </tr>
+                `;}).join('') : '<tr><td colspan="5" style="text-align:center; color:var(--text-muted);">Keine Dokumente archiviert.</td></tr>';
+            }
+
+            document.getElementById('gobdAuditTable').innerHTML = list.map(entry => {
+                const cleanDetails = String(entry.details || '').replace(/n8n/gi, 'Conrad OS');
+                return `
                 <tr>
                     <td class="mono-val">#${entry.seq}</td>
                     <td class="mono-val" style="color:var(--text-secondary);">${new Date(entry.timestamp).toLocaleString('de-DE')}</td>
                     <td><span class="badge neutral">${escapeHtml(entry.action)}</span></td>
                     <td class="mono-val" style="color:var(--text-muted);">${escapeHtml((entry.entity_id || '').substring(0, 12))}</td>
-                    <td>${escapeHtml(entry.details)}</td>
+                    <td>${escapeHtml(cleanDetails)}</td>
                     <td><strong>${escapeHtml(entry.actor)}</strong></td>
                 </tr>
-            `).join('');
+            `;}).join('');
+        }
+
+        function openNewDocumentModal() {
+            openModal('modalNewDocument');
+            setTimeout(() => document.getElementById('ndoc-title')?.focus(), 50);
+        }
+
+        async function submitCreateDocument() {
+            const title = document.getElementById('ndoc-title').value.trim();
+            if (!title) return;
+            const category = document.getElementById('ndoc-category').value;
+            const size_bytes = parseInt(document.getElementById('ndoc-size').value) || 256000;
+            await fetch('/api/documents', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ title, category, size_bytes })
+            });
+            closeModal('modalNewDocument');
+            document.getElementById('ndoc-title').value = '';
+            await loadGobdAuditView();
         }
 
         async function verifyGobdChain() {
@@ -3441,19 +3692,33 @@ pub fn render_app_html() -> &'static str {
                 body: JSON.stringify({ role: type === 'admin' ? 'admin' : 'operator' })
             }).catch(() => {});
 
+            const lbl = document.getElementById('demoAccountLabel');
             if (type === 'admin') {
                 currentRole = 'admin';
                 document.getElementById('ui-user-avatar').innerText = 'MC';
                 document.getElementById('ui-user-name').innerText = 'Merlin Conrad';
                 document.getElementById('ui-user-role').innerText = 'Administrator';
+                if (lbl) lbl.innerText = 'admin@conrad-ki.com';
                 switchAppMode('admin');
             } else {
                 currentRole = 'operator';
                 document.getElementById('ui-user-avatar').innerText = 'OP';
                 document.getElementById('ui-user-name').innerText = 'Operations Team';
                 document.getElementById('ui-user-role').innerText = 'Mitarbeiter';
+                if (lbl) lbl.innerText = 'team@conrad-ki.com';
                 switchAppMode('user');
             }
+        }
+
+        async function submitSsoLogin() {
+            const email = (document.getElementById('sso-email')?.value || '').trim().toLowerCase();
+            if (email.includes('team') || email.includes('op')) {
+                setDemoUser('team');
+            } else {
+                setDemoUser('admin');
+            }
+            closeModal('loginModal');
+            await refreshData();
         }
 
         function openModal(id) { document.getElementById(id).style.display = 'flex'; }
@@ -3462,10 +3727,12 @@ pub fn render_app_html() -> &'static str {
 
         function openCreateModal() {
             if (currentView === 'deals') openNewDealModal();
+            else if (currentView === 'calendar') openNewBookingModal();
             else if (currentView === 'invoices') openNewInvoiceModal();
             else if (currentView === 'retainers') openNewRetainerModal();
             else if (currentView === 'marketing') openNewCampaignModal();
             else if (currentView === 'workflows') openNewWorkflowModal();
+            else if (currentView === 'dms') openNewDocumentModal();
             else if (currentView === 'plugins') openNewPluginModal();
             else if (currentView === 'plugin-dynamic') openNewPluginRecordModal();
             else openNewContactModal();
