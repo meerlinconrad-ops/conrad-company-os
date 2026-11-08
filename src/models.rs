@@ -245,6 +245,8 @@ pub struct PaymentTransaction {
 pub struct CopilotRequest {
     pub prompt: String,
     pub context: Option<String>,
+    pub mode: Option<String>, // "user" or "admin"
+    pub role: Option<String>, // "admin" or "operator"
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -252,6 +254,8 @@ pub struct CopilotResponse {
     pub reply: String,
     pub actions_performed: Vec<String>,
     pub model_used: String,
+    pub navigate_to: Option<String>,
+    pub ui_mutations: Option<serde_json::Value>,
 }
 
 // =========================================================================

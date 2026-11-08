@@ -1,1158 +1,1662 @@
 pub fn render_app_html() -> &'static str {
     r#"<!DOCTYPE html>
-<html lang="de">
+<html lang="de" data-theme="light">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Conrad OS — Omarchy-Style Pure Rust CRM, DMS & ERP</title>
+    <title>Conrad OS — AI-First Company Operating System</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=SF+Pro+Display:wght@400;500;600;700&family=SF+Pro+Text:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
     <style>
+        /* ── Apple HIG & Unslop Design System ── */
         :root {
-            --bg: #090d16;
-            --surface: #101726;
-            --surface-elevated: #182238;
-            --border: #1e293b;
-            --border-glow: rgba(59, 130, 246, 0.4);
-            --primary: #3b82f6;
-            --primary-hover: #2563eb;
-            --accent: #10b981;
-            --ai-accent: #a855f7;
-            --ai-gradient: linear-gradient(135deg, #a855f7, #3b82f6);
-            --danger: #ef4444;
-            --warning: #f59e0b;
-            --text: #f8fafc;
-            --text-secondary: #94a3b8;
-            --sidebar-width: 250px;
+            --font-display: -apple-system, BlinkMacSystemFont, "SF Pro Display", "SF Pro Text", system-ui, sans-serif;
+            --font-mono: "JetBrains Mono", SFMono-Regular, Menlo, monospace;
+
+            /* Light Canvas (Apple Studio Default) */
+            --bg-canvas: #f5f5f7;
+            --bg-surface: #ffffff;
+            --bg-surface-elevated: #ffffff;
+            --bg-surface-subtle: #fbfbfd;
+            --bg-tertiary: #f0f0f2;
+            --border-subtle: rgba(0, 0, 0, 0.06);
+            --border-medium: rgba(0, 0, 0, 0.12);
+            --text-primary: #1d1d1f;
+            --text-secondary: #6e6e73;
+            --text-tertiary: #86868b;
+            --shadow-card: 0 2px 14px rgba(0, 0, 0, 0.04), 0 0 1px rgba(0, 0, 0, 0.08);
+            --shadow-elevated: 0 16px 36px rgba(0, 0, 0, 0.08), 0 0 1px rgba(0, 0, 0, 0.1);
+            --shadow-modal: 0 24px 60px rgba(0, 0, 0, 0.15), 0 0 1px rgba(0, 0, 0, 0.1);
+
+            /* Accent Colors */
+            --accent: #0071e3; /* Apple Signature Blue */
+            --accent-hover: #0077ed;
+            --accent-soft: rgba(0, 113, 227, 0.08);
+            --accent-border: rgba(0, 113, 227, 0.25);
+
+            /* Semantic Apple Colors */
+            --apple-green: #34c759;
+            --apple-green-soft: rgba(52, 199, 89, 0.12);
+            --apple-orange: #ff9500;
+            --apple-orange-soft: rgba(255, 149, 0, 0.12);
+            --apple-red: #ff3b30;
+            --apple-red-soft: rgba(255, 59, 48, 0.12);
+            --apple-purple: #af52de;
+            --apple-purple-soft: rgba(175, 82, 222, 0.12);
+
+            /* AI Glow */
+            --ai-aura: linear-gradient(135deg, rgba(0, 113, 227, 0.7), rgba(175, 82, 222, 0.7), rgba(255, 149, 0, 0.5));
+            --sidebar-width: 260px;
         }
 
-        * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+        [data-theme="dark"] {
+            --bg-canvas: #000000;
+            --bg-surface: #1c1c1e;
+            --bg-surface-elevated: #2c2c2e;
+            --bg-surface-subtle: #161618;
+            --bg-tertiary: #2c2c2e;
+            --border-subtle: rgba(255, 255, 255, 0.08);
+            --border-medium: rgba(255, 255, 255, 0.16);
+            --text-primary: #f5f5f7;
+            --text-secondary: #a1a1a6;
+            --text-tertiary: #6e6e73;
+            --shadow-card: 0 2px 14px rgba(0, 0, 0, 0.4), 0 0 1px rgba(255, 255, 255, 0.08);
+            --shadow-elevated: 0 16px 40px rgba(0, 0, 0, 0.6), 0 0 1px rgba(255, 255, 255, 0.12);
+            --shadow-modal: 0 24px 60px rgba(0, 0, 0, 0.75), 0 0 1px rgba(255, 255, 255, 0.15);
+            --accent-soft: rgba(0, 113, 227, 0.2);
+            --accent-border: rgba(0, 113, 227, 0.4);
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            -webkit-tap-highlight-color: transparent;
+        }
+
         body {
-            background: var(--bg);
-            color: var(--text);
-            font-family: 'Plus Jakarta Sans', -apple-system, sans-serif;
+            background-color: var(--bg-canvas);
+            color: var(--text-primary);
+            font-family: var(--font-display);
+            font-size: 14px;
+            line-height: 1.45;
             display: flex;
             height: 100vh;
             overflow: hidden;
+            -webkit-font-smoothing: antialiased;
+            transition: background-color 0.25s ease, color 0.25s ease;
         }
 
-        /* Omarchy Sidebar */
+        /* ── Apple Sidebar Navigation ── */
         .sidebar {
             width: var(--sidebar-width);
-            background: var(--surface);
-            border-right: 1px solid var(--border);
+            background: var(--bg-surface);
+            border-right: 1px solid var(--border-subtle);
             display: flex;
             flex-direction: column;
-            padding: 18px 14px;
+            padding: 20px 16px;
             flex-shrink: 0;
             z-index: 20;
+            transition: all 0.25s ease;
         }
 
-        .brand {
+        .brand-header {
             display: flex;
             align-items: center;
             gap: 12px;
-            padding-bottom: 20px;
-            border-bottom: 1px solid var(--border);
+            padding: 4px 6px 18px;
+            border-bottom: 1px solid var(--border-subtle);
             margin-bottom: 16px;
         }
-        .brand-logo {
-            width: 36px;
-            height: 36px;
+
+        .brand-icon {
+            width: 32px;
+            height: 32px;
             border-radius: 8px;
-            background: var(--ai-gradient);
+            background: var(--text-primary);
+            color: var(--bg-surface);
             display: flex;
             align-items: center;
             justify-content: center;
+            font-size: 16px;
             font-weight: 700;
-            color: #fff;
-            font-size: 17px;
-            box-shadow: 0 4px 14px rgba(168, 85, 247, 0.35);
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.12);
         }
-        .brand-text { font-size: 15px; font-weight: 700; letter-spacing: -0.02em; }
-        .brand-sub { font-size: 10px; color: var(--text-secondary); font-family: 'JetBrains Mono', monospace; }
 
-        .kbd-hint {
-            font-family: 'JetBrains Mono', monospace;
-            font-size: 10px;
-            background: rgba(255, 255, 255, 0.06);
-            border: 1px solid rgba(255, 255, 255, 0.12);
-            padding: 2px 5px;
-            border-radius: 4px;
+        .brand-titles {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .brand-name {
+            font-size: 14px;
+            font-weight: 600;
+            letter-spacing: -0.01em;
+            color: var(--text-primary);
+        }
+
+        .brand-sub {
+            font-size: 11px;
+            color: var(--text-tertiary);
+            letter-spacing: 0.02em;
+        }
+
+        /* Segmented Mode Switcher (Apple Pill) */
+        .mode-segmented-control {
+            background: var(--bg-tertiary);
+            border-radius: 10px;
+            padding: 3px;
+            display: flex;
+            margin-bottom: 18px;
+            position: relative;
+        }
+
+        .mode-segmented-btn {
+            flex: 1;
+            padding: 6px 10px;
+            border: none;
+            background: transparent;
             color: var(--text-secondary);
-            margin-left: auto;
+            font-size: 12px;
+            font-weight: 600;
+            font-family: inherit;
+            border-radius: 7px;
+            cursor: pointer;
+            transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+            text-align: center;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
         }
 
-        .nav-items { display: flex; flex-direction: column; gap: 4px; flex: 1; }
-        .nav-btn {
+        .mode-segmented-btn.active {
+            background: var(--bg-surface);
+            color: var(--text-primary);
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+        }
+
+        .mode-segmented-btn.admin.active {
+            color: var(--apple-orange);
+        }
+
+        /* Navigation Links */
+        .nav-section-label {
+            font-size: 11px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.06em;
+            color: var(--text-tertiary);
+            padding: 8px 10px 4px;
+        }
+
+        .nav-list {
+            list-style: none;
+            display: flex;
+            flex-direction: column;
+            gap: 2px;
+            margin-bottom: 14px;
+        }
+
+        .nav-item-btn {
             display: flex;
             align-items: center;
             gap: 10px;
-            padding: 10px 12px;
-            border-radius: 6px;
+            padding: 8px 10px;
+            border-radius: 8px;
             background: transparent;
             color: var(--text-secondary);
             border: none;
             font-size: 13px;
-            font-weight: 600;
+            font-weight: 500;
             cursor: pointer;
-            transition: all 0.15s ease;
-            text-align: left;
             width: 100%;
+            text-align: left;
+            transition: all 0.15s ease;
         }
-        .nav-btn:hover { background: var(--surface-elevated); color: var(--text); }
-        .nav-btn.active { background: rgba(59, 130, 246, 0.15); color: #60a5fa; border: 1px solid rgba(59, 130, 246, 0.3); }
 
-        .palette-trigger {
-            background: #090e17;
-            border: 1px solid var(--border);
-            border-radius: 8px;
-            padding: 9px 12px;
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            color: var(--text-secondary);
-            font-size: 12px;
-            cursor: pointer;
-            margin-bottom: 16px;
-            transition: all 0.15s;
+        .nav-item-btn:hover {
+            background: var(--bg-tertiary);
+            color: var(--text-primary);
         }
-        .palette-trigger:hover { border-color: var(--border-glow); color: var(--text); }
 
-        .ai-status-badge {
+        .nav-item-btn.active {
+            background: var(--accent-soft);
+            color: var(--accent);
+            font-weight: 600;
+        }
+
+        .nav-badge {
+            margin-left: auto;
+            font-size: 11px;
+            padding: 2px 6px;
+            border-radius: 6px;
+            background: var(--bg-tertiary);
+            color: var(--text-tertiary);
+            font-weight: 500;
+        }
+
+        .admin-only-badge {
+            font-size: 9px;
+            font-weight: 700;
+            text-transform: uppercase;
+            padding: 2px 5px;
+            border-radius: 4px;
+            background: var(--apple-orange-soft);
+            color: var(--apple-orange);
+            margin-left: auto;
+        }
+
+        /* User Profile Pill at bottom of sidebar */
+        .sidebar-footer {
             margin-top: auto;
-            background: rgba(168, 85, 247, 0.08);
-            border: 1px solid rgba(168, 85, 247, 0.25);
-            border-radius: 8px;
-            padding: 12px;
+            padding-top: 14px;
+            border-top: 1px solid var(--border-subtle);
             display: flex;
             align-items: center;
             gap: 10px;
             cursor: pointer;
-            transition: all 0.2s;
+            padding: 10px;
+            border-radius: 10px;
+            transition: background 0.15s ease;
         }
-        .ai-status-badge:hover { background: rgba(168, 85, 247, 0.15); }
-        .ai-pulse {
-            width: 8px;
-            height: 8px;
-            background: var(--accent);
-            border-radius: 50%;
-            box-shadow: 0 0 8px var(--accent);
-            animation: pulse 2s infinite;
-        }
-        @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.3; } }
 
-        /* Main Workspace */
-        .main-content {
+        .sidebar-footer:hover {
+            background: var(--bg-tertiary);
+        }
+
+        .avatar {
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #0071e3, #af52de);
+            color: #fff;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 12px;
+            font-weight: 600;
+            flex-shrink: 0;
+        }
+
+        .user-info {
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            flex: 1;
+        }
+
+        .user-name {
+            font-size: 12px;
+            font-weight: 600;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .user-role {
+            font-size: 11px;
+            color: var(--text-tertiary);
+        }
+
+        /* ── Main Workspace Content ── */
+        .main-wrapper {
             flex: 1;
             display: flex;
             flex-direction: column;
-            overflow-y: auto;
-            position: relative;
+            height: 100vh;
+            overflow: hidden;
+            background: var(--bg-canvas);
         }
+
+        /* Apple Frosted Topbar */
         .topbar {
             height: 56px;
-            border-bottom: 1px solid var(--border);
+            background: rgba(255, 255, 255, 0.85);
+            backdrop-filter: blur(25px) saturate(180%);
+            -webkit-backdrop-filter: blur(25px) saturate(180%);
+            border-bottom: 1px solid var(--border-subtle);
             display: flex;
             align-items: center;
             justify-content: space-between;
             padding: 0 24px;
-            background: rgba(16, 23, 38, 0.85);
-            backdrop-filter: blur(12px);
-            position: sticky;
-            top: 0;
-            z-index: 10;
+            flex-shrink: 0;
+            z-index: 15;
+            transition: background 0.25s ease;
         }
-        .view-title { font-size: 16px; font-weight: 700; display: flex; align-items: center; gap: 8px; }
-        
-        .agent-hud {
-            font-family: 'JetBrains Mono', monospace;
-            font-size: 11px;
-            color: #a855f7;
-            background: rgba(168, 85, 247, 0.1);
-            border: 1px solid rgba(168, 85, 247, 0.25);
-            padding: 4px 10px;
-            border-radius: 6px;
+
+        [data-theme="dark"] .topbar {
+            background: rgba(28, 28, 30, 0.85);
+        }
+
+        .topbar-left {
             display: flex;
             align-items: center;
-            gap: 6px;
+            gap: 12px;
         }
 
-        .btn {
-            background: var(--primary);
-            color: #fff;
-            border: none;
-            border-radius: 6px;
-            padding: 8px 14px;
-            font-size: 12px;
+        .topbar-title {
+            font-size: 16px;
             font-weight: 600;
-            cursor: pointer;
+            letter-spacing: -0.015em;
+        }
+
+        .mode-indicator-pill {
+            font-size: 11px;
+            font-weight: 600;
+            padding: 3px 8px;
+            border-radius: 6px;
             display: inline-flex;
             align-items: center;
-            gap: 6px;
-            transition: all 0.15s ease;
+            gap: 5px;
         }
-        .btn:hover { background: var(--primary-hover); }
-        .btn-secondary { background: var(--surface-elevated); color: var(--text); border: 1px solid var(--border); }
-        .btn-secondary:hover { background: #273147; }
-        .btn-ai { background: var(--ai-gradient); }
 
-        .view-container { padding: 24px; flex: 1; }
+        .mode-indicator-pill.user {
+            background: var(--accent-soft);
+            color: var(--accent);
+        }
 
-        /* Bento Grid KPI */
-        .kpi-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); gap: 14px; margin-bottom: 24px; }
-        .kpi-card {
-            background: var(--surface);
-            border: 1px solid var(--border);
-            border-radius: 10px;
-            padding: 18px;
+        .mode-indicator-pill.admin {
+            background: var(--apple-orange-soft);
+            color: var(--apple-orange);
+        }
+
+        .topbar-right {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        /* Apple Intelligence Copilot Button */
+        .btn-apple-ai {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 7px 14px;
+            border-radius: 20px;
+            background: var(--bg-surface);
+            border: 1px solid transparent;
             position: relative;
+            cursor: pointer;
+            font-size: 13px;
+            font-weight: 600;
+            color: var(--text-primary);
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+            transition: all 0.25s ease;
+            background-clip: padding-box;
         }
-        .kpi-label { font-size: 11px; color: var(--text-secondary); text-transform: uppercase; font-weight: 600; letter-spacing: 0.05em; margin-bottom: 6px; }
-        .kpi-val { font-size: 24px; font-weight: 700; color: #fff; font-family: 'JetBrains Mono', monospace; }
-        .kpi-sub { font-size: 11px; color: var(--accent); margin-top: 4px; font-family: 'JetBrains Mono', monospace; }
 
-        /* Tables & Lists */
-        .card-table {
-            background: var(--surface);
-            border: 1px solid var(--border);
-            border-radius: 10px;
-            overflow: hidden;
-            margin-bottom: 24px;
+        .btn-apple-ai::before {
+            content: '';
+            position: absolute;
+            inset: -1px;
+            border-radius: 21px;
+            background: var(--ai-aura);
+            z-index: -1;
+            opacity: 0.85;
+            transition: opacity 0.3s ease;
         }
-        .card-header {
-            padding: 14px 18px;
-            border-bottom: 1px solid var(--border);
+
+        .btn-apple-ai:hover::before {
+            opacity: 1;
+        }
+
+        .btn-apple-ai:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 4px 14px rgba(0, 113, 227, 0.2);
+        }
+
+        /* Standard Apple Button Styles */
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+            padding: 8px 14px;
+            border-radius: 8px;
+            font-size: 13px;
+            font-weight: 500;
+            font-family: inherit;
+            cursor: pointer;
+            border: 1px solid var(--border-medium);
+            background: var(--bg-surface);
+            color: var(--text-primary);
+            transition: all 0.15s ease;
+            box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
+        }
+
+        .btn:hover {
+            background: var(--bg-tertiary);
+        }
+
+        .btn:active {
+            transform: scale(0.98);
+        }
+
+        .btn-primary {
+            background: var(--accent);
+            border-color: var(--accent);
+            color: #ffffff;
+        }
+
+        .btn-primary:hover {
+            background: var(--accent-hover);
+        }
+
+        /* Scrollable Main Views Area */
+        .view-content-area {
+            flex: 1;
+            overflow-y: auto;
+            padding: 24px 28px 100px;
+        }
+
+        .view-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            animation: fadeIn 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(4px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* Apple Clean Cards */
+        .apple-card {
+            background: var(--bg-surface);
+            border: 1px solid var(--border-subtle);
+            border-radius: 16px;
+            box-shadow: var(--shadow-card);
+            padding: 22px;
+            margin-bottom: 20px;
+            transition: all 0.2s ease;
+        }
+
+        .apple-card-header {
             display: flex;
             align-items: center;
             justify-content: space-between;
+            margin-bottom: 18px;
         }
-        .card-title { font-size: 14px; font-weight: 700; }
-        table { width: 100%; border-collapse: collapse; font-size: 13px; }
-        th { background: #0c121e; color: var(--text-secondary); padding: 10px 16px; text-align: left; font-size: 11px; text-transform: uppercase; letter-spacing: 0.05em; border-bottom: 1px solid var(--border); font-family: 'JetBrains Mono', monospace; }
-        td { padding: 12px 16px; border-bottom: 1px solid var(--border); color: var(--text); }
-        tr:last-child td { border-bottom: none; }
-        tr:hover td { background: rgba(255, 255, 255, 0.02); }
 
-        .badge {
-            display: inline-block;
-            padding: 2px 7px;
-            border-radius: 4px;
+        .apple-card-title {
+            font-size: 15px;
+            font-weight: 600;
+            letter-spacing: -0.01em;
+            color: var(--text-primary);
+        }
+
+        /* Metric Grid */
+        .metric-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 16px;
+            margin-bottom: 20px;
+        }
+
+        @media (max-width: 1024px) {
+            .metric-grid { grid-template-columns: repeat(2, 1fr); }
+        }
+
+        @media (max-width: 640px) {
+            .metric-grid { grid-template-columns: 1fr; }
+        }
+
+        .metric-card {
+            background: var(--bg-surface);
+            border: 1px solid var(--border-subtle);
+            border-radius: 14px;
+            padding: 18px 20px;
+            box-shadow: var(--shadow-card);
+        }
+
+        .metric-label {
+            font-size: 12px;
+            font-weight: 500;
+            color: var(--text-secondary);
+            margin-bottom: 6px;
+        }
+
+        .metric-value {
+            font-size: 24px;
+            font-weight: 700;
+            letter-spacing: -0.02em;
+            color: var(--text-primary);
+            line-height: 1.15;
+        }
+
+        .metric-sub {
+            font-size: 11px;
+            color: var(--text-tertiary);
+            margin-top: 4px;
+        }
+
+        /* Apple Clean Tables */
+        .table-responsive {
+            width: 100%;
+            overflow-x: auto;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            text-align: left;
+            font-size: 13px;
+        }
+
+        th {
             font-size: 11px;
             font-weight: 600;
-            font-family: 'JetBrains Mono', monospace;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            color: var(--text-tertiary);
+            padding: 12px 14px;
+            border-bottom: 1px solid var(--border-subtle);
+            white-space: nowrap;
         }
-        .badge-lead { background: rgba(245, 158, 11, 0.15); color: #fbbf24; border: 1px solid rgba(245, 158, 11, 0.3); }
-        .badge-qualified { background: rgba(59, 130, 246, 0.15); color: #60a5fa; border: 1px solid rgba(59, 130, 246, 0.3); }
-        .badge-customer { background: rgba(16, 185, 129, 0.15); color: #34d399; border: 1px solid rgba(16, 185, 129, 0.3); }
-        .badge-paid { background: rgba(16, 185, 129, 0.15); color: #34d399; }
-        .badge-draft { background: rgba(156, 163, 175, 0.15); color: #9ca3af; }
+
+        td {
+            padding: 13px 14px;
+            border-bottom: 1px solid var(--border-subtle);
+            color: var(--text-primary);
+            vertical-align: middle;
+        }
+
+        tr:last-child td {
+            border-bottom: none;
+        }
+
+        tr:hover td {
+            background: var(--bg-surface-subtle);
+        }
+
+        /* Apple Status Pills */
+        .status-pill {
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+            padding: 3px 8px;
+            border-radius: 6px;
+            font-size: 11px;
+            font-weight: 600;
+        }
+
+        .status-pill.success {
+            background: var(--apple-green-soft);
+            color: var(--apple-green);
+        }
+
+        .status-pill.warning {
+            background: var(--apple-orange-soft);
+            color: var(--apple-orange);
+        }
+
+        .status-pill.danger {
+            background: var(--apple-red-soft);
+            color: var(--apple-red);
+        }
+
+        .status-pill.info {
+            background: var(--accent-soft);
+            color: var(--accent);
+        }
+
+        .status-pill.neutral {
+            background: var(--bg-tertiary);
+            color: var(--text-secondary);
+        }
 
         /* Kanban Board */
-        .kanban-grid {
+        .kanban-board {
             display: grid;
             grid-template-columns: repeat(4, 1fr);
             gap: 14px;
             align-items: start;
         }
-        .kanban-col {
-            background: #0d1322;
-            border: 1px solid var(--border);
-            border-radius: 10px;
-            padding: 14px;
-            min-height: 420px;
+
+        @media (max-width: 900px) {
+            .kanban-board { grid-template-columns: 1fr; }
         }
-        .kanban-head {
-            font-size: 12px;
-            font-weight: 700;
-            margin-bottom: 12px;
+
+        .kanban-column {
+            background: var(--bg-surface-subtle);
+            border: 1px solid var(--border-subtle);
+            border-radius: 14px;
+            padding: 14px;
+            min-height: 400px;
+        }
+
+        .kanban-col-header {
             display: flex;
             justify-content: space-between;
+            align-items: center;
+            font-size: 12px;
+            font-weight: 600;
             color: var(--text-secondary);
-            font-family: 'JetBrains Mono', monospace;
+            margin-bottom: 12px;
+            padding-bottom: 8px;
+            border-bottom: 1px solid var(--border-subtle);
         }
+
         .kanban-card {
-            background: var(--surface);
-            border: 1px solid var(--border);
-            border-radius: 8px;
+            background: var(--bg-surface);
+            border: 1px solid var(--border-subtle);
+            border-radius: 10px;
             padding: 12px;
-            margin-bottom: 8px;
+            margin-bottom: 10px;
             cursor: pointer;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.03);
             transition: all 0.15s ease;
         }
-        .kanban-card:hover { border-color: var(--primary); transform: translateY(-1px); }
-        .kanban-title { font-weight: 600; font-size: 13px; margin-bottom: 4px; }
-        .kanban-company { font-size: 11px; color: var(--text-secondary); margin-bottom: 8px; }
-        .kanban-val { font-family: 'JetBrains Mono', monospace; font-size: 12px; font-weight: 700; color: var(--accent); }
 
-        /* Omarchy Command Palette (Cmd+K) */
-        .palette-overlay {
-            position: fixed;
-            top: 0; left: 0; width: 100%; height: 100%;
-            background: rgba(0, 0, 0, 0.65);
-            backdrop-filter: blur(6px);
-            display: none;
-            align-items: flex-start;
-            justify-content: center;
-            padding-top: 15vh;
-            z-index: 300;
+        .kanban-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.06);
+            border-color: var(--border-medium);
         }
-        .palette-box {
-            background: var(--surface);
-            border: 1px solid rgba(255, 255, 255, 0.15);
-            border-radius: 12px;
-            width: 90%;
-            max-width: 580px;
-            box-shadow: 0 25px 50px rgba(0,0,0,0.7), 0 0 20px rgba(168, 85, 247, 0.2);
-            overflow: hidden;
-            animation: slideDown 0.15s ease-out;
-        }
-        @keyframes slideDown { from { transform: translateY(-12px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
-        .palette-input-wrap {
-            display: flex;
-            align-items: center;
-            padding: 14px 18px;
-            border-bottom: 1px solid var(--border);
-            gap: 12px;
-            background: #0c121e;
-        }
-        .palette-input {
-            flex: 1;
-            background: transparent;
-            border: none;
-            color: #fff;
-            font-size: 14px;
-            outline: none;
-            font-family: inherit;
-        }
-        .palette-list {
-            max-height: 340px;
-            overflow-y: auto;
-            padding: 8px;
-        }
-        .palette-item {
-            padding: 10px 14px;
-            border-radius: 6px;
+
+        .kanban-card-title {
             font-size: 13px;
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            cursor: pointer;
-            color: var(--text);
-            transition: all 0.1s;
+            font-weight: 600;
+            margin-bottom: 4px;
         }
-        .palette-item:hover, .palette-item.active { background: var(--surface-elevated); color: #60a5fa; }
-        .palette-meta { font-family: 'JetBrains Mono', monospace; font-size: 11px; color: var(--text-secondary); }
 
-        /* Floating / Drawer AI Copilot */
-        .copilot-drawer {
+        .kanban-card-meta {
+            display: flex;
+            justify-content: space-between;
+            font-size: 11px;
+            color: var(--text-secondary);
+            margin-top: 8px;
+        }
+
+        /* ── Slide-Over AI Copilot Drawer (Apple Intelligence) ── */
+        .copilot-panel {
             position: fixed;
             top: 0;
             right: -420px;
             width: 400px;
             height: 100vh;
-            background: var(--surface);
-            border-left: 1px solid var(--border);
-            box-shadow: -10px 0 30px rgba(0,0,0,0.5);
-            transition: right 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+            background: var(--bg-surface);
+            border-left: 1px solid var(--border-subtle);
+            box-shadow: var(--shadow-modal);
+            transition: right 0.3s cubic-bezier(0.16, 1, 0.3, 1);
             display: flex;
             flex-direction: column;
-            z-index: 100;
+            z-index: 50;
         }
-        .copilot-drawer.open { right: 0; }
-        .copilot-header {
-            padding: 16px 18px;
-            border-bottom: 1px solid var(--border);
+
+        .copilot-panel.open {
+            right: 0;
+        }
+
+        .copilot-panel-header {
+            padding: 16px 20px;
+            border-bottom: 1px solid var(--border-subtle);
             display: flex;
             align-items: center;
             justify-content: space-between;
-            background: #0d1322;
         }
+
+        .copilot-badge {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .copilot-aura-dot {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            background: var(--ai-aura);
+            animation: pulseAura 2s infinite ease-in-out;
+        }
+
+        @keyframes pulseAura {
+            0%, 100% { transform: scale(1); opacity: 0.8; }
+            50% { transform: scale(1.25); opacity: 1; }
+        }
+
         .copilot-messages {
             flex: 1;
-            padding: 18px;
             overflow-y: auto;
+            padding: 18px 20px;
             display: flex;
             flex-direction: column;
             gap: 12px;
         }
+
         .chat-bubble {
+            max-width: 86%;
             padding: 11px 15px;
-            border-radius: 10px;
+            border-radius: 14px;
             font-size: 13px;
-            line-height: 1.5;
-            max-width: 90%;
+            line-height: 1.45;
+            word-break: break-word;
         }
-        .chat-user {
-            background: var(--primary);
-            color: #fff;
+
+        .chat-bubble.user {
+            background: var(--accent);
+            color: #ffffff;
             align-self: flex-end;
-            border-bottom-right-radius: 2px;
+            border-bottom-right-radius: 4px;
         }
-        .chat-ai {
-            background: var(--surface-elevated);
-            color: var(--text);
+
+        .chat-bubble.ai {
+            background: var(--bg-tertiary);
+            color: var(--text-primary);
             align-self: flex-start;
-            border-bottom-left-radius: 2px;
-            border: 1px solid var(--border);
+            border-bottom-left-radius: 4px;
         }
-        .copilot-input-bar {
-            padding: 14px;
-            border-top: 1px solid var(--border);
+
+        .chat-nav-chip {
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+            margin-top: 8px;
+            padding: 5px 10px;
+            border-radius: 6px;
+            background: var(--bg-surface);
+            border: 1px solid var(--border-subtle);
+            color: var(--accent);
+            font-weight: 600;
+            font-size: 11px;
+            cursor: pointer;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+        }
+
+        .chat-nav-chip:hover {
+            border-color: var(--accent);
+        }
+
+        .copilot-input-wrap {
+            padding: 14px 18px 20px;
+            border-top: 1px solid var(--border-subtle);
+            background: var(--bg-surface-subtle);
+        }
+
+        .copilot-input-box {
             display: flex;
             gap: 8px;
-            background: #0d1322;
+            background: var(--bg-surface);
+            border: 1px solid var(--border-medium);
+            border-radius: 12px;
+            padding: 4px 6px 4px 12px;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
         }
+
         .copilot-input {
             flex: 1;
-            background: var(--bg);
-            border: 1px solid var(--border);
-            border-radius: 6px;
-            padding: 9px 12px;
-            color: #fff;
+            border: none;
+            background: transparent;
+            outline: none;
+            font-family: inherit;
             font-size: 13px;
+            color: var(--text-primary);
+        }
+
+        /* ── Spotlight / Floating AI Action Bar (Bottom of Screen) ── */
+        .spotlight-bar-wrapper {
+            position: fixed;
+            bottom: 24px;
+            left: calc(var(--sidebar-width) + 24px);
+            right: 24px;
+            max-width: 640px;
+            margin: 0 auto;
+            z-index: 30;
+            pointer-events: none;
+        }
+
+        .spotlight-bar {
+            pointer-events: auto;
+            background: rgba(255, 255, 255, 0.92);
+            backdrop-filter: blur(20px) saturate(180%);
+            -webkit-backdrop-filter: blur(20px) saturate(180%);
+            border: 1px solid var(--border-subtle);
+            border-radius: 16px;
+            padding: 8px 14px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            box-shadow: var(--shadow-elevated);
+        }
+
+        [data-theme="dark"] .spotlight-bar {
+            background: rgba(28, 28, 30, 0.92);
+        }
+
+        .spotlight-input {
+            flex: 1;
+            border: none;
+            background: transparent;
+            font-family: inherit;
+            font-size: 14px;
+            color: var(--text-primary);
             outline: none;
         }
-        .copilot-input:focus { border-color: var(--ai-accent); }
 
-        /* Modal */
-        .modal-overlay {
-            position: fixed;
-            top: 0; left: 0; width: 100%; height: 100%;
-            background: rgba(0,0,0,0.7);
-            backdrop-filter: blur(4px);
+        .spotlight-hint {
+            font-size: 11px;
+            color: var(--text-tertiary);
+            background: var(--bg-tertiary);
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-family: var(--font-mono);
+        }
+
+        /* ── Modal Dialogs ── */
+        .modal-backdrop {
             display: none;
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.35);
+            backdrop-filter: blur(8px);
+            -webkit-backdrop-filter: blur(8px);
+            z-index: 100;
             align-items: center;
             justify-content: center;
-            z-index: 200;
+            animation: fadeIn 0.15s ease;
         }
-        .modal {
-            background: var(--surface);
-            border: 1px solid var(--border);
+
+        .modal-card {
+            background: var(--bg-surface);
+            border: 1px solid var(--border-subtle);
+            border-radius: 18px;
+            box-shadow: var(--shadow-modal);
+            width: min(92vw, 480px);
+            padding: 24px;
+            animation: scaleUp 0.18s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+
+        @keyframes scaleUp {
+            from { transform: scale(0.96); opacity: 0; }
+            to { transform: scale(1); opacity: 1; }
+        }
+
+        .modal-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 18px;
+        }
+
+        .modal-title {
+            font-size: 16px;
+            font-weight: 600;
+        }
+
+        .modal-close-btn {
+            background: transparent;
+            border: none;
+            font-size: 18px;
+            color: var(--text-tertiary);
+            cursor: pointer;
+        }
+
+        .form-group {
+            margin-bottom: 14px;
+        }
+
+        .form-label {
+            display: block;
+            font-size: 12px;
+            font-weight: 500;
+            color: var(--text-secondary);
+            margin-bottom: 5px;
+        }
+
+        .form-input {
+            width: 100%;
+            padding: 9px 12px;
+            border: 1px solid var(--border-medium);
+            border-radius: 8px;
+            background: var(--bg-surface);
+            color: var(--text-primary);
+            font-size: 13px;
+            font-family: inherit;
+            outline: none;
+            transition: border-color 0.15s ease;
+        }
+
+        .form-input:focus {
+            border-color: var(--accent);
+            box-shadow: 0 0 0 3px var(--accent-soft);
+        }
+
+        /* ── Demo Credentials Floating Banner ── */
+        .demo-bar {
+            background: var(--bg-surface);
+            border: 1px solid var(--border-subtle);
             border-radius: 12px;
-            width: 90%;
-            max-width: 500px;
-            padding: 22px;
-            box-shadow: 0 20px 40px rgba(0,0,0,0.6);
+            padding: 10px 16px;
+            margin-bottom: 18px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            font-size: 12px;
+            box-shadow: var(--shadow-card);
         }
-        .modal-head { display: flex; justify-content: space-between; align-items: center; margin-bottom: 18px; }
-        .form-group { margin-bottom: 12px; }
-        .form-label { display: block; font-size: 11px; font-weight: 600; color: var(--text-secondary); margin-bottom: 5px; }
-        .form-input { width: 100%; background: var(--bg); border: 1px solid var(--border); border-radius: 6px; padding: 9px 11px; color: #fff; font-size: 13px; outline: none; }
-        .form-input:focus { border-color: var(--primary); }
 
-        /* Mobile Bottom Nav */
-        .mobile-nav { display: none; }
+        .demo-credentials-tag {
+            font-family: var(--font-mono);
+            background: var(--bg-tertiary);
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-size: 11px;
+            color: var(--text-primary);
+        }
 
+        /* Mobile Adjustments */
         @media (max-width: 768px) {
-            .sidebar { display: none; }
-            .mobile-nav {
-                display: flex;
+            .sidebar {
                 position: fixed;
-                bottom: 0; left: 0; width: 100%;
-                height: 56px;
-                background: var(--surface);
-                border-top: 1px solid var(--border);
-                z-index: 50;
-                justify-content: space-around;
-                align-items: center;
+                left: -100%;
+                top: 0;
+                bottom: 0;
+                width: 280px;
+                box-shadow: var(--shadow-modal);
             }
-            .mobile-nav-btn {
-                background: transparent;
-                border: none;
-                color: var(--text-secondary);
-                font-size: 10px;
-                display: flex;
-                flex-direction: column;
-                align-items: center;
-                gap: 4px;
-                font-weight: 600;
-                cursor: pointer;
+            .sidebar.mobile-open {
+                left: 0;
             }
-            .mobile-nav-btn.active { color: var(--primary); }
-            .kanban-grid { grid-template-columns: 1fr; }
-            .topbar { padding: 0 16px; }
-            .view-container { padding: 16px; padding-bottom: 74px; }
-            .copilot-drawer { width: 100%; right: -100%; }
-            .agent-hud { display: none; }
+            .spotlight-bar-wrapper {
+                left: 16px;
+                right: 16px;
+                bottom: 16px;
+            }
+            .view-content-area {
+                padding: 16px 14px 90px;
+            }
         }
     </style>
 </head>
 <body>
 
-    <!-- Desktop Sidebar (Omarchy Style) -->
-    <aside class="sidebar">
-        <div class="brand">
-            <div class="brand-logo">⚡</div>
-            <div>
-                <div class="brand-text">Conrad OS</div>
-                <div class="brand-sub">OMARCHY ARCHITECTURE</div>
+    <!-- ── Apple Sidebar Navigation ── -->
+    <aside class="sidebar" id="appSidebar">
+        <div class="brand-header">
+            <div class="brand-icon"></div>
+            <div class="brand-titles">
+                <span class="brand-name" id="ui-brand-name">Conrad OS</span>
+                <span class="brand-sub">COMPANY OS · RUST CORE</span>
             </div>
         </div>
 
-        <div class="palette-trigger" onclick="openPalette()">
-            <span>⌘ Befehle suchen...</span>
-            <span class="kbd-hint">⌘K</span>
+        <!-- Mode Segmented Control (Pill Switcher) -->
+        <div class="mode-segmented-control" role="tablist">
+            <button class="mode-segmented-btn active" id="btnModeUser" onclick="switchAppMode('user')" title="Operativer Modus für das tägliche Kundengeschäft">
+                <span>👤</span> User
+            </button>
+            <button class="mode-segmented-btn admin" id="btnModeAdmin" onclick="switchAppMode('admin')" title="System-Architekt Modus für Layout, Themes & Plugins">
+                <span>🛠️</span> Admin
+            </button>
         </div>
 
-        <nav class="nav-items">
-            <button class="nav-btn active" onclick="switchTab('dashboard')">
-                <span>📊 Dashboard</span>
-                <span class="kbd-hint">1</span>
-            </button>
-            <button class="nav-btn" onclick="switchTab('contacts')">
-                <span>👥 Kontakte & Leads</span>
-                <span class="kbd-hint">2</span>
-            </button>
-            <button class="nav-btn" onclick="switchTab('deals')">
-                <span>💼 Vertriebs-Pipeline</span>
-                <span class="kbd-hint">3</span>
-            </button>
-            <button class="nav-btn" onclick="switchTab('invoices')">
-                <span>🧾 ERP & Faktura</span>
-                <span class="kbd-hint">4</span>
-            </button>
-            <button class="nav-btn" onclick="switchTab('retainers')">
-                <span>🔄 Retainer & Abos</span>
-                <span class="kbd-hint">5</span>
-            </button>
-            <button class="nav-btn" onclick="switchTab('marketing')">
-                <span>📈 Marketing & ROI</span>
-                <span class="kbd-hint">6</span>
-            </button>
-            <button class="nav-btn" onclick="switchTab('dms')">
-                <span>📁 DMS Dokumente</span>
-                <span class="kbd-hint">7</span>
-            </button>
-            <button class="nav-btn" onclick="switchTab('settings')">
-                <span>⚙️ Customizer & MCP</span>
-                <span class="kbd-hint">8</span>
-            </button>
-        </nav>
+        <div class="nav-section-label">Übersicht</div>
+        <ul class="nav-list">
+            <li>
+                <button class="nav-item-btn active" id="nav-btn-dashboard" onclick="switchView('dashboard')">
+                    <span>📊</span> Betriebs-Cockpit
+                </button>
+            </li>
+            <li>
+                <button class="nav-item-btn" id="nav-btn-contacts" onclick="switchView('contacts')">
+                    <span>👥</span> Kontakte &amp; Leads
+                    <span class="nav-badge" id="badge-contacts-count">0</span>
+                </button>
+            </li>
+            <li>
+                <button class="nav-item-btn" id="nav-btn-deals" onclick="switchView('deals')">
+                    <span>💼</span> Vertriebs-Pipeline
+                    <span class="nav-badge" id="badge-deals-count">0</span>
+                </button>
+            </li>
+        </ul>
 
-        <div class="ai-status-badge" onclick="toggleCopilot()">
-            <div class="ai-pulse"></div>
-            <div style="flex: 1;">
-                <div style="font-size: 12px; font-weight: 700; color: #c4b5fd;">Qwen 1.5B Copilot</div>
-                <div style="font-size: 10px; color: var(--text-secondary); font-family: 'JetBrains Mono';">MCP: ACTIVE [C]</div>
+        <div class="nav-section-label">Finanzen &amp; Wachstum</div>
+        <ul class="nav-list">
+            <li>
+                <button class="nav-item-btn" id="nav-btn-invoices" onclick="switchView('invoices')">
+                    <span>🧾</span> Faktura &amp; E-Rechnung
+                </button>
+            </li>
+            <li>
+                <button class="nav-item-btn" id="nav-btn-retainers" onclick="switchView('retainers')">
+                    <span>🔄</span> Retainer &amp; Abos
+                </button>
+            </li>
+            <li>
+                <button class="nav-item-btn" id="nav-btn-marketing" onclick="switchView('marketing')">
+                    <span>📈</span> Marketing &amp; ROI
+                </button>
+            </li>
+        </ul>
+
+        <div class="nav-section-label">System &amp; Compliance</div>
+        <ul class="nav-list">
+            <li>
+                <button class="nav-item-btn" id="nav-btn-dms" onclick="switchView('dms')">
+                    <span>📁</span> DMS &amp; GoBD-Archiv
+                </button>
+            </li>
+            <li>
+                <button class="nav-item-btn" id="nav-btn-settings" onclick="switchView('settings')">
+                    <span>⚙️</span> System-Architektur
+                    <span class="admin-only-badge">Admin</span>
+                </button>
+            </li>
+        </ul>
+
+        <!-- Bottom User Profile Pill -->
+        <div class="sidebar-footer" onclick="openLoginModal()" title="Klicken zum Wechseln des Demo-Benutzers">
+            <div class="avatar" id="ui-user-avatar">MC</div>
+            <div class="user-info">
+                <span class="user-name" id="ui-user-name">Merlin Conrad</span>
+                <span class="user-role" id="ui-user-role">Administrator</span>
             </div>
-            <span class="kbd-hint">C</span>
+            <span style="font-size:10px; color:var(--text-tertiary);">▾</span>
         </div>
     </aside>
 
-    <!-- Main Workspace -->
-    <main class="main-content">
+    <!-- ── Main Workspace ── -->
+    <div class="main-wrapper">
+        <!-- Apple Frosted Topbar -->
         <header class="topbar">
-            <h1 class="view-title" id="current-view-title">Betriebs-Cockpit</h1>
-            <div class="agent-hud">
-                <span style="color:var(--accent);">●</span> LOCAL ENGINE // QWEN-1.5B // WAL: 0.2ms
+            <div class="topbar-left">
+                <button class="btn" style="display:none; padding:6px 10px;" id="mobileMenuBtn" onclick="toggleMobileSidebar()">☰</button>
+                <span class="topbar-title" id="currentViewTitle">Betriebs-Cockpit</span>
+                <span class="mode-indicator-pill user" id="topbarModePill">
+                    <span style="width:6px; height:6px; border-radius:50%; background:currentColor;"></span>
+                    <span id="topbarModeLabel">User-Modus (Operativ)</span>
+                </span>
             </div>
-            <div style="display: flex; gap: 8px; align-items: center;">
-                <button class="btn btn-secondary" onclick="openPalette()">⌘K</button>
-                <button class="btn btn-ai" onclick="toggleCopilot()">🤖 Copilot</button>
-                <button class="btn" onclick="openNewContactModal()">+ Neuer Kontakt</button>
+
+            <div class="topbar-right">
+                <button class="btn" onclick="toggleTheme()" title="Zwischen Light &amp; Dark Mode umschalten">
+                    <span id="themeToggleIcon">🌙</span>
+                </button>
+                <button class="btn-apple-ai" onclick="toggleCopilot()">
+                    <span>✨</span>
+                    <span id="copilotBtnLabel">Copilot</span>
+                </button>
+                <button class="btn btn-primary" id="topbarActionBtn" onclick="openCreateModal()">
+                    <span>+</span> Neu
+                </button>
             </div>
         </header>
 
-        <!-- View 1: Dashboard -->
-        <section id="view-dashboard" class="view-container">
-            <!-- Holzhey Consulting & German Compliance Banner -->
-            <div style="background: linear-gradient(135deg, rgba(59,130,246,0.12), rgba(16,185,129,0.12)); border: 1px solid rgba(59,130,246,0.3); border-radius: 10px; padding: 14px 18px; margin-bottom: 20px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px;">
-                <div>
-                    <div style="font-size: 14px; font-weight: 700; color: #93c5fd; display: flex; align-items: center; gap: 8px;">
-                        <span>🏢 Holzhey Consulting Company OS</span>
-                        <span class="badge" style="background:rgba(16,185,129,0.2); color:#6ee7b7; font-size:10px;">HubSpot-Ablösung Aktiv</span>
+        <!-- Scrollable Content Views -->
+        <div class="view-content-area">
+            
+            <!-- Demo Login Banner -->
+            <div class="demo-bar">
+                <div style="display:flex; align-items:center; gap:8px;">
+                    <span style="font-size:14px;">🔑</span>
+                    <span><strong>Demo-Zugang aktiv:</strong> Angemeldet als <span class="demo-credentials-tag" id="demoAccountLabel">admin@conrad-ki.com</span> (Passwort: <span class="demo-credentials-tag">conrad2026!</span>)</span>
+                </div>
+                <div style="display:flex; gap:6px;">
+                    <button class="btn" style="padding:4px 10px; font-size:11px;" onclick="setDemoUser('admin')">Als Admin</button>
+                    <button class="btn" style="padding:4px 10px; font-size:11px;" onclick="setDemoUser('team')">Als Mitarbeiter</button>
+                </div>
+            </div>
+
+            <!-- View 1: Dashboard -->
+            <section id="view-dashboard" class="view-container">
+                <div class="metric-grid">
+                    <div class="metric-card">
+                        <div class="metric-label">Pipeline-Volumen</div>
+                        <div class="metric-value" id="kpi-pipeline">0,00 €</div>
+                        <div class="metric-sub">Aktive Angebote in Verhandlung</div>
                     </div>
-                    <div style="font-size: 12px; color: var(--text-secondary); margin-top: 4px;">
-                        Eingesparte HubSpot-Lizenzgebühren: <strong style="color:var(--accent);">~18.280 € / Jahr</strong> (99.3% Kostenreduktion) · GoBD & DSGVO zertifiziert.
+                    <div class="metric-card">
+                        <div class="metric-label">Realisierter Umsatz</div>
+                        <div class="metric-value" id="kpi-revenue" style="color:var(--apple-green);">0,00 €</div>
+                        <div class="metric-sub">Bezahlte Rechnungen (GoBD)</div>
+                    </div>
+                    <div class="metric-card">
+                        <div class="metric-label">Offene Forderungen</div>
+                        <div class="metric-value" id="kpi-pending" style="color:var(--apple-orange);">0,00 €</div>
+                        <div class="metric-sub">Ausstehende Zahlungen</div>
+                    </div>
+                    <div class="metric-card">
+                        <div class="metric-label">Kontakte &amp; Leads</div>
+                        <div class="metric-value" id="kpi-contacts">0</div>
+                        <div class="metric-sub">Erfasst im Conrad OS</div>
                     </div>
                 </div>
-                <div style="display:flex; gap:8px; flex-wrap:wrap;">
-                    <span class="badge" style="background:rgba(59,130,246,0.15); color:#60a5fa; font-size:11px;">🔒 GoBD Hash-Chain</span>
-                    <span class="badge" style="background:rgba(168,85,247,0.15); color:#c084fc; font-size:11px;">📄 ZUGFeRD 2.2 / XRechnung</span>
-                    <span class="badge" style="background:rgba(16,185,129,0.15); color:#34d399; font-size:11px;">⚡ 0% GiroCode SEPA</span>
-                </div>
-            </div>
 
-            <div class="kpi-grid">
-                <div class="kpi-card">
-                    <div class="kpi-label">Pipeline-Volumen</div>
-                    <div class="kpi-val" id="kpi-pipeline">0,00 €</div>
-                    <div class="kpi-sub">↑ Aktive Angebote</div>
+                <div class="apple-card">
+                    <div class="apple-card-header">
+                        <span class="apple-card-title">Neueste Kontakte &amp; Akquise-Leads</span>
+                        <button class="btn" onclick="switchView('contacts')">Alle Kontakte ansehen →</button>
+                    </div>
+                    <div class="table-responsive">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>Name</th>
+                                    <th>Unternehmen</th>
+                                    <th>E-Mail</th>
+                                    <th>Status</th>
+                                    <th>Erstellt</th>
+                                </tr>
+                            </thead>
+                            <tbody id="dashboardRecentContacts">
+                                <tr><td colspan="5" style="text-align:center; color:var(--text-tertiary);">Lade Kontakte...</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
                 </div>
-                <div class="kpi-card">
-                    <div class="kpi-label">Realisierter Umsatz</div>
-                    <div class="kpi-val" id="kpi-revenue" style="color: var(--accent);">0,00 €</div>
-                    <div class="kpi-sub">Bezahlte Rechnungen</div>
-                </div>
-                <div class="kpi-card">
-                    <div class="kpi-label">Offene Forderungen</div>
-                    <div class="kpi-val" id="kpi-pending" style="color: var(--warning);">0,00 €</div>
-                    <div class="kpi-sub">Ausstehend</div>
-                </div>
-                <div class="kpi-card">
-                    <div class="kpi-label">Kontakte & Leads</div>
-                    <div class="kpi-val" id="kpi-contacts">0</div>
-                    <div class="kpi-sub">Im CRM erfasst</div>
-                </div>
-            </div>
+            </section>
 
-            <div class="card-table">
-                <div class="card-header">
-                    <div class="card-title">Neueste Kontakte & Leads</div>
-                    <button class="btn btn-secondary" onclick="switchTab('contacts')">Alle anzeigen →</button>
+            <!-- View 2: Kontakte & Leads -->
+            <section id="view-contacts" class="view-container" style="display:none;">
+                <div class="apple-card">
+                    <div class="apple-card-header">
+                        <div style="display:flex; gap:10px; align-items:center; flex:1; max-width:400px;">
+                            <input type="text" id="contactSearchInput" class="form-input" placeholder="🔍 Suche nach Name, Firma, E-Mail..." oninput="filterContactsList()">
+                        </div>
+                        <button class="btn btn-primary" onclick="openNewContactModal()">+ Neuer Kontakt</button>
+                    </div>
+                    <div class="table-responsive">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>Name</th>
+                                    <th>Firma</th>
+                                    <th>Kontakt</th>
+                                    <th>Status</th>
+                                    <th>Tags</th>
+                                    <th>Aktion</th>
+                                </tr>
+                            </thead>
+                            <tbody id="contactsFullTable"></tbody>
+                        </table>
+                    </div>
                 </div>
-                <table>
-                    <thead>
-                        <tr>
-                            <th>Name</th>
-                            <th>Unternehmen</th>
-                            <th>E-Mail</th>
-                            <th>Status</th>
-                        </tr>
-                    </thead>
-                    <tbody id="dashboard-recent-contacts">
-                        <tr><td colspan="4" style="text-align:center; color:var(--text-secondary);">Lade Kontakte...</td></tr>
-                    </tbody>
-                </table>
-            </div>
-        </section>
+            </section>
 
-        <!-- View 2: Kontakte -->
-        <section id="view-contacts" class="view-container" style="display: none;">
-            <div style="display: flex; gap: 12px; margin-bottom: 20px;">
-                <input type="text" id="contact-search" class="form-input" placeholder="🔍 Suche nach Name, Firma, E-Mail oder Tags..." oninput="filterContacts()">
-                <button class="btn" onclick="openNewContactModal()">+ Neuer Kontakt</button>
-            </div>
-            <div class="card-table">
-                <table>
-                    <thead>
-                        <tr>
-                            <th>Name</th>
-                            <th>Firma</th>
-                            <th>Kontakt</th>
-                            <th>Status</th>
-                            <th>Tags</th>
-                        </tr>
-                    </thead>
-                    <tbody id="contacts-full-table"></tbody>
-                </table>
-            </div>
-        </section>
+            <!-- View 3: Vertriebs-Pipeline (Deals) -->
+            <section id="view-deals" class="view-container" style="display:none;">
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px;">
+                    <p style="font-size:13px; color:var(--text-secondary);">Klick auf eine Deal-Karte bewegt den Vorgang in die nächste Phase.</p>
+                    <button class="btn btn-primary" onclick="openNewDealModal()">+ Neuer Deal</button>
+                </div>
+                <div class="kanban-board">
+                    <div class="kanban-column" id="k-col-discovery">
+                        <div class="kanban-col-header"><span>1. ERSTKONTAKT</span><span id="k-sum-discovery">0 €</span></div>
+                        <div id="k-items-discovery"></div>
+                    </div>
+                    <div class="kanban-column" id="k-col-proposal">
+                        <div class="kanban-col-header"><span>2. ANGEBOT</span><span id="k-sum-proposal">0 €</span></div>
+                        <div id="k-items-proposal"></div>
+                    </div>
+                    <div class="kanban-column" id="k-col-negotiation">
+                        <div class="kanban-col-header"><span>3. VERHANDLUNG</span><span id="k-sum-negotiation">0 €</span></div>
+                        <div id="k-items-negotiation"></div>
+                    </div>
+                    <div class="kanban-column" id="k-col-closed_won">
+                        <div class="kanban-col-header"><span>4. GEWONNEN</span><span id="k-sum-closed_won">0 €</span></div>
+                        <div id="k-items-closed_won"></div>
+                    </div>
+                </div>
+            </section>
 
-        <!-- View 3: Pipeline / Deals -->
-        <section id="view-deals" class="view-container" style="display: none;">
-            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
-                <p style="color: var(--text-secondary); font-size: 13px;">Klick auf eine Karte schiebt den Deal in die nächste Phase</p>
-                <button class="btn" onclick="openNewDealModal()">+ Neuer Deal</button>
-            </div>
-            <div class="kanban-grid">
-                <div class="kanban-col" id="col-discovery">
-                    <div class="kanban-head"><span>1. ERSTKONTAKT</span><span id="sum-discovery">0 €</span></div>
-                    <div class="kanban-items" id="items-discovery"></div>
+            <!-- View 4: Faktura & E-Rechnung -->
+            <section id="view-invoices" class="view-container" style="display:none;">
+                <div class="apple-card">
+                    <div class="apple-card-header">
+                        <div>
+                            <span class="apple-card-title">GoBD-Faktura &amp; ZUGFeRD 2.2 / XRechnung</span>
+                            <p style="font-size:12px; color:var(--text-secondary); margin-top:2px;">Revisionssichere E-Rechnungen nach europäischer Norm EN 16931.</p>
+                        </div>
+                        <button class="btn btn-primary" onclick="openNewInvoiceModal()">+ Neue Rechnung erstellen</button>
+                    </div>
+                    <div class="table-responsive">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>Nummer</th>
+                                    <th>Kunde</th>
+                                    <th>Fällig</th>
+                                    <th>Netto</th>
+                                    <th>Brutto</th>
+                                    <th>Status</th>
+                                    <th>Aktionen</th>
+                                </tr>
+                            </thead>
+                            <tbody id="invoicesFullTable"></tbody>
+                        </table>
+                    </div>
                 </div>
-                <div class="kanban-col" id="col-proposal">
-                    <div class="kanban-head"><span>2. ANGEBOT</span><span id="sum-proposal">0 €</span></div>
-                    <div class="kanban-items" id="items-proposal"></div>
-                </div>
-                <div class="kanban-col" id="col-negotiation">
-                    <div class="kanban-head"><span>3. VERHANDLUNG</span><span id="sum-negotiation">0 €</span></div>
-                    <div class="kanban-items" id="items-negotiation"></div>
-                </div>
-                <div class="kanban-col" id="col-closed_won">
-                    <div class="kanban-head"><span style="color: var(--accent);">4. GEWONNEN</span><span id="sum-closed_won">0 €</span></div>
-                    <div class="kanban-items" id="items-closed_won"></div>
-                </div>
-            </div>
-        </section>
+            </section>
 
-        <!-- View 4: ERP & Invoices -->
-        <section id="view-invoices" class="view-container" style="display: none;">
-            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; flex-wrap: wrap; gap: 10px;">
-                <div style="display: flex; gap: 8px; align-items: center; flex-wrap: wrap;">
-                    <button class="btn btn-secondary" onclick="exportDatev('skr03')">📊 DATEV (SKR03)</button>
-                    <button class="btn btn-secondary" onclick="exportDatev('skr04')">📊 DATEV (SKR04)</button>
-                    <button class="btn btn-secondary" onclick="openModal('hubspot-modal')">📥 HubSpot Migration</button>
-                    <button class="btn btn-secondary" onclick="verifyGobdAudit()">🔒 GoBD prüfen</button>
+            <!-- View 5: Retainer & Abos -->
+            <section id="view-retainers" class="view-container" style="display:none;">
+                <div class="apple-card" style="background:linear-gradient(180deg, var(--bg-surface) 0%, var(--bg-surface-subtle) 100%);">
+                    <div class="apple-card-header">
+                        <div>
+                            <span class="apple-card-title">🔄 Automatisierter Monats-Retainer Abrechnungslauf</span>
+                            <p style="font-size:12px; color:var(--text-secondary); margin-top:4px;">Erzeugt GoBD-festgeschriebene Monatsrechnungen mit ZUGFeRD 2.2 XML für fällige Verträge.</p>
+                        </div>
+                        <button class="btn btn-primary" onclick="triggerRetainerRun()">⚡ Abrechnungslauf jetzt starten</button>
+                    </div>
+                    <div class="table-responsive">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>Kunde</th>
+                                    <th>Plan / Leistung</th>
+                                    <th>Betrag</th>
+                                    <th>Intervall</th>
+                                    <th>Nächste Abrechnung</th>
+                                    <th>Status</th>
+                                </tr>
+                            </thead>
+                            <tbody id="retainersFullTable"></tbody>
+                        </table>
+                    </div>
                 </div>
-                <button class="btn" onclick="openNewInvoiceModal()">+ Neue Rechnung</button>
-            </div>
-            <div class="card-table">
-                <table>
-                    <thead>
-                        <tr>
-                            <th>Rechnungs-Nr.</th>
-                            <th>Kunde</th>
-                            <th>Fälligkeit</th>
-                            <th>Netto</th>
-                            <th>Brutto (19%)</th>
-                            <th>Status (GoBD)</th>
-                            <th>DE-Compliance & Aktionen</th>
-                        </tr>
-                    </thead>
-                    <tbody id="invoices-full-table"></tbody>
-                </table>
-            </div>
-        </section>
+            </section>
 
-        <!-- View 5: DMS -->
-        <section id="view-dms" class="view-container" style="display: none;">
-            <div class="card-table">
-                <div class="card-header">
-                    <div class="card-title">Dokumenten-Management (DMS)</div>
-                    <span style="font-size: 12px; color: var(--text-secondary);">Revisionssichere Dateiablage</span>
-                </div>
-                <table>
-                    <thead>
-                        <tr>
-                            <th>Titel / Datei</th>
-                            <th>Kategorie</th>
-                            <th>Größe</th>
-                            <th>Datum</th>
-                        </tr>
-                    </thead>
-                    <tbody id="dms-full-table">
-                        <tr><td colspan="4" style="text-align:center; color:var(--text-secondary);">Keine Dokumente abgelegt.</td></tr>
-                    </tbody>
-                </table>
-            </div>
-        </section>
-
-        <!-- View 6: Customizer & MCP -->
-        <section id="view-settings" class="view-container" style="display: none;">
-            <div class="card-table" style="padding: 24px;">
-                <h3 style="margin-bottom: 12px;">🛠️ Model Context Protocol (MCP) Integration</h3>
-                <p style="color: var(--text-secondary); font-size: 13px; line-height: 1.6; margin-bottom: 20px;">
-                    Dieses CRM stellt einen nativen MCP-Server unter <code>POST /mcp</code> bereit.<br>
-                    Jedes Tool (Kontaktsuche, Deal-Erstellung, Rechnungen, Custom Fields) kann von Claude Code, Antigravity oder einem lokalen Qwen aufgerufen werden.
-                </p>
-                <div style="background: #000; padding: 14px; border-radius: 8px; font-family: monospace; font-size: 12px; color: #34d399; margin-bottom: 24px;">
-                    curl -X POST http://localhost:8080/mcp -H "Content-Type: application/json" -d '{"jsonrpc":"2.0","id":1,"method":"tools/list"}'
+            <!-- View 6: Marketing & ROI -->
+            <section id="view-marketing" class="view-container" style="display:none;">
+                <div class="metric-grid">
+                    <div class="metric-card">
+                        <div class="metric-label">Ad Spend (Ausgaben)</div>
+                        <div class="metric-value" id="m-kpi-spend">0,00 €</div>
+                        <div class="metric-sub">Meta &amp; Google Ads</div>
+                    </div>
+                    <div class="metric-card">
+                        <div class="metric-label">Generierte Leads</div>
+                        <div class="metric-value" id="m-kpi-leads">0</div>
+                        <div class="metric-sub">Aus Web-Funnel &amp; Ads</div>
+                    </div>
+                    <div class="metric-card">
+                        <div class="metric-label">Blended CAC</div>
+                        <div class="metric-value" id="m-kpi-cac" style="color:var(--apple-green);">0,00 €</div>
+                        <div class="metric-sub">Kosten pro Neukunde</div>
+                    </div>
+                    <div class="metric-card">
+                        <div class="metric-label">ROAS</div>
+                        <div class="metric-value" id="m-kpi-roas" style="color:var(--apple-purple);">0.0x</div>
+                        <div class="metric-sub">Umsatz / Werbebudget</div>
+                    </div>
                 </div>
 
-                <h3 style="margin-bottom: 12px;">🧩 Dynamische Custom Fields</h3>
-                <div style="display: flex; gap: 10px; margin-bottom: 16px;">
-                    <input type="text" id="new-cf-key" class="form-input" placeholder="Technischer Key (z.B. branche)">
-                    <input type="text" id="new-cf-label" class="form-input" placeholder="Label (z.B. Branche)">
-                    <button class="btn" onclick="saveCustomField()">Feld hinzufügen</button>
+                <div class="apple-card">
+                    <div class="apple-card-header">
+                        <span class="apple-card-title">Werbekampagnen &amp; Performance</span>
+                    </div>
+                    <div class="table-responsive">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>Kampagne</th>
+                                    <th>Plattform</th>
+                                    <th>Ausgaben</th>
+                                    <th>Klicks</th>
+                                    <th>Leads</th>
+                                    <th>Kunden</th>
+                                    <th>Umsatz</th>
+                                    <th>Status</th>
+                                </tr>
+                            </thead>
+                            <tbody id="marketingCampaignsTable"></tbody>
+                        </table>
+                    </div>
                 </div>
-                <div id="custom-fields-list" style="font-size: 13px; color: var(--text-secondary);"></div>
-            </div>
-        </section>
+            </section>
 
-        <!-- View 7: Retainer & Recurring Billing -->
-        <section id="view-retainers" class="view-container" style="display: none;">
-            <div style="background: rgba(16,185,129,0.08); border: 1px solid rgba(16,185,129,0.3); border-radius: 10px; padding: 16px 20px; margin-bottom: 20px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 14px;">
-                <div>
-                    <h3 style="color:#6ee7b7; font-size:15px; margin-bottom:4px;">🔄 Automatisiertes Monats-Retainer Abrechnungssystem</h3>
-                    <p style="font-size:12px; color:var(--text-secondary);">
-                        Erzeugt vollautomatisch revisionssichere GoBD-Rechnungen mit ZUGFeRD 2.2 XML und aktualisiert die Abrechnungszyklen.
-                    </p>
+            <!-- View 7: DMS & GoBD Archiv -->
+            <section id="view-dms" class="view-container" style="display:none;">
+                <div class="apple-card">
+                    <div class="apple-card-header">
+                        <div>
+                            <span class="apple-card-title">Kryptografische GoBD-Hash-Chain (SHA-256)</span>
+                            <p style="font-size:12px; color:var(--text-secondary); margin-top:2px;">Revisionssichere Unveränderbarkeit aller Buchungsvorgänge.</p>
+                        </div>
+                        <button class="btn" onclick="verifyGobdChain()">🔍 Prüfsumme verifizieren</button>
+                    </div>
+                    <div id="gobdVerifyResult" style="padding:10px 14px; border-radius:8px; margin-bottom:14px; font-size:12px; display:none;"></div>
+                    <div class="table-responsive">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>Seq #</th>
+                                    <th>Zeitstempel</th>
+                                    <th>Vorgang</th>
+                                    <th>Entity ID</th>
+                                    <th>Details</th>
+                                    <th>Akteur</th>
+                                </tr>
+                            </thead>
+                            <tbody id="gobdAuditTable"></tbody>
+                        </table>
+                    </div>
                 </div>
-                <button class="btn btn-ai" onclick="triggerRetainerRun()">⚡ Abrechnungslauf jetzt ausführen</button>
-            </div>
+            </section>
 
-            <div class="card-table">
-                <div class="card-header">
-                    <div class="card-title">Laufende Retainer-Abonnements</div>
-                </div>
-                <table>
-                    <thead>
-                        <tr>
-                            <th>Kunde</th>
-                            <th>Plan / Leistung</th>
-                            <th>Monatlicher Betrag</th>
-                            <th>Intervall</th>
-                            <th>Nächste Abrechnung</th>
-                            <th>Status</th>
-                        </tr>
-                    </thead>
-                    <tbody id="retainers-table">
-                        <tr><td colspan="6" style="text-align:center; color:var(--text-secondary);">Lade Retainer...</td></tr>
-                    </tbody>
-                </table>
-            </div>
-        </section>
+            <!-- View 8: System-Architektur (Admin Customizer & MCP) -->
+            <section id="view-settings" class="view-container" style="display:none;">
+                <div class="apple-card">
+                    <div class="apple-card-header">
+                        <div>
+                            <span class="apple-card-title">🛠️ System-Architekt &amp; Dynamic Customizer</span>
+                            <p style="font-size:12px; color:var(--text-secondary); margin-top:2px;">Passen Sie Layout, Farbakzente und Module im laufenden Betrieb an.</p>
+                        </div>
+                    </div>
 
-        <!-- View 8: Marketing & Ad Campaign ROI -->
-        <section id="view-marketing" class="view-container" style="display: none;">
-            <div class="kpi-grid">
-                <div class="kpi-card">
-                    <div class="kpi-label">Gesamtausgaben (Ad Spend)</div>
-                    <div class="kpi-val" id="kpi-ad-spend" style="color: #60a5fa;">0,00 €</div>
-                    <div class="kpi-sub">Meta & Google Ads</div>
-                </div>
-                <div class="kpi-card">
-                    <div class="kpi-label">Generierte Leads</div>
-                    <div class="kpi-val" id="kpi-m-leads">0</div>
-                    <div class="kpi-sub">Durch Ad-Kampagnen</div>
-                </div>
-                <div class="kpi-card">
-                    <div class="kpi-label">Blended CAC</div>
-                    <div class="kpi-val" id="kpi-m-cac" style="color: var(--accent);">0,00 €</div>
-                    <div class="kpi-sub">Kosten pro Kunde/Lead</div>
-                </div>
-                <div class="kpi-card">
-                    <div class="kpi-label">ROAS (Return on Ad Spend)</div>
-                    <div class="kpi-val" id="kpi-m-roas" style="color: #c084fc;">0,0x</div>
-                    <div class="kpi-sub">Umsatz / Ad Spend</div>
-                </div>
-            </div>
+                    <div style="display:grid; grid-template-columns:1fr 1fr; gap:20px; margin-bottom:24px;">
+                        <div>
+                            <label class="form-label">Unternehmensname (Branding)</label>
+                            <input type="text" id="settingCompanyName" class="form-input" value="Conrad KI">
+                            <button class="btn" style="margin-top:8px;" onclick="saveCompanyNameSetting()">Name speichern</button>
+                        </div>
+                        <div>
+                            <label class="form-label">System-Akzentfarbe</label>
+                            <div style="display:flex; gap:8px; margin-top:6px;">
+                                <button class="btn" style="border-left:4px solid #0071E3;" onclick="setThemeAccent('#0071E3')">Apple Blue</button>
+                                <button class="btn" style="border-left:4px solid #34C759;" onclick="setThemeAccent('#34C759')">Emerald</button>
+                                <button class="btn" style="border-left:4px solid #C8531A;" onclick="setThemeAccent('#C8531A')">Terra Cotta</button>
+                                <button class="btn" style="border-left:4px solid #AF52DE;" onclick="setThemeAccent('#AF52DE')">Purple</button>
+                            </div>
+                        </div>
+                    </div>
 
-            <div class="card-table">
-                <div class="card-header">
-                    <div class="card-title">Aktive Werbekampagnen</div>
-                </div>
-                <table>
-                    <thead>
-                        <tr>
-                            <th>Kampagne</th>
-                            <th>Plattform</th>
-                            <th>Ausgaben</th>
-                            <th>Klicks</th>
-                            <th>Leads</th>
-                            <th>Kunden</th>
-                            <th>Umsatz</th>
-                            <th>Status</th>
-                        </tr>
-                    </thead>
-                    <tbody id="marketing-campaigns-table">
-                        <tr><td colspan="8" style="text-align:center; color:var(--text-secondary);">Lade Kampagnen...</td></tr>
-                    </tbody>
-                </table>
-            </div>
-        </section>
-    </main>
+                    <h4 style="font-size:13px; font-weight:600; margin-bottom:10px;">Model Context Protocol (MCP) Endpunkt</h4>
+                    <p style="font-size:12px; color:var(--text-secondary); margin-bottom:8px;">Vollständiger JSON-RPC 2.0 Server für lokale Modelle (Qwen 1.5B, Claude, Hermes):</p>
+                    <div style="background:var(--bg-tertiary); padding:10px 14px; border-radius:8px; font-family:var(--font-mono); font-size:12px; color:var(--text-primary); margin-bottom:20px;">
+                        POST /mcp · Content-Type: application/json
+                    </div>
 
-    <!-- Omarchy Command Palette (Cmd+K) -->
-    <div class="palette-overlay" id="palette-overlay" onclick="if(event.target===this) closePalette()">
-        <div class="palette-box">
-            <div class="palette-input-wrap">
-                <span style="font-size: 16px;">⚡</span>
-                <input type="text" id="palette-input" class="palette-input" placeholder="Omarchy Quick Command oder Ansicht suchen..." oninput="filterPalette()">
-                <span class="kbd-hint">ESC</span>
-            </div>
-            <div class="palette-list" id="palette-list">
-                <div class="palette-item" onclick="switchTab('dashboard'); closePalette();">
-                    <span>📊 Gehe zu Dashboard</span>
-                    <span class="palette-meta">1</span>
+                    <h4 style="font-size:13px; font-weight:600; margin-bottom:10px;">🧩 Dynamische Custom Fields</h4>
+                    <div style="display:flex; gap:8px; max-width:600px; margin-bottom:14px;">
+                        <input type="text" id="newCfKey" class="form-input" placeholder="Technischer Key (z.B. branche)">
+                        <input type="text" id="newCfLabel" class="form-input" placeholder="Label (z.B. Branche)">
+                        <button class="btn btn-primary" onclick="submitCustomField()">Hinzufügen</button>
+                    </div>
+                    <div id="customFieldsRenderList" style="font-size:12px; color:var(--text-secondary);"></div>
                 </div>
-                <div class="palette-item" onclick="switchTab('contacts'); closePalette();">
-                    <span>👥 Gehe zu Kontakte & Leads</span>
-                    <span class="palette-meta">2</span>
-                </div>
-                <div class="palette-item" onclick="switchTab('deals'); closePalette();">
-                    <span>💼 Gehe zu Vertriebs-Pipeline</span>
-                    <span class="palette-meta">3</span>
-                </div>
-                <div class="palette-item" onclick="switchTab('invoices'); closePalette();">
-                    <span>🧾 Gehe zu ERP & Faktura</span>
-                    <span class="palette-meta">4</span>
-                </div>
-                <div class="palette-item" onclick="switchTab('dms'); closePalette();">
-                    <span>📁 Gehe zu DMS Dokumente</span>
-                    <span class="palette-meta">5</span>
-                </div>
-                <div class="palette-item" onclick="openNewContactModal(); closePalette();">
-                    <span>➕ Neuer Kontakt anlegen</span>
-                    <span class="palette-meta">N C</span>
-                </div>
-                <div class="palette-item" onclick="openNewDealModal(); closePalette();">
-                    <span>➕ Neuer Deal anlegen</span>
-                    <span class="palette-meta">N D</span>
-                </div>
-                <div class="palette-item" onclick="openNewInvoiceModal(); closePalette();">
-                    <span>➕ Neue Rechnung buchen</span>
-                    <span class="palette-meta">N I</span>
-                </div>
-                <div class="palette-item" onclick="toggleCopilot(); closePalette();">
-                    <span>🤖 Qwen 1.5B Copilot Drawer öffnen</span>
-                    <span class="palette-meta">C</span>
-                </div>
+            </section>
+
+        </div>
+
+        <!-- ── Floating AI Spotlight Bar (Bottom) ── -->
+        <div class="spotlight-bar-wrapper">
+            <div class="spotlight-bar">
+                <span style="font-size:16px;">✨</span>
+                <input type="text" id="spotlightInput" class="spotlight-input" placeholder="Mit KI sprechen: „Zeig mir offene Rechnungen“ oder „Schalte auf Dark Mode“..." onkeydown="if(event.key==='Enter') executeSpotlightCommand()">
+                <span class="spotlight-hint">Enter</span>
             </div>
         </div>
     </div>
 
-    <!-- Mobile Bottom Navigation -->
-    <nav class="mobile-nav">
-        <button class="mobile-nav-btn active" onclick="switchTab('dashboard')"><span>📊</span>Cockpit</button>
-        <button class="mobile-nav-btn" onclick="switchTab('contacts')"><span>👥</span>Kontakte</button>
-        <button class="mobile-nav-btn" onclick="switchTab('deals')"><span>💼</span>Deals</button>
-        <button class="mobile-nav-btn" onclick="switchTab('invoices')"><span>🧾</span>ERP</button>
-        <button class="mobile-nav-btn" onclick="toggleCopilot()"><span>🤖</span>KI</button>
-    </nav>
-
-    <!-- AI Copilot Drawer -->
-    <aside class="copilot-drawer" id="copilot-drawer">
-        <div class="copilot-header">
-            <div style="display: flex; align-items: center; gap: 10px;">
-                <span style="font-size: 18px;">🤖</span>
+    <!-- ── Apple Intelligence Slide-Over Copilot Panel ── -->
+    <aside class="copilot-panel" id="copilotPanel">
+        <div class="copilot-panel-header">
+            <div class="copilot-badge">
+                <div class="copilot-aura-dot"></div>
                 <div>
-                    <div style="font-size: 14px; font-weight: 700;">Conrad Copilot</div>
-                    <div style="font-size: 10px; color: #a78bfa; font-family:'JetBrains Mono';">QWEN 1.5B // MCP ENGINE</div>
+                    <div style="font-size:13px; font-weight:600;" id="copilotPanelTitle">Conrad Copilot</div>
+                    <div style="font-size:10px; color:var(--text-tertiary);" id="copilotPanelSub">QWEN 1.5B · MCP CONNECTED</div>
                 </div>
             </div>
-            <button onclick="toggleCopilot()" style="background:none; border:none; color:var(--text-secondary); font-size:18px; cursor:pointer;">✕</button>
+            <button class="modal-close-btn" onclick="toggleCopilot()">✕</button>
         </div>
 
-        <div class="copilot-messages" id="copilot-messages">
-            <div class="chat-bubble chat-ai">
-                Hallo Merlin! Ich bin dein integrierter Qwen-Copilot. Sag mir einfach, was du tun möchtest:
-                <br><br>
-                💡 <em>„Wie steht unsere Pipeline heute?"</em><br>
-                💡 <em>„Erstelle Kontakt Stefan Koch von Koch Sanitär"</em><br>
-                💡 <em>„Erstelle Rechnung für Jens Ohrladen über 99 €"</em>
+        <div class="copilot-messages" id="copilotMessages">
+            <div class="chat-bubble ai">
+                Hallo! Ich bin dein integrierter KI-Copilot. Du kannst mit mir sprechen und das System steuern:<br><br>
+                💡 <em>„Wie steht unsere Pipeline heute?“</em><br>
+                💡 <em>„Trag Hans Meyer von Meyer Dachbau als Lead ein“</em><br>
+                💡 <em>„Schalte in den Admin-Modus um und aktiviere Dark Mode“</em>
             </div>
         </div>
 
-        <div class="copilot-input-bar">
-            <input type="text" id="copilot-input" class="copilot-input" placeholder="Befehl oder Frage eingeben..." onkeydown="if(event.key==='Enter') sendCopilotMsg()">
-            <button class="btn btn-ai" onclick="sendCopilotMsg()">Senden</button>
+        <div class="copilot-input-wrap">
+            <div class="copilot-input-box">
+                <input type="text" id="copilotInput" class="copilot-input" placeholder="Befehl oder Frage eingeben..." onkeydown="if(event.key==='Enter') sendCopilotChat()">
+                <button class="btn btn-primary" style="padding:6px 12px; border-radius:8px;" onclick="sendCopilotChat()">Senden</button>
+            </div>
         </div>
     </aside>
 
-    <!-- Modal: Neuer Kontakt -->
-    <div class="modal-overlay" id="contact-modal">
-        <div class="modal">
-            <div class="modal-head">
-                <h3 style="font-size: 15px; font-weight: 700;">Neuen Kontakt anlegen</h3>
-                <button onclick="closeModal('contact-modal')" style="background:none; border:none; color:var(--text-secondary); font-size:18px; cursor:pointer;">✕</button>
+    <!-- ── Modal: Demo Login Switcher ── -->
+    <div class="modal-backdrop" id="loginModal">
+        <div class="modal-card">
+            <div class="modal-header">
+                <span class="modal-title">Demo-Benutzer wählen</span>
+                <button class="modal-close-btn" onclick="closeModal('loginModal')">✕</button>
+            </div>
+            <p style="font-size:13px; color:var(--text-secondary); margin-bottom:18px;">
+                Wählen Sie eine Benutzerrolle zum sofortigen Testen aller Funktionen:
+            </p>
+
+            <div style="display:flex; flex-direction:column; gap:10px; margin-bottom:18px;">
+                <div style="border:1px solid var(--border-medium); border-radius:10px; padding:12px; cursor:pointer;" onclick="setDemoUser('admin'); closeModal('loginModal');">
+                    <div style="display:flex; justify-content:space-between; align-items:center;">
+                        <strong>Merlin Conrad (Admin)</strong>
+                        <span class="status-pill warning">System-Architekt</span>
+                    </div>
+                    <div style="font-size:12px; color:var(--text-secondary); margin-top:4px;">admin@conrad-ki.com · Vollzugriff auf Layout, Theme &amp; Plugins</div>
+                </div>
+
+                <div style="border:1px solid var(--border-medium); border-radius:10px; padding:12px; cursor:pointer;" onclick="setDemoUser('team'); closeModal('loginModal');">
+                    <div style="display:flex; justify-content:space-between; align-items:center;">
+                        <strong>Operations Team (Mitarbeiter)</strong>
+                        <span class="status-pill info">User-Modus</span>
+                    </div>
+                    <div style="font-size:12px; color:var(--text-secondary); margin-top:4px;">team@conrad-ki.com · Kundengespräche, Leads &amp; E-Rechnungen</div>
+                </div>
+            </div>
+
+            <div style="text-align:right;">
+                <button class="btn" onclick="closeModal('loginModal')">Schließen</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ── Modal: Neuer Kontakt ── -->
+    <div class="modal-backdrop" id="modalNewContact">
+        <div class="modal-card">
+            <div class="modal-header">
+                <span class="modal-title">Neuen Kontakt anlegen</span>
+                <button class="modal-close-btn" onclick="closeModal('modalNewContact')">✕</button>
             </div>
             <div class="form-group">
-                <label class="form-label">Vollständiger Name *</label>
-                <input type="text" id="c-name" class="form-input" placeholder="z.B. Maximilian Mustermann">
+                <label class="form-label">Name / Ansprechpartner *</label>
+                <input type="text" id="nc-name" class="form-input" placeholder="z.B. Stefan Koch">
             </div>
             <div class="form-group">
-                <label class="form-label">Unternehmen / Firma</label>
-                <input type="text" id="c-company" class="form-input" placeholder="z.B. Musterbau GmbH">
+                <label class="form-label">Unternehmen</label>
+                <input type="text" id="nc-company" class="form-input" placeholder="z.B. Koch Sanitär &amp; Heizung">
             </div>
             <div class="form-group">
                 <label class="form-label">E-Mail-Adresse</label>
-                <input type="email" id="c-email" class="form-input" placeholder="name@firma.de">
+                <input type="email" id="nc-email" class="form-input" placeholder="stefan@koch-sanitaer.de">
             </div>
             <div class="form-group">
                 <label class="form-label">Telefonnummer</label>
-                <input type="text" id="c-phone" class="form-input" placeholder="+49 170 1234567">
+                <input type="tel" id="nc-phone" class="form-input" placeholder="+49 171 1234567">
             </div>
             <div class="form-group">
                 <label class="form-label">Status</label>
-                <select id="c-status" class="form-input">
+                <select id="nc-status" class="form-input">
                     <option value="lead">Lead (Interessent)</option>
                     <option value="qualified">Qualifiziert</option>
                     <option value="customer">Kunde (Aktiv)</option>
                 </select>
             </div>
-            <div style="display: flex; justify-content: flex-end; gap: 8px; margin-top: 18px;">
-                <button class="btn btn-secondary" onclick="closeModal('contact-modal')">Abbrechen</button>
-                <button class="btn" onclick="submitCreateContact()">Speichern</button>
+            <div style="display:flex; justify-content:flex-end; gap:8px; margin-top:20px;">
+                <button class="btn" onclick="closeModal('modalNewContact')">Abbrechen</button>
+                <button class="btn btn-primary" onclick="submitCreateContact()">Kontakt speichern</button>
             </div>
         </div>
     </div>
 
-    <!-- Modal: Neuer Deal -->
-    <div class="modal-overlay" id="deal-modal">
-        <div class="modal">
-            <div class="modal-head">
-                <h3 style="font-size: 15px; font-weight: 700;">Neuen Deal / Angebot anlegen</h3>
-                <button onclick="closeModal('deal-modal')" style="background:none; border:none; color:var(--text-secondary); font-size:18px; cursor:pointer;">✕</button>
+    <!-- ── Modal: Neuer Deal ── -->
+    <div class="modal-backdrop" id="modalNewDeal">
+        <div class="modal-card">
+            <div class="modal-header">
+                <span class="modal-title">Neuen Verkaufsvorgang (Deal) anlegen</span>
+                <button class="modal-close-btn" onclick="closeModal('modalNewDeal')">✕</button>
             </div>
             <div class="form-group">
-                <label class="form-label">Deal Titel *</label>
-                <input type="text" id="d-title" class="form-input" placeholder="z.B. KI-Postfach Autopilot Setup">
+                <label class="form-label">Kunde / Kontakt *</label>
+                <select id="nd-contact-select" class="form-input"></select>
             </div>
             <div class="form-group">
-                <label class="form-label">Kontakt / Kunde *</label>
-                <select id="d-contact-select" class="form-input"></select>
+                <label class="form-label">Titel des Deals *</label>
+                <input type="text" id="nd-title" class="form-input" placeholder="z.B. Pilotprojekt KI-Postfachtriage">
             </div>
             <div class="form-group">
-                <label class="form-label">Betrag in Euro (€) *</label>
-                <input type="number" id="d-val" class="form-input" placeholder="z.B. 1500">
+                <label class="form-label">Auftragswert (€) *</label>
+                <input type="number" id="nd-val" class="form-input" placeholder="890.00" value="890">
             </div>
             <div class="form-group">
-                <label class="form-label">Phase (Stage)</label>
-                <select id="d-stage" class="form-input">
-                    <option value="discovery">1. Erstkontakt / Discovery</option>
-                    <option value="proposal">2. Angebot versendet</option>
+                <label class="form-label">Start-Phase</label>
+                <select id="nd-stage" class="form-input">
+                    <option value="discovery">1. Erstkontakt</option>
+                    <option value="proposal">2. Angebot</option>
                     <option value="negotiation">3. Verhandlung</option>
-                    <option value="closed_won">4. Gewonnen (Closed Won)</option>
+                    <option value="closed_won">4. Gewonnen</option>
                 </select>
             </div>
-            <div style="display: flex; justify-content: flex-end; gap: 8px; margin-top: 18px;">
-                <button class="btn btn-secondary" onclick="closeModal('deal-modal')">Abbrechen</button>
-                <button class="btn" onclick="submitCreateDeal()">Deal erstellen</button>
+            <div style="display:flex; justify-content:flex-end; gap:8px; margin-top:20px;">
+                <button class="btn" onclick="closeModal('modalNewDeal')">Abbrechen</button>
+                <button class="btn btn-primary" onclick="submitCreateDeal()">Deal anlegen</button>
             </div>
         </div>
     </div>
 
-    <!-- Modal: Neue Rechnung -->
-    <div class="modal-overlay" id="invoice-modal">
-        <div class="modal">
-            <div class="modal-head">
-                <h3 style="font-size: 15px; font-weight: 700;">Rechnung erstellen (ERP)</h3>
-                <button onclick="closeModal('invoice-modal')" style="background:none; border:none; color:var(--text-secondary); font-size:18px; cursor:pointer;">✕</button>
+    <!-- ── Modal: Neue Rechnung ── -->
+    <div class="modal-backdrop" id="modalNewInvoice">
+        <div class="modal-card">
+            <div class="modal-header">
+                <span class="modal-title">GoBD-Rechnung erstellen</span>
+                <button class="modal-close-btn" onclick="closeModal('modalNewInvoice')">✕</button>
             </div>
             <div class="form-group">
-                <label class="form-label">Kunde *</label>
-                <select id="inv-contact-select" class="form-input"></select>
+                <label class="form-label">Kunde / Rechnungsempfänger *</label>
+                <select id="ni-contact-select" class="form-input"></select>
             </div>
             <div class="form-group">
-                <label class="form-label">Position / Beschreibung *</label>
-                <input type="text" id="inv-desc" class="form-input" placeholder="z.B. Monatliche Betreuung n8n (November 2026)">
+                <label class="form-label">Positionsbeschreibung *</label>
+                <input type="text" id="ni-desc" class="form-input" placeholder="z.B. KI-Workflows &amp; Wartung Monatspauschale">
             </div>
             <div class="form-group">
                 <label class="form-label">Nettobetrag (€) *</label>
-                <input type="number" id="inv-amount" class="form-input" placeholder="z.B. 99">
+                <input type="number" id="ni-amount" class="form-input" placeholder="99.00" value="99">
             </div>
-            <div style="display: flex; justify-content: flex-end; gap: 8px; margin-top: 18px;">
-                <button class="btn btn-secondary" onclick="closeModal('invoice-modal')">Abbrechen</button>
-                <button class="btn" onclick="submitCreateInvoice()">Rechnung buchen</button>
+            <div style="display:flex; justify-content:flex-end; gap:8px; margin-top:20px;">
+                <button class="btn" onclick="closeModal('modalNewInvoice')">Abbrechen</button>
+                <button class="btn btn-primary" onclick="submitCreateInvoice()">Rechnung buchen</button>
             </div>
         </div>
     </div>
 
-    <!-- Modal: HubSpot Migration (Holzhey Consulting) -->
-    <div class="modal-overlay" id="hubspot-modal">
-        <div class="modal" style="max-width: 550px;">
-            <div class="modal-head">
-                <h3 style="font-size: 15px; font-weight: 700;">HubSpot Migration (Holzhey Consulting)</h3>
-                <button onclick="closeModal('hubspot-modal')" style="background:none; border:none; color:var(--text-secondary); font-size:18px; cursor:pointer;">✕</button>
+    <!-- ── Modal: GiroCode (EPC-QR) ── -->
+    <div class="modal-backdrop" id="modalEpcQr">
+        <div class="modal-card" style="text-align:center;">
+            <div class="modal-header">
+                <span class="modal-title">Europäischer GiroCode (SEPA-QR)</span>
+                <button class="modal-close-btn" onclick="closeModal('modalEpcQr')">✕</button>
             </div>
-            <p style="font-size: 12px; color: var(--text-secondary); margin-bottom: 14px;">
-                Füge den Inhalt deiner exportierten HubSpot-CSV-Datei ein (Kontakte oder Deals). Phasen und Felder werden automatisch konvertiert.
+            <p style="font-size:12px; color:var(--text-secondary); margin-bottom:14px;">
+                0,00 % Transaktionsgebühren. Kunde scannt direkt mit Sparkasse, Volksbank, DKB, N26 oder Revolut.
             </p>
-            <div class="form-group">
-                <label class="form-label">Datentyp</label>
-                <select id="hs-type" class="form-input">
-                    <option value="contacts">Kontakte & Leads (Contacts CSV)</option>
-                    <option value="deals">Vertriebs-Deals & Pipeline (Deals CSV)</option>
-                </select>
+            <div style="background:#ffffff; padding:16px; border-radius:12px; display:inline-block; margin-bottom:12px; border:1px solid var(--border-subtle);">
+                <div style="font-family:var(--font-mono); font-size:11px; color:#1d1d1f;">
+                    <div style="font-weight:700; margin-bottom:4px;">EPC / SEPA GIROCODE</div>
+                    <div style="font-size:44px; margin:8px 0;">🏁</div>
+                    <div style="font-size:10px; color:#86868b;" id="epcQrCodeString">BCD/002/1/SCT/...</div>
+                </div>
             </div>
-            <div class="form-group">
-                <label class="form-label">CSV-Inhalt (Kopieren & Einfügen)</label>
-                <textarea id="hs-csv" class="form-input" style="height: 140px; font-family: 'JetBrains Mono', monospace; font-size: 11px;" placeholder="First Name,Last Name,Email,Company Name,Phone Number..."></textarea>
-            </div>
-            <div style="display: flex; justify-content: flex-end; gap: 8px; margin-top: 18px;">
-                <button class="btn btn-secondary" onclick="closeModal('hubspot-modal')">Abbrechen</button>
-                <button class="btn" onclick="submitHubSpotImport()">Jetzt importieren</button>
+            <div id="epcDetailsBox" style="font-family:var(--font-mono); font-size:12px; color:var(--text-secondary); text-align:left; background:var(--bg-tertiary); padding:10px; border-radius:8px;"></div>
+            <div style="text-align:right; margin-top:16px;">
+                <button class="btn" onclick="closeModal('modalEpcQr')">Schließen</button>
             </div>
         </div>
     </div>
 
-    <!-- Modal: GoBD Storno -->
-    <div class="modal-overlay" id="storno-modal">
-        <div class="modal">
-            <div class="modal-head">
-                <h3 style="font-size: 15px; font-weight: 700; color: var(--danger);">Rechnung GoBD-konform stornieren</h3>
-                <button onclick="closeModal('storno-modal')" style="background:none; border:none; color:var(--text-secondary); font-size:18px; cursor:pointer;">✕</button>
-            </div>
-            <p style="font-size: 12px; color: var(--text-secondary); margin-bottom: 14px;">
-                Nach GoBD dürfen festgeschriebene Rechnungen nicht gelöscht werden. Es wird automatisch eine Stornorechnung mit negativen Beträgen erstellt und im Audit-Log revisionssicher verknüpft.
-            </p>
-            <div class="form-group">
-                <label class="form-label">Begründung für die Stornierung *</label>
-                <input type="text" id="storno-reason" class="form-input" placeholder="z.B. Falscher Leistungszeitraum oder Korrektur">
-            </div>
-            <div style="display: flex; justify-content: flex-end; gap: 8px; margin-top: 18px;">
-                <button class="btn btn-secondary" onclick="closeModal('storno-modal')">Abbrechen</button>
-                <button class="btn" style="background: var(--danger);" onclick="submitStorno()">Storno ausführen</button>
-            </div>
-        </div>
-    </div>
-
-    <!-- Modal: SEPA GiroCode / EPC QR -->
-    <div class="modal-overlay" id="epc-modal">
-        <div class="modal" style="text-align: center;">
-            <div class="modal-head">
-                <h3 style="font-size: 15px; font-weight: 700;">Europäischer GiroCode (EPC-QR)</h3>
-                <button onclick="closeModal('epc-modal')" style="background:none; border:none; color:var(--text-secondary); font-size:18px; cursor:pointer;">✕</button>
-            </div>
-            <p style="font-size: 12px; color: var(--text-secondary); margin-bottom: 14px;">
-                0% Transaktionsgebühren. Kunde scannt mit Sparkasse, Volksbank, DKB, N26 oder Revolut.
-            </p>
-            <div id="epc-qr-container" style="background:#fff; padding:16px; border-radius:10px; display:inline-block; margin-bottom:14px;">
-                <div id="epc-qr-code"></div>
-            </div>
-            <div id="epc-details" style="font-family:'JetBrains Mono'; font-size:12px; color:var(--text-secondary); text-align:left; background:var(--surface); padding:10px; border-radius:6px;"></div>
-            <div style="display: flex; justify-content: flex-end; gap: 8px; margin-top: 18px;">
-                <button class="btn btn-secondary" onclick="closeModal('epc-modal')">Schließen</button>
-            </div>
-        </div>
-    </div>
-
+    <!-- ── Application Logic ── -->
     <script>
+        // State
+        let currentMode = 'user'; // 'user' or 'admin'
+        let currentRole = 'admin'; // 'admin' or 'operator'
+        let currentView = 'dashboard';
         let contactsData = [];
         let dealsData = [];
         let invoicesData = [];
+        let settingsData = {};
 
-        async function init() {
-            await refreshAllData();
-            setupKeyboardShortcuts();
+        async function initApp() {
+            await loadSettings();
+            await refreshData();
+            setupKeyboardNav();
         }
 
-        // Global Omarchy Keyboard Shortcuts
-        function setupKeyboardShortcuts() {
-            window.addEventListener('keydown', (e) => {
-                // Ignore if focus is in an input or textarea
-                const inInput = ['INPUT', 'TEXTAREA', 'SELECT'].includes(document.activeElement.tagName);
+        // Mode Switcher: User vs. Admin
+        function switchAppMode(mode) {
+            currentMode = mode;
+            const btnUser = document.getElementById('btnModeUser');
+            const btnAdmin = document.getElementById('btnModeAdmin');
+            const topbarPill = document.getElementById('topbarModePill');
+            const topbarLabel = document.getElementById('topbarModeLabel');
 
-                // Cmd+K or Ctrl+K -> Command Palette
-                if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'k') {
-                    e.preventDefault();
-                    togglePalette();
-                    return;
-                }
+            if (mode === 'admin') {
+                btnUser.classList.remove('active');
+                btnAdmin.classList.add('active');
+                topbarPill.className = 'mode-indicator-pill admin';
+                topbarLabel.innerText = 'Admin-Modus (Architekt)';
+                document.getElementById('copilotPanelTitle').innerText = 'System Architekt Copilot';
+                document.getElementById('copilotPanelSub').innerText = 'LAYOUT & PLUGIN MUTATIONS ACTIVE';
+                document.querySelectorAll('.admin-only-badge').forEach(b => b.style.display = 'inline-block');
+            } else {
+                btnAdmin.classList.remove('active');
+                btnUser.classList.add('active');
+                topbarPill.className = 'mode-indicator-pill user';
+                topbarLabel.innerText = 'User-Modus (Operativ)';
+                document.getElementById('copilotPanelTitle').innerText = 'Conrad Copilot';
+                document.getElementById('copilotPanelSub').innerText = 'QWEN 1.5B · MCP CONNECTED';
+            }
+        }
 
-                if (e.key === 'Escape') {
-                    closePalette();
-                    closeModal('contact-modal');
-                    closeModal('deal-modal');
-                    closeModal('invoice-modal');
-                    document.getElementById('copilot-drawer').classList.remove('open');
-                    return;
-                }
-
-                if (inInput) return;
-
-                if (e.key === '1') switchTab('dashboard');
-                if (e.key === '2') switchTab('contacts');
-                if (e.key === '3') switchTab('deals');
-                if (e.key === '4') switchTab('invoices');
-                if (e.key === '5') switchTab('dms');
-                if (e.key === '6') switchTab('settings');
-                if (e.key.toLowerCase() === 'c') toggleCopilot();
-                if (e.key === '/') {
-                    e.preventDefault();
-                    switchTab('contacts');
-                    document.getElementById('contact-search')?.focus();
-                }
+        // View Switcher
+        function switchView(viewId) {
+            currentView = viewId;
+            const views = ['dashboard', 'contacts', 'deals', 'invoices', 'retainers', 'marketing', 'dms', 'settings'];
+            views.forEach(v => {
+                const el = document.getElementById(`view-${v}`);
+                if (el) el.style.display = v === viewId ? 'block' : 'none';
+                const btn = document.getElementById(`nav-btn-${v}`);
+                if (btn) btn.classList.toggle('active', v === viewId);
             });
+
+            const titles = {
+                dashboard: 'Betriebs-Cockpit',
+                contacts: 'Kontakte & Leads',
+                deals: 'Vertriebs-Pipeline',
+                invoices: 'Faktura & E-Rechnung',
+                retainers: 'Retainer & Abos',
+                marketing: 'Marketing & ROI Tracker',
+                dms: 'DMS & GoBD Archiv',
+                settings: 'System-Architektur & Customizer'
+            };
+
+            document.getElementById('currentViewTitle').innerText = titles[viewId] || 'Workspace';
+
+            if (viewId === 'marketing') loadMarketingView();
+            if (viewId === 'retainers') loadRetainersView();
+            if (viewId === 'dms') loadGobdAuditView();
+            if (viewId === 'settings') loadSettingsView();
         }
 
-        function openPalette() {
-            document.getElementById('palette-overlay').style.display = 'flex';
-            setTimeout(() => document.getElementById('palette-input').focus(), 50);
-        }
-        function closePalette() {
-            document.getElementById('palette-overlay').style.display = 'none';
-        }
-        function togglePalette() {
-            const el = document.getElementById('palette-overlay');
-            if (el.style.display === 'flex') closePalette(); else openPalette();
-        }
-
-        function filterPalette() {
-            const q = document.getElementById('palette-input').value.toLowerCase();
-            const items = document.querySelectorAll('.palette-item');
-            items.forEach(it => {
-                const text = it.innerText.toLowerCase();
-                it.style.display = text.includes(q) ? 'flex' : 'none';
-            });
-        }
-
-        async function refreshAllData() {
+        // Data Refresh
+        async function refreshData() {
             try {
-                const [statsRes, contactsRes, dealsRes, invRes] = await Promise.all([
+                const [statsRes, contacts, deals, invoices] = await Promise.all([
                     fetch('/mcp', {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
@@ -1163,11 +1667,15 @@ pub fn render_app_html() -> &'static str {
                     fetch('/api/invoices').then(r => r.json())
                 ]);
 
-                contactsData = contactsRes || [];
-                dealsData = dealsRes || [];
-                invoicesData = invRes || [];
+                contactsData = contacts || [];
+                dealsData = deals || [];
+                invoicesData = invoices || [];
 
-                // Render KPIs
+                // Badges
+                document.getElementById('badge-contacts-count').innerText = contactsData.length;
+                document.getElementById('badge-deals-count').innerText = dealsData.length;
+
+                // KPIs
                 if (statsRes?.result?.content?.[0]?.text) {
                     const stats = JSON.parse(statsRes.result.content[0].text);
                     document.getElementById('kpi-pipeline').innerText = (stats.pipeline_volume_cents / 100).toLocaleString('de-DE', { style: 'currency', currency: 'EUR' });
@@ -1176,181 +1684,104 @@ pub fn render_app_html() -> &'static str {
                     document.getElementById('kpi-contacts').innerText = stats.total_contacts;
                 }
 
-                renderContactsTables();
+                renderDashboardTables();
+                renderContactsTable();
                 renderDealsKanban();
                 renderInvoicesTable();
-            } catch (e) {
-                console.error("Data refresh error:", e);
+            } catch (err) {
+                console.error("Data refresh failed:", err);
             }
         }
 
-        function renderContactsTables() {
-            const tbodyDash = document.getElementById('dashboard-recent-contacts');
-            const tbodyFull = document.getElementById('contacts-full-table');
-
+        // Render Contacts
+        function renderDashboardTables() {
+            const tbody = document.getElementById('dashboardRecentContacts');
             if (!contactsData.length) {
-                tbodyDash.innerHTML = `<tr><td colspan="4" style="text-align:center; color:var(--text-secondary);">Keine Kontakte vorhanden.</td></tr>`;
-                tbodyFull.innerHTML = `<tr><td colspan="5" style="text-align:center; color:var(--text-secondary);">Keine Kontakte vorhanden.</td></tr>`;
+                tbody.innerHTML = '<tr><td colspan="5" style="text-align:center; color:var(--text-tertiary);">Keine Kontakte vorhanden.</td></tr>';
                 return;
             }
-
-            tbodyDash.innerHTML = contactsData.slice(0, 5).map(c => `
+            tbody.innerHTML = contactsData.slice(0, 5).map(c => `
                 <tr>
                     <td><strong>${escapeHtml(c.name)}</strong></td>
                     <td>${escapeHtml(c.company || '—')}</td>
                     <td>${escapeHtml(c.email || '—')}</td>
-                    <td><span class="badge badge-${c.status}">${c.status}</span></td>
+                    <td><span class="status-pill ${c.status === 'customer' ? 'success' : 'info'}">${escapeHtml(c.status)}</span></td>
+                    <td style="color:var(--text-tertiary); font-size:12px;">${new Date(c.created_at).toLocaleDateString('de-DE')}</td>
                 </tr>
             `).join('');
+        }
 
-            tbodyFull.innerHTML = contactsData.map(c => `
+        function renderContactsTable() {
+            const tbody = document.getElementById('contactsFullTable');
+            if (!contactsData.length) {
+                tbody.innerHTML = '<tr><td colspan="6" style="text-align:center; color:var(--text-tertiary);">Keine Kontakte hinterlegt.</td></tr>';
+                return;
+            }
+            tbody.innerHTML = contactsData.map(c => `
                 <tr>
                     <td><strong>${escapeHtml(c.name)}</strong></td>
                     <td>${escapeHtml(c.company || '—')}</td>
-                    <td>${escapeHtml(c.email || c.phone || '—')}</td>
-                    <td><span class="badge badge-${c.status}">${c.status}</span></td>
-                    <td><span style="font-size:11px; color:var(--text-secondary); font-family:'JetBrains Mono';">${escapeHtml(c.tags || '—')}</span></td>
+                    <td>
+                        <div>${escapeHtml(c.email || '')}</div>
+                        <div style="font-size:11px; color:var(--text-tertiary);">${escapeHtml(c.phone || '')}</div>
+                    </td>
+                    <td><span class="status-pill ${c.status === 'customer' ? 'success' : 'info'}">${escapeHtml(c.status)}</span></td>
+                    <td><span style="font-size:11px; color:var(--text-secondary);">${escapeHtml(c.tags || '—')}</span></td>
+                    <td><button class="btn" style="padding:4px 8px; font-size:11px;" onclick="openNewDealModalForContact('${c.id}')">+ Deal</button></td>
                 </tr>
             `).join('');
         }
 
+        function filterContactsList() {
+            const q = document.getElementById('contactSearchInput').value.toLowerCase();
+            const rows = document.querySelectorAll('#contactsFullTable tr');
+            rows.forEach(r => {
+                r.style.display = r.innerText.toLowerCase().includes(q) ? '' : 'none';
+            });
+        }
+
+        // Render Deals Kanban
         function renderDealsKanban() {
             const stages = ['discovery', 'proposal', 'negotiation', 'closed_won'];
-            stages.forEach(st => {
-                const colItems = document.getElementById(`items-${st}`);
-                const sumEl = document.getElementById(`sum-${st}`);
-                const filtered = dealsData.filter(d => d.stage === st);
-                const sum = filtered.reduce((acc, d) => acc + d.value_cents, 0) / 100;
+            const sums = { discovery: 0, proposal: 0, negotiation: 0, closed_won: 0 };
 
-                sumEl.innerText = sum.toLocaleString('de-DE', { style: 'currency', currency: 'EUR' });
-                colItems.innerHTML = filtered.map(d => `
-                    <div class="kanban-card" onclick="advanceDeal('${d.id}', '${d.stage}')" title="Klick schiebt den Deal vorwärts">
-                        <div class="kanban-title">${escapeHtml(d.title)}</div>
-                        <div class="kanban-company">${escapeHtml(d.contact_name || 'Kontakt')}</div>
-                        <div class="kanban-val">${(d.value_cents / 100).toLocaleString('de-DE', { style: 'currency', currency: 'EUR' })}</div>
-                    </div>
-                `).join('');
+            stages.forEach(s => {
+                const col = document.getElementById(`k-items-${s}`);
+                if (col) col.innerHTML = '';
             });
-        }
 
-        function renderInvoicesTable() {
-            const tbody = document.getElementById('invoices-full-table');
-            if (!invoicesData.length) {
-                tbody.innerHTML = `<tr><td colspan="7" style="text-align:center; color:var(--text-secondary);">Noch keine Rechnungen erfasst.</td></tr>`;
-                return;
-            }
+            dealsData.forEach(d => {
+                const stage = sums[d.stage] !== undefined ? d.stage : 'discovery';
+                sums[stage] += d.value_cents;
 
-            tbody.innerHTML = invoicesData.map(inv => {
-                const isStorno = inv.invoice_number.startsWith('ST-');
-                const isLocked = inv.status === 'sent' || inv.status === 'paid';
-                const lockIcon = isLocked ? '🔒 ' : '';
-                return `
-                <tr>
-                    <td>
-                        <strong style="font-family:'JetBrains Mono';">${escapeHtml(inv.invoice_number)}</strong>
-                        ${isStorno ? '<span class="badge" style="background:rgba(239,68,68,0.2); color:#fca5a5; margin-left:6px; font-size:10px;">STORNO</span>' : ''}
-                    </td>
-                    <td>${escapeHtml(inv.contact_name || 'Kunde')}</td>
-                    <td style="font-family:'JetBrains Mono';">${escapeHtml(inv.due_date)}</td>
-                    <td style="font-family:'JetBrains Mono';">${(inv.net_cents / 100).toLocaleString('de-DE', { style: 'currency', currency: 'EUR' })}</td>
-                    <td style="font-family:'JetBrains Mono';"><strong>${(inv.gross_cents / 100).toLocaleString('de-DE', { style: 'currency', currency: 'EUR' })}</strong></td>
-                    <td><span class="badge badge-${inv.status}" onclick="toggleInvoicePaid('${inv.id}', '${inv.status}')" style="cursor:pointer;" title="Klick ändert Status">${lockIcon}${inv.status}</span></td>
-                    <td>
-                        <div style="display:flex; gap:6px; align-items:center;">
-                            <a href="/api/invoices/${inv.id}/xrechnung" target="_blank" class="btn btn-secondary" style="padding:4px 8px; font-size:11px;" title="EN 16931 XRechnung / ZUGFeRD 2.2 XML">📄 XML</a>
-                            <button onclick="showEpcQr('${escapeHtml(inv.invoice_number)}', ${inv.gross_cents})" class="btn btn-secondary" style="padding:4px 8px; font-size:11px;" title="0% SEPA GiroCode QR">⚡ QR</button>
-                            ${inv.status !== 'cancelled' && !isStorno ? `<button onclick="openStornoModal('${inv.id}', '${escapeHtml(inv.invoice_number)}')" class="btn btn-secondary" style="padding:4px 8px; font-size:11px; color:var(--danger);" title="GoBD-konformes Storno">↩ Storno</button>` : ''}
+                const col = document.getElementById(`k-items-${stage}`);
+                if (col) {
+                    const card = document.createElement('div');
+                    card.className = 'kanban-card';
+                    card.onclick = () => advanceDealStage(d.id, d.stage);
+                    card.innerHTML = `
+                        <div class="kanban-card-title">${escapeHtml(d.title)}</div>
+                        <div style="font-size:12px; color:var(--text-secondary);">${escapeHtml(d.contact_name || 'Kontakt')}</div>
+                        <div class="kanban-card-meta">
+                            <strong style="color:var(--accent); font-size:13px;">${(d.value_cents / 100).toLocaleString('de-DE', {style:'currency', currency:'EUR'})}</strong>
+                            <span>→ Vorrücken</span>
                         </div>
-                    </td>
-                </tr>
-            `}).join('');
-        }
-
-        let activeStornoInvoiceId = null;
-
-        function openStornoModal(invId, invNum) {
-            activeStornoInvoiceId = invId;
-            document.getElementById('storno-reason').value = '';
-            openModal('storno-modal');
-        }
-
-        async function submitStorno() {
-            const reason = document.getElementById('storno-reason').value.trim();
-            if (!reason) { alert('Bitte Begründung angeben.'); return; }
-            const res = await fetch(`/api/invoices/${activeStornoInvoiceId}/storno`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ reason: reason, actor: 'Merlin' })
-            });
-            if (res.ok) {
-                closeModal('storno-modal');
-                await refreshAllData();
-                alert('Stornorechnung erfolgreich erstellt und GoBD-konform verbucht!');
-            } else {
-                const err = await res.text();
-                alert('Fehler beim Storno: ' + err);
-            }
-        }
-
-        function exportDatev(skr) {
-            window.location.href = `/api/export/datev?year=2026&skr=${skr}`;
-        }
-
-        async function verifyGobdAudit() {
-            const res = await fetch('/api/gobd/verify');
-            const data = await res.json();
-            alert(`🔒 GoBD-Audit-Status:\n\n${data.message}\nVerifizierte Datensätze: ${data.total_entries}\nStatus: ${data.valid ? 'GÜLTIG & REVISIONSSICHER' : 'FEHLER'}`);
-        }
-
-        async function submitHubSpotImport() {
-            const type = document.getElementById('hs-type').value;
-            const csv = document.getElementById('hs-csv').value.trim();
-            if (!csv) { alert('Bitte CSV-Text einfügen.'); return; }
-
-            const endpoint = type === 'deals' ? '/api/import/hubspot/deals' : '/api/import/hubspot/contacts';
-            const res = await fetch(endpoint, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ csv_content: csv })
+                    `;
+                    col.appendChild(card);
+                }
             });
 
-            if (res.ok) {
-                const data = await res.json();
-                closeModal('hubspot-modal');
-                document.getElementById('hs-csv').value = '';
-                await refreshAllData();
-                alert(`✅ ${data.summary}`);
-            } else {
-                const err = await res.text();
-                alert('Import fehlgeschlagen: ' + err);
-            }
+            stages.forEach(s => {
+                const sumEl = document.getElementById(`k-sum-${s}`);
+                if (sumEl) sumEl.innerText = (sums[s] / 100).toLocaleString('de-DE', {style:'currency', currency:'EUR'});
+            });
         }
 
-        function showEpcQr(invNum, grossCents) {
-            const eur = (grossCents / 100).toFixed(2);
-            const iban = 'DE02100100100123456789';
-            const recipient = 'Holzhey Consulting GmbH';
-            document.getElementById('epc-details').innerHTML = `
-                <div><strong>Empfänger:</strong> ${recipient}</div>
-                <div><strong>IBAN:</strong> ${iban}</div>
-                <div><strong>Betrag:</strong> ${eur} €</div>
-                <div><strong>Verwendungszweck:</strong> ${invNum}</div>
-            `;
-            document.getElementById('epc-qr-code').innerHTML = `
-                <div style="font-family:'JetBrains Mono'; font-size:11px; color:#000; text-align:center;">
-                    <div style="font-weight:700; margin-bottom:4px;">EPC / SEPA GIROCODE</div>
-                    <div style="font-size:48px;">🏁</div>
-                    <div style="font-size:10px; color:#555;">BCD/002/1/SCT/EUR/${eur}/${invNum}</div>
-                </div>
-            `;
-            openModal('epc-modal');
-        }
-
-        async function advanceDeal(id, currentStage) {
-            const stages = ['discovery', 'proposal', 'negotiation', 'closed_won'];
-            const idx = stages.indexOf(currentStage);
-            if (idx === -1 || idx === stages.length - 1) return;
-            const nextStage = stages[idx + 1];
+        async function advanceDealStage(dealId, currentStage) {
+            const flow = ['discovery', 'proposal', 'negotiation', 'closed_won'];
+            const idx = flow.indexOf(currentStage);
+            if (idx === -1 || idx === flow.length - 1) return;
+            const next = flow[idx + 1];
 
             await fetch('/mcp', {
                 method: 'POST',
@@ -1359,185 +1790,411 @@ pub fn render_app_html() -> &'static str {
                     jsonrpc: '2.0',
                     id: 1,
                     method: 'tools/call',
-                    params: { name: 'crm_update_deal_stage', arguments: { deal_id: id, new_stage: nextStage } }
+                    params: { name: 'crm_update_deal_stage', arguments: { deal_id: dealId, new_stage: next } }
                 })
             });
-            await refreshAllData();
+            await refreshData();
         }
 
-        async function toggleInvoicePaid(id, currentStatus) {
-            const newStatus = currentStatus === 'paid' ? 'sent' : 'paid';
+        // Render Invoices Table
+        function renderInvoicesTable() {
+            const tbody = document.getElementById('invoicesFullTable');
+            if (!invoicesData.length) {
+                tbody.innerHTML = '<tr><td colspan="7" style="text-align:center; color:var(--text-tertiary);">Keine Rechnungen vorhanden.</td></tr>';
+                return;
+            }
+            tbody.innerHTML = invoicesData.map(inv => {
+                const isPaid = inv.status === 'paid';
+                return `
+                    <tr>
+                        <td><strong>${escapeHtml(inv.invoice_number)}</strong></td>
+                        <td>${escapeHtml(inv.contact_name || inv.contact_id)}</td>
+                        <td>${escapeHtml(inv.due_date)}</td>
+                        <td>${(inv.net_cents / 100).toLocaleString('de-DE', {style:'currency', currency:'EUR'})}</td>
+                        <td><strong>${(inv.gross_cents / 100).toLocaleString('de-DE', {style:'currency', currency:'EUR'})}</strong></td>
+                        <td><span class="status-pill ${isPaid ? 'success' : 'warning'}">${escapeHtml(inv.status)}</span></td>
+                        <td>
+                            <div style="display:flex; gap:6px;">
+                                <button class="btn" style="padding:4px 8px; font-size:11px;" onclick="toggleInvoiceStatus('${inv.id}', '${inv.status}')">
+                                    ${isPaid ? 'Als offen markieren' : 'Als bezahlt'}
+                                </button>
+                                <a href="/api/invoices/${inv.id}/xrechnung" target="_blank" class="btn" style="padding:4px 8px; font-size:11px; text-decoration:none;">
+                                    XML
+                                </a>
+                                <button class="btn" style="padding:4px 8px; font-size:11px;" onclick="openEpcModal('${inv.invoice_number}', ${inv.gross_cents})">
+                                    GiroCode
+                                </button>
+                            </div>
+                        </td>
+                    </tr>
+                `;
+            }).join('');
+        }
+
+        async function toggleInvoiceStatus(id, currentStatus) {
+            const nextStatus = currentStatus === 'paid' ? 'sent' : 'paid';
             await fetch(`/api/invoices/${id}/status`, {
                 method: 'PATCH',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ status: newStatus })
+                body: JSON.stringify({ status: nextStatus })
             });
-            await refreshAllData();
+            await refreshData();
         }
 
-        function switchTab(viewId) {
-            const views = ['dashboard', 'contacts', 'deals', 'invoices', 'retainers', 'marketing', 'dms', 'settings'];
-            views.forEach(v => {
-                const el = document.getElementById(`view-${v}`);
-                if (el) el.style.display = v === viewId ? 'block' : 'none';
-            });
-            document.querySelectorAll('.nav-btn').forEach(btn => btn.classList.remove('active'));
-            document.querySelectorAll('.mobile-nav-btn').forEach(btn => btn.classList.remove('active'));
-
-            const titles = {
-                dashboard: 'Betriebs-Cockpit',
-                contacts: 'Kontakte & Leads',
-                deals: 'Vertriebs-Pipeline',
-                invoices: 'ERP & Rechnungen',
-                retainers: 'Retainer & Monats-Abrechnung',
-                marketing: 'Marketing & Ad Spend ROI',
-                dms: 'DMS Dokumente',
-                settings: 'Customizer & MCP'
-            };
-            document.getElementById('current-view-title').innerText = titles[viewId] || 'Workspace';
-
-            if (viewId === 'retainers') loadRetainersData();
-            if (viewId === 'marketing') loadMarketingData();
+        function openEpcModal(invNum, grossCents) {
+            const eur = (grossCents / 100).toFixed(2);
+            document.getElementById('epcQrCodeString').innerText = `BCD/002/1/SCT/EUR/${eur}/${invNum}`;
+            document.getElementById('epcDetailsBox').innerHTML = `
+                <div><strong>Empfänger:</strong> Conrad KI / Merlin Conrad</div>
+                <div><strong>IBAN:</strong> DE02100100100123456789</div>
+                <div><strong>Rechnungsbetrag:</strong> ${eur} €</div>
+                <div><strong>Verwendungszweck:</strong> ${invNum}</div>
+            `;
+            openModal('modalEpcQr');
         }
 
-        async function loadRetainersData() {
+        // Render Retainers View
+        async function loadRetainersView() {
             try {
                 const list = await fetch('/api/retainers').then(r => r.json());
-                const tbody = document.getElementById('retainers-table');
+                const tbody = document.getElementById('retainersFullTable');
                 if (!list.length) {
-                    tbody.innerHTML = '<tr><td colspan="6" style="text-align:center; color:var(--text-secondary);">Keine Retainer hinterlegt.</td></tr>';
+                    tbody.innerHTML = '<tr><td colspan="6" style="text-align:center; color:var(--text-tertiary);">Keine laufenden Retainer hinterlegt.</td></tr>';
                     return;
                 }
                 tbody.innerHTML = list.map(r => `
                     <tr>
                         <td><strong>${escapeHtml(r.contact_name || r.contact_id)}</strong></td>
                         <td>${escapeHtml(r.plan_name)}</td>
-                        <td><strong style="color:var(--accent);">${(r.amount_cents / 100).toLocaleString('de-DE', {style:'currency', currency:'EUR'})}</strong></td>
+                        <td><strong style="color:var(--apple-green);">${(r.amount_cents / 100).toLocaleString('de-DE', {style:'currency', currency:'EUR'})}</strong></td>
                         <td>Alle ${r.interval_months} Mon.</td>
                         <td><code>${escapeHtml(r.next_billing_date)}</code></td>
-                        <td><span class="badge ${r.active ? 'badge-success' : 'badge-warning'}">${r.active ? 'Aktiv' : 'Pausiert'}</span></td>
+                        <td><span class="status-pill ${r.active ? 'success' : 'warning'}">${r.active ? 'Aktiv' : 'Pausiert'}</span></td>
                     </tr>
                 `).join('');
-            } catch (e) {
-                console.error("Retainers load error:", e);
+            } catch (err) {
+                console.error("Retainers load failed:", err);
             }
         }
 
         async function triggerRetainerRun() {
-            if (!confirm('Möchten Sie den automatischen Abrechnungslauf für alle fälligen Retainer jetzt ausführen?')) return;
+            if (!confirm("Möchten Sie den automatischen monatlichen Retainer-Abrechnungslauf jetzt starten?")) return;
             try {
                 const res = await fetch('/api/retainers/trigger-run', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ actor: 'Admin UI' })
+                    body: JSON.stringify({ actor: `${document.getElementById('ui-user-name').innerText}` })
                 }).then(r => r.json());
                 alert(`✅ ${res.summary}`);
-                await loadRetainersData();
-                await refreshAllData();
-            } catch (e) {
-                alert('Fehler beim Abrechnungslauf: ' + e);
+                await loadRetainersView();
+                await refreshData();
+            } catch (err) {
+                alert("Fehler beim Abrechnungslauf: " + err);
             }
         }
 
-        async function loadMarketingData() {
+        // Render Marketing & ROI View
+        async function loadMarketingView() {
             try {
                 const [campaigns, roi] = await Promise.all([
                     fetch('/api/marketing/campaigns').then(r => r.json()),
                     fetch('/api/marketing/roi').then(r => r.json())
                 ]);
 
-                // Update KPIs
                 if (roi) {
-                    document.getElementById('kpi-ad-spend').innerText = roi.total_spend_eur.toLocaleString('de-DE', {style:'currency', currency:'EUR'});
-                    document.getElementById('kpi-m-leads').innerText = roi.total_leads;
-                    document.getElementById('kpi-m-cac').innerText = roi.blended_cac_eur.toLocaleString('de-DE', {style:'currency', currency:'EUR'});
-                    document.getElementById('kpi-m-roas').innerText = `${roi.roas.toFixed(1)}x`;
+                    document.getElementById('m-kpi-spend').innerText = roi.total_spend_eur.toLocaleString('de-DE', {style:'currency', currency:'EUR'});
+                    document.getElementById('m-kpi-leads').innerText = roi.total_leads;
+                    document.getElementById('m-kpi-cac').innerText = roi.blended_cac_eur.toLocaleString('de-DE', {style:'currency', currency:'EUR'});
+                    document.getElementById('m-kpi-roas').innerText = `${roi.roas.toFixed(1)}x`;
                 }
 
-                const tbody = document.getElementById('marketing-campaigns-table');
+                const tbody = document.getElementById('marketingCampaignsTable');
                 if (!campaigns.length) {
-                    tbody.innerHTML = '<tr><td colspan="8" style="text-align:center; color:var(--text-secondary);">Keine Kampagnen vorhanden.</td></tr>';
+                    tbody.innerHTML = '<tr><td colspan="8" style="text-align:center; color:var(--text-tertiary);">Keine Kampagnen erfasst.</td></tr>';
                     return;
                 }
-                tbody.innerHTML = campaigns.map(c => {
-                    const spendEur = (c.spend_cents / 100).toLocaleString('de-DE', {style:'currency', currency:'EUR'});
-                    const revEur = (c.revenue_cents / 100).toLocaleString('de-DE', {style:'currency', currency:'EUR'});
-                    const cpc = c.clicks > 0 ? ((c.spend_cents / c.clicks) / 100).toFixed(2) + ' €' : '-';
-                    return `
-                        <tr>
-                            <td><strong>${escapeHtml(c.name)}</strong></td>
-                            <td><span class="badge" style="background:rgba(59,130,246,0.15); color:#60a5fa;">${escapeHtml(c.platform.toUpperCase())}</span></td>
-                            <td>${spendEur}</td>
-                            <td>${c.clicks} (${cpc})</td>
-                            <td>${c.leads}</td>
-                            <td><strong style="color:var(--accent);">${c.customers}</strong></td>
-                            <td>${revEur}</td>
-                            <td><span class="badge ${c.status === 'active' ? 'badge-success' : 'badge-warning'}">${escapeHtml(c.status)}</span></td>
-                        </tr>
-                    `;
-                }).join('');
+                tbody.innerHTML = campaigns.map(c => `
+                    <tr>
+                        <td><strong>${escapeHtml(c.name)}</strong></td>
+                        <td><span class="status-pill neutral">${escapeHtml(c.platform.toUpperCase())}</span></td>
+                        <td>${(c.spend_cents / 100).toLocaleString('de-DE', {style:'currency', currency:'EUR'})}</td>
+                        <td>${c.clicks}</td>
+                        <td>${c.leads}</td>
+                        <td><strong style="color:var(--apple-green);">${c.customers}</strong></td>
+                        <td>${(c.revenue_cents / 100).toLocaleString('de-DE', {style:'currency', currency:'EUR'})}</td>
+                        <td><span class="status-pill ${c.status === 'active' ? 'success' : 'neutral'}">${escapeHtml(c.status)}</span></td>
+                    </tr>
+                `).join('');
+            } catch (err) {
+                console.error("Marketing load failed:", err);
+            }
+        }
+
+        // Render GoBD Audit View
+        async function loadGobdAuditView() {
+            try {
+                const list = await fetch('/api/gobd/audit-log').then(r => r.json());
+                const tbody = document.getElementById('gobdAuditTable');
+                if (!list.length) {
+                    tbody.innerHTML = '<tr><td colspan="6" style="text-align:center; color:var(--text-tertiary);">Keine Audit-Einträge.</td></tr>';
+                    return;
+                }
+                tbody.innerHTML = list.map(entry => `
+                    <tr>
+                        <td><code>#${entry.seq}</code></td>
+                        <td style="font-size:12px; color:var(--text-tertiary);">${new Date(entry.timestamp).toLocaleString('de-DE')}</td>
+                        <td><span class="status-pill neutral">${escapeHtml(entry.action)}</span></td>
+                        <td><code>${escapeHtml(entry.entity_id ? entry.entity_id.substring(0, 12) + '...' : '—')}</code></td>
+                        <td>${escapeHtml(entry.details)}</td>
+                        <td><strong style="font-size:12px;">${escapeHtml(entry.actor)}</strong></td>
+                    </tr>
+                `).join('');
+            } catch (err) {
+                console.error("GoBD log failed:", err);
+            }
+        }
+
+        async function verifyGobdChain() {
+            try {
+                const res = await fetch('/api/gobd/verify').then(r => r.json());
+                const box = document.getElementById('gobdVerifyResult');
+                box.style.display = 'block';
+                if (res.valid) {
+                    box.style.background = 'var(--apple-green-soft)';
+                    box.style.color = 'var(--apple-green)';
+                    box.innerHTML = `<strong>✅ ${res.message}</strong> (${res.total_entries} Journal-Einträge)`;
+                } else {
+                    box.style.background = 'var(--apple-red-soft)';
+                    box.style.color = 'var(--apple-red)';
+                    box.innerHTML = `<strong>⚠️ Revisionsprüfung fehlgeschlagen:</strong> Unstimmigkeit in Hash-Kette.`;
+                }
+            } catch (err) {
+                alert("Verifikation fehlgeschlagen: " + err);
+            }
+        }
+
+        // Settings & Customizer
+        async function loadSettings() {
+            try {
+                settingsData = await fetch('/api/settings').then(r => r.json()) || {};
+                if (settingsData.company_name) {
+                    document.getElementById('ui-brand-name').innerText = settingsData.company_name;
+                    document.getElementById('settingCompanyName').value = settingsData.company_name;
+                }
+                if (settingsData.theme_accent) {
+                    setThemeAccent(settingsData.theme_accent, false);
+                }
+                if (settingsData.theme_mode) {
+                    document.documentElement.setAttribute('data-theme', settingsData.theme_mode);
+                    document.getElementById('themeToggleIcon').innerText = settingsData.theme_mode === 'dark' ? '☀️' : '🌙';
+                }
             } catch (e) {
-                console.error("Marketing load error:", e);
+                console.log("Default settings loaded");
             }
         }
 
+        async function saveCompanyNameSetting() {
+            const name = document.getElementById('settingCompanyName').value.trim();
+            if (!name) return;
+            await fetch('/api/settings', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ key: 'company_name', value: name })
+            });
+            document.getElementById('ui-brand-name').innerText = name;
+            alert('Unternehmensname aktualisiert.');
+        }
+
+        function setThemeAccent(hex, persist = true) {
+            document.documentElement.style.setProperty('--accent', hex);
+            document.documentElement.style.setProperty('--accent-hover', hex);
+            if (persist) {
+                fetch('/api/settings', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ key: 'theme_accent', value: hex })
+                });
+            }
+        }
+
+        function toggleTheme() {
+            const current = document.documentElement.getAttribute('data-theme') || 'light';
+            const next = current === 'dark' ? 'light' : 'dark';
+            document.documentElement.setAttribute('data-theme', next);
+            document.getElementById('themeToggleIcon').innerText = next === 'dark' ? '☀️' : '🌙';
+            fetch('/api/settings', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ key: 'theme_mode', value: next })
+            });
+        }
+
+        async function loadSettingsView() {
+            try {
+                const cfs = await fetch('/api/custom-fields').then(r => r.json());
+                const list = document.getElementById('customFieldsRenderList');
+                if (!cfs || !cfs.length) {
+                    list.innerHTML = 'Keine dynamischen Custom Fields definiert.';
+                    return;
+                }
+                list.innerHTML = cfs.map(f => `• <strong>${escapeHtml(f.label)}</strong> (<code>${escapeHtml(f.key)}</code> · ${f.entity_type})`).join('<br>');
+            } catch (err) {
+                console.error("Custom fields error:", err);
+            }
+        }
+
+        async function submitCustomField() {
+            const key = document.getElementById('newCfKey').value.trim();
+            const label = document.getElementById('newCfLabel').value.trim();
+            if (!key || !label) return alert('Bitte Key und Label ausfüllen.');
+
+            await fetch('/api/custom-fields', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    entity_type: 'contact',
+                    key,
+                    label,
+                    field_type: 'text'
+                })
+            });
+            document.getElementById('newCfKey').value = '';
+            document.getElementById('newCfLabel').value = '';
+            await loadSettingsView();
+        }
+
+        // ── Conversational Copilot & Spotlight ──
         function toggleCopilot() {
-            document.getElementById('copilot-drawer').classList.toggle('open');
-            if (document.getElementById('copilot-drawer').classList.contains('open')) {
-                setTimeout(() => document.getElementById('copilot-input').focus(), 150);
+            document.getElementById('copilotPanel').classList.toggle('open');
+            if (document.getElementById('copilotPanel').classList.contains('open')) {
+                setTimeout(() => document.getElementById('copilotInput').focus(), 150);
             }
         }
 
-        async function sendCopilotMsg() {
-            const input = document.getElementById('copilot-input');
+        async function sendCopilotChat() {
+            const input = document.getElementById('copilotInput');
             const prompt = input.value.trim();
             if (!prompt) return;
 
-            const box = document.getElementById('copilot-messages');
-            box.innerHTML += `<div class="chat-bubble chat-user">${escapeHtml(prompt)}</div>`;
+            const box = document.getElementById('copilotMessages');
+            box.innerHTML += `<div class="chat-bubble user">${escapeHtml(prompt)}</div>`;
             input.value = '';
             box.scrollTop = box.scrollHeight;
 
+            await handleAiInteraction(prompt, box);
+        }
+
+        async function executeSpotlightCommand() {
+            const input = document.getElementById('spotlightInput');
+            const prompt = input.value.trim();
+            if (!prompt) return;
+
+            input.value = '';
+            toggleCopilot();
+            const box = document.getElementById('copilotMessages');
+            box.innerHTML += `<div class="chat-bubble user">${escapeHtml(prompt)}</div>`;
+            box.scrollTop = box.scrollHeight;
+
+            await handleAiInteraction(prompt, box);
+        }
+
+        async function handleAiInteraction(prompt, box) {
             try {
                 const res = await fetch('/api/copilot/chat', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ prompt })
+                    body: JSON.stringify({ prompt, mode: currentMode, role: currentRole })
                 }).then(r => r.json());
 
-                let replyHtml = escapeHtml(res.reply).replace(/\n/g, '<br>');
+                let html = escapeHtml(res.reply).replace(/\n/g, '<br>');
+
+                // If AI executed actions
                 if (res.actions_performed && res.actions_performed.length) {
-                    replyHtml += `<div style="margin-top:8px; font-size:11px; color:#34d399; font-weight:600; font-family:'JetBrains Mono';">⚡ MCP TOOL AUSGEFÜHRT</div>`;
+                    html += `<div style="margin-top:8px; font-size:11px; color:var(--apple-green); font-weight:600;">⚡ MCP Tool ausgeführt: ${escapeHtml(res.actions_performed.join(', '))}</div>`;
                 }
-                box.innerHTML += `<div class="chat-bubble chat-ai">${replyHtml}</div>`;
+
+                // If AI mutated UI in Admin Mode
+                if (res.ui_mutations) {
+                    if (res.ui_mutations.theme_mode) {
+                        document.documentElement.setAttribute('data-theme', res.ui_mutations.theme_mode);
+                    }
+                    if (res.ui_mutations.theme_accent) {
+                        setThemeAccent(res.ui_mutations.theme_accent);
+                    }
+                    if (res.ui_mutations.refresh_schema) {
+                        await loadSettingsView();
+                    }
+                }
+
+                // If AI requests navigation
+                if (res.navigate_to) {
+                    switchView(res.navigate_to);
+                    html += `<div><button class="chat-nav-chip" onclick="switchView('${res.navigate_to}')">🧭 Zu ${res.navigate_to} wechseln</button></div>`;
+                }
+
+                box.innerHTML += `<div class="chat-bubble ai">${html}</div>`;
                 box.scrollTop = box.scrollHeight;
 
-                await refreshAllData();
-            } catch (e) {
-                box.innerHTML += `<div class="chat-bubble chat-ai" style="color:var(--danger);">Fehler beim Aufruf des Copilots.</div>`;
+                await refreshData();
+            } catch (err) {
+                box.innerHTML += `<div class="chat-bubble ai" style="color:var(--apple-red);">Fehler bei der Kommunikation mit dem Copilot.</div>`;
             }
         }
 
+        // Demo User Switcher
+        function setDemoUser(type) {
+            if (type === 'admin') {
+                currentRole = 'admin';
+                document.getElementById('ui-user-avatar').innerText = 'MC';
+                document.getElementById('ui-user-name').innerText = 'Merlin Conrad';
+                document.getElementById('ui-user-role').innerText = 'Administrator';
+                document.getElementById('demoAccountLabel').innerText = 'admin@conrad-ki.com';
+                switchAppMode('admin');
+            } else {
+                currentRole = 'operator';
+                document.getElementById('ui-user-avatar').innerText = 'TM';
+                document.getElementById('ui-user-name').innerText = 'Team Operator';
+                document.getElementById('ui-user-role').innerText = 'Mitarbeiter';
+                document.getElementById('demoAccountLabel').innerText = 'team@conrad-ki.com';
+                switchAppMode('user');
+            }
+        }
+
+        // Modal Helpers
+        function openModal(id) { document.getElementById(id).style.display = 'flex'; }
+        function closeModal(id) { document.getElementById(id).style.display = 'none'; }
+        function openLoginModal() { openModal('loginModal'); }
+
+        function openCreateModal() {
+            if (currentView === 'deals') openNewDealModal();
+            else if (currentView === 'invoices') openNewInvoiceModal();
+            else openNewContactModal();
+        }
+
         function openNewContactModal() {
-            document.getElementById('contact-modal').style.display = 'flex';
-            setTimeout(() => document.getElementById('c-name').focus(), 50);
+            openModal('modalNewContact');
+            setTimeout(() => document.getElementById('nc-name').focus(), 50);
         }
+
         function openNewDealModal() {
-            const sel = document.getElementById('d-contact-select');
+            const sel = document.getElementById('nd-contact-select');
             sel.innerHTML = contactsData.map(c => `<option value="${c.id}">${escapeHtml(c.name)} (${escapeHtml(c.company || 'Privat')})</option>`).join('');
-            document.getElementById('deal-modal').style.display = 'flex';
+            openModal('modalNewDeal');
         }
+
+        function openNewDealModalForContact(contactId) {
+            openNewDealModal();
+            document.getElementById('nd-contact-select').value = contactId;
+        }
+
         function openNewInvoiceModal() {
-            const sel = document.getElementById('inv-contact-select');
+            const sel = document.getElementById('ni-contact-select');
             sel.innerHTML = contactsData.map(c => `<option value="${c.id}">${escapeHtml(c.name)} (${escapeHtml(c.company || 'Privat')})</option>`).join('');
-            document.getElementById('invoice-modal').style.display = 'flex';
-        }
-        function closeModal(id) {
-            document.getElementById(id).style.display = 'none';
+            openModal('modalNewInvoice');
         }
 
         async function submitCreateContact() {
-            const name = document.getElementById('c-name').value.trim();
+            const name = document.getElementById('nc-name').value.trim();
             if (!name) return alert('Bitte Name eingeben');
 
             await fetch('/api/contacts', {
@@ -1545,21 +2202,21 @@ pub fn render_app_html() -> &'static str {
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
                     name,
-                    company: document.getElementById('c-company').value.trim(),
-                    email: document.getElementById('c-email').value.trim(),
-                    phone: document.getElementById('c-phone').value.trim(),
-                    status: document.getElementById('c-status').value
+                    company: document.getElementById('nc-company').value.trim(),
+                    email: document.getElementById('nc-email').value.trim(),
+                    phone: document.getElementById('nc-phone').value.trim(),
+                    status: document.getElementById('nc-status').value
                 })
             });
-            closeModal('contact-modal');
-            await refreshAllData();
+            closeModal('modalNewContact');
+            await refreshData();
         }
 
         async function submitCreateDeal() {
-            const title = document.getElementById('d-title').value.trim();
-            const contact_id = document.getElementById('d-contact-select').value;
-            const val = parseFloat(document.getElementById('d-val').value) || 0;
-            const stage = document.getElementById('d-stage').value;
+            const title = document.getElementById('nd-title').value.trim();
+            const contact_id = document.getElementById('nd-contact-select').value;
+            const val = parseFloat(document.getElementById('nd-val').value) || 0;
+            const stage = document.getElementById('nd-stage').value;
 
             await fetch('/api/deals', {
                 method: 'POST',
@@ -1571,14 +2228,14 @@ pub fn render_app_html() -> &'static str {
                     stage
                 })
             });
-            closeModal('deal-modal');
-            await refreshAllData();
+            closeModal('modalNewDeal');
+            await refreshData();
         }
 
         async function submitCreateInvoice() {
-            const contact_id = document.getElementById('inv-contact-select').value;
-            const desc = document.getElementById('inv-desc').value.trim();
-            const amount = parseFloat(document.getElementById('inv-amount').value) || 0;
+            const contact_id = document.getElementById('ni-contact-select').value;
+            const desc = document.getElementById('ni-desc').value.trim();
+            const amount = parseFloat(document.getElementById('ni-amount').value) || 0;
 
             await fetch('/api/invoices', {
                 method: 'POST',
@@ -1588,24 +2245,46 @@ pub fn render_app_html() -> &'static str {
                     items: [{ description: desc, quantity: 1, unit_price_cents: Math.round(amount * 100), total_cents: Math.round(amount * 100) }]
                 })
             });
-            closeModal('invoice-modal');
-            await refreshAllData();
+            closeModal('modalNewInvoice');
+            await refreshData();
         }
 
-        function filterContacts() {
-            const q = document.getElementById('contact-search').value.toLowerCase();
-            const rows = document.querySelectorAll('#contacts-full-table tr');
-            rows.forEach(r => {
-                r.style.display = r.innerText.toLowerCase().includes(q) ? '' : 'none';
+        function setupKeyboardNav() {
+            window.addEventListener('keydown', (e) => {
+                const inInput = ['INPUT', 'TEXTAREA', 'SELECT'].includes(document.activeElement.tagName);
+                if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'k') {
+                    e.preventDefault();
+                    document.getElementById('spotlightInput').focus();
+                    return;
+                }
+                if (e.key === 'Escape') {
+                    document.querySelectorAll('.modal-backdrop').forEach(m => m.style.display = 'none');
+                    document.getElementById('copilotPanel').classList.remove('open');
+                    return;
+                }
+                if (inInput) return;
+                if (e.key === '1') switchView('dashboard');
+                if (e.key === '2') switchView('contacts');
+                if (e.key === '3') switchView('deals');
+                if (e.key === '4') switchView('invoices');
+                if (e.key === '5') switchView('retainers');
+                if (e.key === '6') switchView('marketing');
+                if (e.key === '7') switchView('dms');
+                if (e.key === '8') switchView('settings');
+                if (e.key.toLowerCase() === 'c') toggleCopilot();
             });
+        }
+
+        function toggleMobileSidebar() {
+            document.getElementById('appSidebar').classList.toggle('mobile-open');
         }
 
         function escapeHtml(text) {
             if (!text) return '';
-            return text.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+            return String(text).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
         }
 
-        window.onload = init;
+        window.onload = initApp;
     </script>
 </body>
 </html>"#

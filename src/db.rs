@@ -146,6 +146,12 @@ impl Database {
                 PRIMARY KEY (entity_id, field_id)
             );
 
+            CREATE TABLE IF NOT EXISTS system_settings (
+                key TEXT PRIMARY KEY,
+                value TEXT NOT NULL,
+                updated_at TEXT NOT NULL
+            );
+
             CREATE TABLE IF NOT EXISTS gobd_audit_log (
                 id TEXT PRIMARY KEY,
                 seq INTEGER NOT NULL,
@@ -350,6 +356,12 @@ impl Database {
                 revenue_cents: Some(99000),
                 status: Some("active".to_string()),
             });
+
+            // Seed system settings
+            let _ = self.set_setting("company_name", "Conrad KI");
+            let _ = self.set_setting("theme_accent", "#0071E3");
+            let _ = self.set_setting("visible_modules", "dashboard,contacts,deals,invoices,retainers,marketing,dms,settings");
+            let _ = self.set_setting("active_plugins", "gobd,zugferd,datev,girocode,n8n,calcom");
         }
         Ok(())
     }
@@ -1702,5 +1714,39 @@ impl Database {
             total_amount_eur,
             summary,
         })
+    }
+
+    // =========================================================================
+    // System Settings & Dynamic Customizer (AI-First Admin Control)
+    // =========================================================================
+
+    pub fn get_setting(&self, key: &str) -> Result<Option<String>> {
+        let conn = self.conn.lock().unwrap();
+        let val: Option<String> = conn
+            .query_row("SELECT value FROM system_settings WHERE key = ?1", [key], |r| r.get(0))
+            .ok();
+        Ok(val)
+    }
+
+    pub fn set_setting(&self, key: &str, value: &str) -> Result<()> {
+        let now = Utc::now().to_rfc3339();
+        let conn = self.conn.lock().unwrap();
+        conn.execute(
+            "INSERT INTO system_settings (key, value, updated_at) VALUES (?1, ?2, ?3)
+             ON CONFLICT(key) DO UPDATE SET value = excluded.value, updated_at = excluded.updated_at",
+            params![key, value, now],
+        )?;
+        Ok(())
+    }
+
+    pub fn get_all_settings(&self) -> Result<std::collections::HashMap<String, String>> {
+        let conn = self.conn.lock().unwrap();
+        let mut stmt = conn.prepare("SELECT key, value FROM system_settings")?;
+        let rows = stmt.query_map([], |r| Ok((r.get::<_, String>(0)?, r.get::<_, String>(1)?)))?;
+        let mut map = std::collections::HashMap::new();
+        for row in rows.filter_map(Result::ok) {
+            map.insert(row.0, row.1);
+        }
+        Ok(map)
     }
 }

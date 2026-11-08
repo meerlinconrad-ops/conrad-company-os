@@ -78,6 +78,7 @@ async fn main() -> anyhow::Result<()> {
         .route("/api/consulting/savings-report", get(consulting_savings_report_handler))
         .route("/api/documents", get(list_documents_handler))
         .route("/api/custom-fields", get(list_custom_fields_handler).post(add_custom_field_handler))
+        .route("/api/settings", get(get_settings_handler).post(update_setting_handler))
         .layer(CorsLayer::permissive())
         .with_state(state);
 
@@ -415,5 +416,28 @@ async fn trigger_retainer_billing_run_handler(
     match state.db.trigger_retainer_billing_run(&actor) {
         Ok(res) => (StatusCode::OK, Json(serde_json::to_value(res).unwrap())).into_response(),
         Err(err) => (StatusCode::INTERNAL_SERVER_ERROR, Json(json!({ "error": err.to_string() }))).into_response(),
+    }
+}
+
+async fn get_settings_handler(State(state): State<AppState>) -> impl IntoResponse {
+    match state.db.get_all_settings() {
+        Ok(map) => (StatusCode::OK, Json(serde_json::to_value(map).unwrap())).into_response(),
+        Err(err) => (StatusCode::INTERNAL_SERVER_ERROR, Json(json!({ "error": err.to_string() }))).into_response(),
+    }
+}
+
+#[derive(Deserialize)]
+struct UpdateSettingPayload {
+    key: String,
+    value: String,
+}
+
+async fn update_setting_handler(
+    State(state): State<AppState>,
+    Json(payload): Json<UpdateSettingPayload>,
+) -> impl IntoResponse {
+    match state.db.set_setting(&payload.key, &payload.value) {
+        Ok(_) => (StatusCode::OK, Json(json!({ "success": true, "key": payload.key, "value": payload.value }))).into_response(),
+        Err(err) => (StatusCode::BAD_REQUEST, Json(json!({ "error": err.to_string() }))).into_response(),
     }
 }
