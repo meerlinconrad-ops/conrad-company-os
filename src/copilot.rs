@@ -172,10 +172,107 @@ impl CopilotEngine {
             navigate_to = Some("marketing".to_string());
         } else if p_lower.contains("retainer") || p_lower.contains("monatsabo") || p_lower.contains("abo") || p_lower.contains("dauerauftrag") {
             navigate_to = Some("retainers".to_string());
+        } else if p_lower.contains("workflow") || p_lower.contains("trigger") || p_lower.contains("automatisier") {
+            navigate_to = Some("workflows".to_string());
+        } else if p_lower.contains("immobilie") || p_lower.contains("halmhuber") || p_lower.contains("mfh") || p_lower.contains("miet") {
+            navigate_to = Some("plugin:plugin.realestate".to_string());
+        } else if p_lower.contains("projekt") || p_lower.contains("sprint") || p_lower.contains("zeiterfassung") {
+            navigate_to = Some("plugin:plugin.projects".to_string());
+        } else if p_lower.contains("helpdesk") || p_lower.contains("ticket") || p_lower.contains("sla") {
+            navigate_to = Some("plugin:plugin.helpdesk".to_string());
+        } else if p_lower.contains("plugin") || p_lower.contains("harness") || p_lower.contains("app store") || p_lower.contains("modul") {
+            navigate_to = Some("plugins".to_string());
         } else if p_lower.contains("dokument") || p_lower.contains("dms") || p_lower.contains("ablage") {
-            navigate_to = Some("dms".to_string());
-        } else if p_lower.contains("einstellung") || p_lower.contains("customizer") || p_lower.contains("mcp") || p_lower.contains("konfig") {
             navigate_to = Some("settings".to_string());
+        } else if p_lower.contains("einstellung") || p_lower.contains("customizer") || p_lower.contains("mcp") || p_lower.contains("konfig") || p_lower.contains("architektur") {
+            navigate_to = Some("settings".to_string());
+        }
+
+        // --- AI-First Harness Plugin Builder ("Du baust es dir selbst") ---
+        if (p_lower.contains("plugin") || p_lower.contains("app") || p_lower.contains("modul"))
+            && (p_lower.contains("bau") || p_lower.contains("erstell") || p_lower.contains("generier") || p_lower.contains("neu"))
+        {
+            let mut app_name = prompt
+                .replace("Baue", "")
+                .replace("baue", "")
+                .replace("Erstelle", "")
+                .replace("erstelle", "")
+                .replace("Generiere", "")
+                .replace("generiere", "")
+                .replace("mir", "")
+                .replace("ein", "")
+                .replace("neues", "")
+                .replace("neue", "")
+                .replace("Plugin", "")
+                .replace("plugin", "")
+                .replace("App", "")
+                .replace("app", "")
+                .replace("Modul", "")
+                .replace("modul", "")
+                .replace("für", "")
+                .replace(":", "")
+                .trim()
+                .to_string();
+
+            if app_name.is_empty() {
+                app_name = "Fuhrpark & Assets".to_string();
+            }
+
+            let created = self.mcp.execute_tool(
+                "harness_create_plugin",
+                &json!({
+                    "name": app_name,
+                    "category": "Custom Studio",
+                    "accent_color": "#2563eb"
+                }),
+            )?;
+
+            let pid = created
+                .get("id")
+                .and_then(|v| v.as_str())
+                .unwrap_or("custom.app")
+                .to_string();
+            let layer = created.get("layer_order").and_then(|v| v.as_i64()).unwrap_or(160);
+
+            actions.push(format!("Harness-Plugin '{}' (Layer #{}) generiert & gemountet", app_name, layer));
+            return Ok(CopilotResponse {
+                reply: format!(
+                    "**Neues Harness-Plugin gebaut & gemountet:** **{}**\n\n\
+                     • **Plugin-ID:** `{}`\n\
+                     • **Patch-Layer:** `#{}`\n\
+                     • **Datenbank & MCP-Tools:** Live initialisiert\n\n\
+                     Ich habe das neue Plugin direkt im Workspace geöffnet.",
+                    app_name, pid, layer
+                ),
+                actions_performed: actions,
+                model_used: "Conrad Harness Architect (AI-First)".to_string(),
+                navigate_to: Some(format!("plugin:{}", pid)),
+                ui_mutations: Some(json!({
+                    "refresh_plugins": true,
+                    "open_plugin": pid
+                })),
+            });
+        }
+
+        // --- Real Estate / Immobilien Portfolio Query ---
+        if p_lower.contains("immobilie") || p_lower.contains("halmhuber") || p_lower.contains("mfh") {
+            let recs = self.mcp.execute_tool("harness_list_plugin_records", &json!({ "plugin_id": "plugin.realestate" }))?;
+            let count = recs.as_array().map(|a| a.len()).unwrap_or(0);
+            actions.push("Immobilien-Plugin Records via MCP abgerufen".to_string());
+            return Ok(CopilotResponse {
+                reply: format!(
+                    "**Immobilien-Portfolio (Plugin `plugin.realestate`):**\n\n\
+                     • **Erfasste Objekte / Ziele:** {}\n\
+                     • **Bestand:** Studio-Wohnung Halmhuberstraße 10, Mannheim (KP 86.000 €, EK 21.000 €, Cashflow **+53,00 €/Monat**, Mieter: Sebastian Gruia)\n\
+                     • **Nächster Meilenstein:** 2. Immobilie (MFH) nach Jobwechsel & Probezeit.\n\n\
+                     Ich habe das Immobilien-Plugin geöffnet.",
+                    count
+                ),
+                actions_performed: actions,
+                model_used: "Conrad Copilot".to_string(),
+                navigate_to: Some("plugin:plugin.realestate".to_string()),
+                ui_mutations: None,
+            });
         }
 
         // --- Admin Mode: System, Theme, Layout & Plugin Mutations ---

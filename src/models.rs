@@ -497,3 +497,74 @@ pub struct RetainerBillingRunResult {
     pub total_amount_eur: f64,
     pub summary: String,
 }
+
+// =========================================================================
+// Odoo × DeepSeek Harness Plugin Engine ("Everything is a Plugin")
+// =========================================================================
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct PluginFieldSchema {
+    pub key: String,
+    pub label: String,
+    pub field_type: String, // "text", "number", "currency", "badge", "date"
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct HarnessPlugin {
+    pub id: String,
+    pub name: String,
+    pub slug: String,
+    pub category: String,
+    pub description: String,
+    pub version: String,
+    pub layer_order: i64,
+    pub installed: bool,
+    pub is_core: bool,
+    pub icon_svg: String,
+    pub accent_color: String,
+    pub schema_json: String,
+    pub record_count: i64,
+    pub created_at: DateTime<Utc>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct NewHarnessPlugin {
+    pub name: String,
+    pub slug: Option<String>,
+    pub category: Option<String>,
+    pub description: Option<String>,
+    pub accent_color: Option<String>,
+    pub fields: Option<Vec<PluginFieldSchema>>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct PluginRecord {
+    pub id: String,
+    pub plugin_id: String,
+    pub title: String,
+    pub status: String,
+    pub amount_cents: i64,
+    pub owner: String,
+    pub data_json: String,
+    pub created_at: DateTime<Utc>,
+    pub updated_at: DateTime<Utc>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct NewPluginRecord {
+    pub title: String,
+    pub status: Option<String>,
+    pub amount_cents: Option<i64>,
+    pub owner: Option<String>,
+    pub data: Option<serde_json::Value>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct UpdatePluginRecord {
+    pub title: Option<String>,
+    pub status: Option<String>,
+    pub amount_cents: Option<i64>,
+    pub owner: Option<String>,
+    pub data: Option<serde_json::Value>,
+}
+

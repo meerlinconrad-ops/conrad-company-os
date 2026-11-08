@@ -6,7 +6,8 @@ use serde_json::{json, Value};
 use crate::db::Database;
 use crate::models::{
     DatevExportConfig, FunnelLeadPayload, InvoiceItem, NewBooking, NewContact, NewCustomFieldDef,
-    NewDeal, NewInvoice, NewMarketingCampaign, NewRetainerSubscription,
+    NewDeal, NewHarnessPlugin, NewInvoice, NewMarketingCampaign, NewPluginRecord,
+    NewRetainerSubscription,
 };
 
 #[derive(Debug, Deserialize)]
@@ -322,6 +323,67 @@ impl McpServer {
                     "properties": {
                         "actor": { "type": "string", "description": "Name des aufrufenden Agenten oder Nutzers" }
                     }
+                }
+            },
+            {
+                "name": "harness_list_plugins",
+                "description": "Listet alle im Conrad OS installierten und verfügbaren Odoo/DeepSeek-Harness Plugins & Patch-Layers auf",
+                "parameters": {
+                    "type": "object",
+                    "properties": {}
+                }
+            },
+            {
+                "name": "harness_toggle_plugin",
+                "description": "Aktiviert (mountet) oder deaktiviert ein Plugin-Layer im Harness-Stack",
+                "parameters": {
+                    "type": "object",
+                    "properties": {
+                        "plugin_id": { "type": "string", "description": "Plugin-ID oder Slug (z.B. plugin.projects, plugin.realestate, plugin.helpdesk)" }
+                    },
+                    "required": ["plugin_id"]
+                }
+            },
+            {
+                "name": "harness_create_plugin",
+                "description": "Baut zur Laufzeit ein komplett neues Odoo/Harness Plugin mit eigenem Daten-Schema, Tabelle und UI-Ansicht ('Everything is a Plugin')",
+                "parameters": {
+                    "type": "object",
+                    "properties": {
+                        "name": { "type": "string", "description": "Anzeigename des neuen Plugins (z.B. 'Fuhrpark & Leasing')" },
+                        "slug": { "type": "string", "description": "Technischer Kurzname (z.B. 'fuhrpark')" },
+                        "category": { "type": "string", "description": "Kategorie (z.B. 'Operations & ERP', 'Immobilien & Assets', 'Custom Studio')" },
+                        "description": { "type": "string", "description": "Beschreibung des Plugins" },
+                        "accent_color": { "type": "string", "description": "Hex-Farbe (z.B. '#0284c7')" }
+                    },
+                    "required": ["name"]
+                }
+            },
+            {
+                "name": "harness_list_plugin_records",
+                "description": "Liest alle Einträge eines bestimmten Plugins (z.B. 'plugin.projects', 'plugin.realestate', 'plugin.helpdesk')",
+                "parameters": {
+                    "type": "object",
+                    "properties": {
+                        "plugin_id": { "type": "string", "description": "Plugin-ID oder Slug" }
+                    },
+                    "required": ["plugin_id"]
+                }
+            },
+            {
+                "name": "harness_create_plugin_record",
+                "description": "Erstellt einen neuen Datensatz innerhalb eines beliebigen Harness-Plugins",
+                "parameters": {
+                    "type": "object",
+                    "properties": {
+                        "plugin_id": { "type": "string", "description": "Plugin-ID oder Slug" },
+                        "title": { "type": "string", "description": "Titel / Bezeichnung des Eintrags" },
+                        "status": { "type": "string", "description": "Status (z.B. 'Aktiv', 'In Prüfung', 'Abgeschlossen')" },
+                        "amount_cents": { "type": "integer", "description": "Wert oder Cashflow in Cent" },
+                        "owner": { "type": "string", "description": "Verantwortlicher" },
+                        "data": { "type": "object", "description": "Zusätzliche Schema-Felder als JSON-Objekt" }
+                    },
+                    "required": ["plugin_id", "title"]
                 }
             }
         ])
@@ -667,6 +729,44 @@ impl McpServer {
                 let actor = args.get("actor").and_then(|v| v.as_str()).unwrap_or("MCP Copilot Agent");
                 let res = self.db.trigger_retainer_billing_run(actor)?;
                 Ok(json!(res))
+            }
+            "harness_list_plugins" => {
+                let list = self.db.list_plugins()?;
+                Ok(json!(list))
+            }
+            "harness_toggle_plugin" => {
+                let pid = args.get("plugin_id").and_then(|v| v.as_str()).unwrap_or("");
+                let plugin = self.db.toggle_plugin(pid)?;
+                Ok(json!(plugin))
+            }
+            "harness_create_plugin" => {
+                let input = NewHarnessPlugin {
+                    name: args.get("name").and_then(|v| v.as_str()).unwrap_or("Neues Plugin").to_string(),
+                    slug: args.get("slug").and_then(|v| v.as_str()).map(String::from),
+                    category: args.get("category").and_then(|v| v.as_str()).map(String::from),
+                    description: args.get("description").and_then(|v| v.as_str()).map(String::from),
+                    accent_color: args.get("accent_color").and_then(|v| v.as_str()).map(String::from),
+                    fields: None,
+                };
+                let plugin = self.db.create_plugin(input)?;
+                Ok(json!(plugin))
+            }
+            "harness_list_plugin_records" => {
+                let pid = args.get("plugin_id").and_then(|v| v.as_str()).unwrap_or("plugin.projects");
+                let records = self.db.list_plugin_records(pid)?;
+                Ok(json!(records))
+            }
+            "harness_create_plugin_record" => {
+                let pid = args.get("plugin_id").and_then(|v| v.as_str()).unwrap_or("plugin.projects");
+                let input = NewPluginRecord {
+                    title: args.get("title").and_then(|v| v.as_str()).unwrap_or("Neuer Eintrag").to_string(),
+                    status: args.get("status").and_then(|v| v.as_str()).map(String::from),
+                    amount_cents: args.get("amount_cents").and_then(|v| v.as_i64()),
+                    owner: args.get("owner").and_then(|v| v.as_str()).map(String::from),
+                    data: args.get("data").cloned(),
+                };
+                let rec = self.db.create_plugin_record(pid, input)?;
+                Ok(json!(rec))
             }
             _ => Err(anyhow::anyhow!("Unbekanntes Tool: {}", name)),
         }

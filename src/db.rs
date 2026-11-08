@@ -11,11 +11,13 @@ use crate::hubspot::{parse_hubspot_contacts_csv, parse_hubspot_deals_csv};
 use crate::models::{
     BookingSlot, CashflowStats, Contact, CustomFieldDef, DatevExportConfig, Deal, DocumentMeta,
     EmailInboundPayload, FollowUpTask, FunnelLeadPayload, FunnelLeadResponse, GobdAuditEntry,
-    HubSpotImportResult, InteractionMessage, Invoice, InvoiceItem, MarketingCampaign,
-    MarketingRoiSummary, NewBooking, NewContact, NewCustomFieldDef, NewDeal, NewDocument,
-    NewFollowUpTask, NewInvoice, NewMarketingCampaign, NewProductService, NewRetainerSubscription,
-    NewWorkflowRule, ProductService, RetainerBillingRunResult, RetainerSubscription,
-    UpdateContactPayload, WhatsAppWebhookPayload, WorkflowRule,
+    HarnessPlugin, HubSpotImportResult, InteractionMessage, Invoice, InvoiceItem,
+    MarketingCampaign, MarketingRoiSummary, NewBooking, NewContact, NewCustomFieldDef, NewDeal,
+    NewDocument, NewFollowUpTask, NewHarnessPlugin, NewInvoice, NewMarketingCampaign,
+    NewPluginRecord, NewProductService, NewRetainerSubscription, NewWorkflowRule,
+    PluginFieldSchema, PluginRecord, ProductService, RetainerBillingRunResult,
+    RetainerSubscription, UpdateContactPayload, UpdatePluginRecord, WhatsAppWebhookPayload,
+    WorkflowRule,
 };
 use crate::zugferd::generate_xrechnung_xml;
 
@@ -235,6 +237,35 @@ impl Database {
                 FOREIGN KEY (contact_id) REFERENCES contacts(id) ON DELETE CASCADE
             );
 
+            CREATE TABLE IF NOT EXISTS harness_plugins (
+                id TEXT PRIMARY KEY,
+                name TEXT NOT NULL,
+                slug TEXT UNIQUE NOT NULL,
+                category TEXT NOT NULL,
+                description TEXT NOT NULL,
+                version TEXT NOT NULL DEFAULT '1.0.0',
+                layer_order INTEGER NOT NULL DEFAULT 100,
+                installed INTEGER NOT NULL DEFAULT 1,
+                is_core INTEGER NOT NULL DEFAULT 0,
+                icon_svg TEXT NOT NULL,
+                accent_color TEXT NOT NULL DEFAULT '#2563eb',
+                schema_json TEXT NOT NULL DEFAULT '[]',
+                created_at TEXT NOT NULL
+            );
+
+            CREATE TABLE IF NOT EXISTS plugin_records (
+                id TEXT PRIMARY KEY,
+                plugin_id TEXT NOT NULL,
+                title TEXT NOT NULL,
+                status TEXT NOT NULL DEFAULT 'Aktiv',
+                amount_cents INTEGER NOT NULL DEFAULT 0,
+                owner TEXT NOT NULL DEFAULT 'Merlin Conrad',
+                data_json TEXT NOT NULL DEFAULT '{}',
+                created_at TEXT NOT NULL,
+                updated_at TEXT NOT NULL,
+                FOREIGN KEY (plugin_id) REFERENCES harness_plugins(id) ON DELETE CASCADE
+            );
+
             CREATE INDEX IF NOT EXISTS idx_contacts_name ON contacts(name);
             CREATE INDEX IF NOT EXISTS idx_deals_stage ON deals(stage);
             CREATE INDEX IF NOT EXISTS idx_invoices_status ON invoices(status);
@@ -243,7 +274,8 @@ impl Database {
             CREATE INDEX IF NOT EXISTS idx_gobd_entity ON gobd_audit_log(entity_type, entity_id);
             CREATE INDEX IF NOT EXISTS idx_campaigns_platform ON marketing_campaigns(platform);
             CREATE INDEX IF NOT EXISTS idx_retainers_next_date ON retainer_subscriptions(next_billing_date);
-            CREATE INDEX IF NOT EXISTS idx_bookings_slug ON bookings(slug, start_time);",
+            CREATE INDEX IF NOT EXISTS idx_bookings_slug ON bookings(slug, start_time);
+            CREATE INDEX IF NOT EXISTS idx_plugin_records_pid ON plugin_records(plugin_id);",
         )?;
         Ok(())
     }
@@ -494,6 +526,299 @@ impl Database {
                 template_subject: Some("Rückfrage zu unserem Angebot — Conrad KI".to_string()),
                 template_body: "Hallo {{name}},\n\nich wollte mich kurz erkundigen, ob Sie bereits Gelegenheit hatten, unser Angebot zu prüfen. Lassen Sie uns gerne kurz telefonieren, falls noch Fragen offen sind.\n\nBeste Grüße\nMerlin Conrad".to_string(),
             });
+        }
+
+        // Seed Odoo × DeepSeek Harness Plugin Registry if empty
+        let plugin_count: i64 = {
+            let conn = self.conn.lock().unwrap();
+            conn.query_row("SELECT COUNT(*) FROM harness_plugins", [], |r| r.get(0)).unwrap_or(0)
+        };
+        if plugin_count == 0 {
+            let now_str = Utc::now().to_rfc3339();
+            let default_plugins = vec![
+                (
+                    "core.crm",
+                    "CRM & 360° Kontakte",
+                    "contacts",
+                    "Sales & CRM",
+                    "Zentrales Kontakt- und Lead-Register mit 360°-Timeline, WhatsApp-Webhook und Inline-Editor.",
+                    "3.0.0",
+                    10,
+                    1,
+                    1,
+                    "users",
+                    "#2563eb",
+                    r#"[{"key":"company","label":"Unternehmen","field_type":"text"},{"key":"email","label":"E-Mail","field_type":"text"}]"#,
+                ),
+                (
+                    "core.pipeline",
+                    "Vertriebs-Pipeline",
+                    "deals",
+                    "Sales & CRM",
+                    "Mehrstufiges Kanban-Board mit gewichteter Abschluss-Prognose und Touch Drag & Drop.",
+                    "3.0.0",
+                    20,
+                    1,
+                    1,
+                    "kanban",
+                    "#4f46e5",
+                    r#"[{"key":"stage","label":"Phase","field_type":"badge"},{"key":"value","label":"Volumen","field_type":"currency"}]"#,
+                ),
+                (
+                    "core.invoicing",
+                    "GoBD Faktura & ZUGFeRD",
+                    "invoices",
+                    "Finance & GoBD",
+                    "Revisionssichere Rechnungs-Engine mit XRechnung 3.0 XML, DATEV EXTF (SKR03/04) und Storno-Logik.",
+                    "3.0.0",
+                    30,
+                    1,
+                    1,
+                    "invoice",
+                    "#059669",
+                    r#"[{"key":"invoice_number","label":"Beleg-Nr.","field_type":"text"},{"key":"gross","label":"Brutto","field_type":"currency"}]"#,
+                ),
+                (
+                    "core.retainers",
+                    "Retainer & MRR-Abos",
+                    "retainers",
+                    "Finance & GoBD",
+                    "Wiederkehrende Kundenverträge (39–99 €/Mo.) mit 1-Klick Monatsabrechnungslauf.",
+                    "3.0.0",
+                    40,
+                    1,
+                    1,
+                    "repeat",
+                    "#0d9488",
+                    r#"[{"key":"plan_name","label":"Vertrag","field_type":"text"},{"key":"next_billing","label":"Nächster Lauf","field_type":"date"}]"#,
+                ),
+                (
+                    "core.marketing",
+                    "Ad Spend & ROAS",
+                    "marketing",
+                    "Sales & CRM",
+                    "Meta- & Google-Ads Kampagnen-Attribution mit Echtzeit-ROAS, Blended CAC und CPC.",
+                    "3.0.0",
+                    50,
+                    1,
+                    1,
+                    "chart",
+                    "#d97706",
+                    r#"[{"key":"platform","label":"Kanal","field_type":"badge"},{"key":"roas","label":"ROAS","field_type":"number"}]"#,
+                ),
+                (
+                    "core.workflows",
+                    "Workflows & Trigger",
+                    "workflows",
+                    "AI & Harness",
+                    "Ereignisgesteuerte Automatisierung für Aufgaben, Follow-ups und sichere E-Mail-Entwürfe.",
+                    "3.0.0",
+                    60,
+                    1,
+                    1,
+                    "zap",
+                    "#7c3aed",
+                    r#"[{"key":"trigger","label":"Trigger","field_type":"text"},{"key":"action","label":"Aktion","field_type":"text"}]"#,
+                ),
+                (
+                    "plugin.projects",
+                    "Projekte & Zeiterfassung",
+                    "projects",
+                    "Operations & ERP",
+                    "Odoo-inspiriertes Projekt-, Sprint- und Stunden-Tracking für Kundenmandate von Conrad KI.",
+                    "2.4.0",
+                    110,
+                    1,
+                    0,
+                    "folder",
+                    "#0284c7",
+                    r#"[{"key":"client","label":"Mandant","field_type":"text"},{"key":"milestone","label":"Meilenstein","field_type":"text"},{"key":"hours","label":"Stunden","field_type":"text"}]"#,
+                ),
+                (
+                    "plugin.realestate",
+                    "Immobilien & Mietobjekte",
+                    "realestate",
+                    "Immobilien & Assets",
+                    "Objekt-, Mieter- und Cashflow-Cockpit für Bestandswohnungen und die MFH-Akquise-Pipeline.",
+                    "2.1.0",
+                    120,
+                    1,
+                    0,
+                    "building",
+                    "#16a34a",
+                    r#"[{"key":"address","label":"Objektadresse","field_type":"text"},{"key":"tenant","label":"Mieter / Status","field_type":"text"},{"key":"yield_info","label":"Eckdaten","field_type":"text"}]"#,
+                ),
+                (
+                    "plugin.helpdesk",
+                    "Service-Desk & SLA-Tickets",
+                    "helpdesk",
+                    "Operations & ERP",
+                    "Kunden-Support, Wartungsanfragen und SLA-Überwachung für betreute KI- und n8n-Systeme.",
+                    "1.9.0",
+                    130,
+                    1,
+                    0,
+                    "lifebuoy",
+                    "#e11d48",
+                    r#"[{"key":"customer","label":"Kunde","field_type":"text"},{"key":"priority","label":"Priorität","field_type":"badge"},{"key":"sla","label":"SLA-Ziel","field_type":"text"}]"#,
+                ),
+                (
+                    "plugin.inventory",
+                    "Leistungen & SKR03-Katalog",
+                    "inventory",
+                    "Finance & GoBD",
+                    "Zentrales Artikel-, Lizenz- und Dienstleistungsverzeichnis mit SKR03/04 Erlöskonten-Mapping.",
+                    "2.0.0",
+                    140,
+                    1,
+                    0,
+                    "box",
+                    "#475569",
+                    r#"[{"key":"sku","label":"SKU / Code","field_type":"text"},{"key":"unit","label":"Einheit","field_type":"text"},{"key":"skr03","label":"Erlöskonto","field_type":"text"}]"#,
+                ),
+            ];
+
+            {
+                let conn = self.conn.lock().unwrap();
+                for p in default_plugins {
+                    let _ = conn.execute(
+                        "INSERT OR IGNORE INTO harness_plugins (id, name, slug, category, description, version, layer_order, installed, is_core, icon_svg, accent_color, schema_json, created_at)
+                         VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12, ?13)",
+                        params![p.0, p.1, p.2, p.3, p.4, p.5, p.6, p.7, p.8, p.9, p.10, p.11, now_str],
+                    );
+                }
+            }
+
+            // Seed realistic records for modular plugins
+            let _ = self.create_plugin_record(
+                "plugin.projects",
+                NewPluginRecord {
+                    title: "Der Ohrladen — Hörtest-Simulator v2 & n8n Triage".to_string(),
+                    status: Some("Aktiv".to_string()),
+                    amount_cents: Some(240000),
+                    owner: Some("Merlin Conrad".to_string()),
+                    data: Some(serde_json::json!({
+                        "client": "Jens (Der Ohrladen)",
+                        "milestone": "Live-Deployment & Webhook-Sync",
+                        "hours": "18.5 Std."
+                    })),
+                },
+            );
+            let _ = self.create_plugin_record(
+                "plugin.projects",
+                NewPluginRecord {
+                    title: "Schlossgarten-Imkerei — Instagram DM & Shop-Automation".to_string(),
+                    status: Some("In Prüfung".to_string()),
+                    amount_cents: Some(95000),
+                    owner: Some("Merlin Conrad".to_string()),
+                    data: Some(serde_json::json!({
+                        "client": "Alex (Schlossgarten-Imkerei)",
+                        "milestone": "Freigabe Workflow-Regeln",
+                        "hours": "9.0 Std."
+                    })),
+                },
+            );
+            let _ = self.create_plugin_record(
+                "plugin.projects",
+                NewPluginRecord {
+                    title: "Leo Club Schwetzingen — Mobile Redesign & Spenden-Portal".to_string(),
+                    status: Some("Abgeschlossen".to_string()),
+                    amount_cents: Some(0),
+                    owner: Some("Merlin Conrad".to_string()),
+                    data: Some(serde_json::json!({
+                        "client": "Leo Club Schwetzingen",
+                        "milestone": "Touch-First Navigation Live",
+                        "hours": "6.5 Std."
+                    })),
+                },
+            );
+
+            let _ = self.create_plugin_record(
+                "plugin.realestate",
+                NewPluginRecord {
+                    title: "Studio-Apartment Halmhuberstraße 10, Mannheim".to_string(),
+                    status: Some("Vermietet".to_string()),
+                    amount_cents: Some(5300), // +53,00 €/Monat positiver Cashflow
+                    owner: Some("Merlin & Tamara Conrad".to_string()),
+                    data: Some(serde_json::json!({
+                        "address": "Halmhuberstraße 10, 68163 Mannheim",
+                        "tenant": "Sebastian Gruia (Bestandsmieter)",
+                        "yield_info": "Kaufpreis 86.000 € · EK 21.000 € · CF +53 €/Mo."
+                    })),
+                },
+            );
+            let _ = self.create_plugin_record(
+                "plugin.realestate",
+                NewPluginRecord {
+                    title: "MFH Akquise-Objekt Rhein-Neckar (6 Wohneinheiten)".to_string(),
+                    status: Some("Pipeline 09/2026".to_string()),
+                    amount_cents: Some(45000),
+                    owner: Some("Merlin & Tamara Conrad".to_string()),
+                    data: Some(serde_json::json!({
+                        "address": "Schwetzingen / Mannheim Süd",
+                        "tenant": "Akquise nach Jobwechsel & Probezeit",
+                        "yield_info": "Ziel-Rendite > 6,2 % · 10-Jahres-Plan (3 MFHs)"
+                    })),
+                },
+            );
+
+            let _ = self.create_plugin_record(
+                "plugin.helpdesk",
+                NewPluginRecord {
+                    title: "WhatsApp Business Webhook-Routing für Neukunden".to_string(),
+                    status: Some("In Bearbeitung".to_string()),
+                    amount_cents: Some(0),
+                    owner: Some("Conrad KI Support".to_string()),
+                    data: Some(serde_json::json!({
+                        "customer": "Der Ohrladen Hörgeräte",
+                        "priority": "Hoch",
+                        "sla": "< 2 Std. Reaktionszeit"
+                    })),
+                },
+            );
+            let _ = self.create_plugin_record(
+                "plugin.helpdesk",
+                NewPluginRecord {
+                    title: "ZUGFeRD 2.2 XML Validierung für Steuerberater-Export".to_string(),
+                    status: Some("Gelöst".to_string()),
+                    amount_cents: Some(0),
+                    owner: Some("Conrad KI Support".to_string()),
+                    data: Some(serde_json::json!({
+                        "customer": "Holzhey Consulting GmbH",
+                        "priority": "Normal",
+                        "sla": "EN 16931 verifiziert"
+                    })),
+                },
+            );
+
+            let _ = self.create_plugin_record(
+                "plugin.inventory",
+                NewPluginRecord {
+                    title: "Monatlicher KI- & n8n-Automatisierungs-Retainer".to_string(),
+                    status: Some("Aktiv".to_string()),
+                    amount_cents: Some(9900),
+                    owner: Some("Conrad KI".to_string()),
+                    data: Some(serde_json::json!({
+                        "sku": "WORKFLOW-RETAINER-M",
+                        "unit": "Monatspauschale (zzgl. 19% USt.)",
+                        "skr03": "8400 (Erlöse 19% USt.)"
+                    })),
+                },
+            );
+            let _ = self.create_plugin_record(
+                "plugin.inventory",
+                NewPluginRecord {
+                    title: "Setup: Lokaler LLM Postfach- & E-Mail-Triage Autopilot".to_string(),
+                    status: Some("Aktiv".to_string()),
+                    amount_cents: Some(89000),
+                    owner: Some("Conrad KI".to_string()),
+                    data: Some(serde_json::json!({
+                        "sku": "SETUP-POSTFACH-TRIAGE",
+                        "unit": "Einmaliges Setup (Pauschal)",
+                        "skr03": "8400 (Erlöse 19% USt.)"
+                    })),
+                },
+            );
         }
 
         Ok(())
@@ -2457,6 +2782,383 @@ impl Database {
 
         Ok(())
     }
+
+    pub fn toggle_workflow_rule(&self, rule_id: &str) -> Result<bool> {
+        let conn = self.conn.lock().unwrap();
+        let current: i64 = conn
+            .query_row("SELECT active FROM workflow_rules WHERE id = ?1", params![rule_id], |r| r.get(0))
+            .unwrap_or(1);
+        let next = if current != 0 { 0 } else { 1 };
+        conn.execute(
+            "UPDATE workflow_rules SET active = ?1 WHERE id = ?2",
+            params![next, rule_id],
+        )?;
+        let _ = Self::log_gobd_internal(
+            &conn,
+            "workflow",
+            rule_id,
+            "WORKFLOW_TOGGLED",
+            &format!("Workflow-Regel {} auf active={}", rule_id, next),
+            "Operator",
+        );
+        Ok(next != 0)
+    }
+
+    // =========================================================================
+    // Odoo × DeepSeek Harness Plugin Engine ("Everything is a Plugin")
+    // =========================================================================
+
+    pub fn list_plugins(&self) -> Result<Vec<HarnessPlugin>> {
+        let conn = self.conn.lock().unwrap();
+        let mut stmt = conn.prepare(
+            "SELECT p.id, p.name, p.slug, p.category, p.description, p.version, p.layer_order, p.installed, p.is_core, p.icon_svg, p.accent_color, p.schema_json, p.created_at,
+                    (SELECT COUNT(*) FROM plugin_records r WHERE r.plugin_id = p.id) AS rec_count
+             FROM harness_plugins p
+             ORDER BY p.layer_order ASC, p.created_at ASC",
+        )?;
+
+        let plugins = stmt
+            .query_map([], |row| {
+                let c_str: String = row.get(12)?;
+                let inst_int: i64 = row.get(7)?;
+                let core_int: i64 = row.get(8)?;
+                Ok(HarnessPlugin {
+                    id: row.get(0)?,
+                    name: row.get(1)?,
+                    slug: row.get(2)?,
+                    category: row.get(3)?,
+                    description: row.get(4)?,
+                    version: row.get(5)?,
+                    layer_order: row.get(6)?,
+                    installed: inst_int != 0,
+                    is_core: core_int != 0,
+                    icon_svg: row.get(9)?,
+                    accent_color: row.get(10)?,
+                    schema_json: row.get(11)?,
+                    record_count: row.get(13)?,
+                    created_at: chrono::DateTime::parse_from_rfc3339(&c_str)
+                        .map(|d| d.with_timezone(&Utc))
+                        .unwrap_or_else(|_| Utc::now()),
+                })
+            })?
+            .filter_map(Result::ok)
+            .collect();
+
+        Ok(plugins)
+    }
+
+    pub fn get_plugin_by_id_or_slug(&self, id_or_slug: &str) -> Result<HarnessPlugin> {
+        let plugins = self.list_plugins()?;
+        plugins
+            .into_iter()
+            .find(|p| p.id == id_or_slug || p.slug == id_or_slug)
+            .ok_or_else(|| anyhow::anyhow!("Plugin '{}' nicht gefunden", id_or_slug))
+    }
+
+    pub fn create_plugin(&self, input: NewHarnessPlugin) -> Result<HarnessPlugin> {
+        let now = Utc::now();
+        let raw_slug = input.slug.unwrap_or_else(|| {
+            input
+                .name
+                .to_lowercase()
+                .chars()
+                .map(|c| if c.is_ascii_alphanumeric() { c } else { '_' })
+                .collect::<String>()
+                .trim_matches('_')
+                .to_string()
+        });
+        let clean_slug = if raw_slug.is_empty() {
+            format!("app_{}", now.timestamp_subsec_millis())
+        } else {
+            raw_slug
+        };
+        let id = format!("custom.{}", clean_slug);
+        let category = input.category.unwrap_or_else(|| "Custom Studio".to_string());
+        let description = input.description.unwrap_or_else(|| {
+            format!(
+                "Eigenes Harness-Plugin '{}' — dynamisch generiert mit eigenem Daten-Schema & MCP-Anbindung.",
+                input.name
+            )
+        });
+        let accent = input.accent_color.unwrap_or_else(|| "#2563eb".to_string());
+
+        let fields = input.fields.unwrap_or_else(|| {
+            vec![
+                PluginFieldSchema {
+                    key: "category".to_string(),
+                    label: "Kategorie / Typ".to_string(),
+                    field_type: "text".to_string(),
+                },
+                PluginFieldSchema {
+                    key: "notes".to_string(),
+                    label: "Notizen / Details".to_string(),
+                    field_type: "text".to_string(),
+                },
+            ]
+        });
+        let schema_json = serde_json::to_string(&fields).unwrap_or_else(|_| "[]".to_string());
+
+        let layer_order: i64 = {
+            let conn = self.conn.lock().unwrap();
+            let max_layer: i64 = conn
+                .query_row("SELECT COALESCE(MAX(layer_order), 150) FROM harness_plugins", [], |r| r.get(0))
+                .unwrap_or(150);
+            let next_layer = max_layer + 10;
+
+            conn.execute(
+                "INSERT INTO harness_plugins (id, name, slug, category, description, version, layer_order, installed, is_core, icon_svg, accent_color, schema_json, created_at)
+                 VALUES (?1, ?2, ?3, ?4, ?5, '1.0.0', ?6, 1, 0, 'cube', ?7, ?8, ?9)
+                 ON CONFLICT(slug) DO UPDATE SET name = excluded.name, description = excluded.description, installed = 1",
+                params![
+                    id,
+                    input.name,
+                    clean_slug,
+                    category,
+                    description,
+                    next_layer,
+                    accent,
+                    schema_json,
+                    now.to_rfc3339(),
+                ],
+            )?;
+
+            let _ = Self::log_gobd_internal(
+                &conn,
+                "plugin",
+                &id,
+                "PLUGIN_CREATED",
+                &format!("Neues Harness-Plugin erstellt & gemountet: {} (Layer #{})", input.name, next_layer),
+                "Harness-Architect",
+            );
+            next_layer
+        };
+
+        // Create an initial starter record so the new plugin table is immediately interactive
+        let _ = self.create_plugin_record(
+            &id,
+            NewPluginRecord {
+                title: format!("Erster Eintrag — {}", input.name),
+                status: Some("Aktiv".to_string()),
+                amount_cents: Some(0),
+                owner: Some("Merlin Conrad".to_string()),
+                data: Some(serde_json::json!({
+                    "category": "Standard",
+                    "notes": "Automatisch beim Plugin-Build initialisiert"
+                })),
+            },
+        );
+
+        Ok(HarnessPlugin {
+            id,
+            name: input.name,
+            slug: clean_slug,
+            category,
+            description,
+            version: "1.0.0".to_string(),
+            layer_order,
+            installed: true,
+            is_core: false,
+            icon_svg: "cube".to_string(),
+            accent_color: accent,
+            schema_json,
+            record_count: 1,
+            created_at: now,
+        })
+    }
+
+    pub fn toggle_plugin(&self, id_or_slug: &str) -> Result<HarnessPlugin> {
+        let existing = self.get_plugin_by_id_or_slug(id_or_slug)?;
+        let next_installed = if existing.installed { 0 } else { 1 };
+        {
+            let conn = self.conn.lock().unwrap();
+            conn.execute(
+                "UPDATE harness_plugins SET installed = ?1 WHERE id = ?2",
+                params![next_installed, existing.id],
+            )?;
+            let _ = Self::log_gobd_internal(
+                &conn,
+                "plugin",
+                &existing.id,
+                if next_installed == 1 { "PLUGIN_MOUNTED" } else { "PLUGIN_UNMOUNTED" },
+                &format!(
+                    "Harness-Plugin '{}' (Layer #{}) Status geändert auf installed={}",
+                    existing.name, existing.layer_order, next_installed == 1
+                ),
+                "Harness-Architect",
+            );
+        }
+        self.get_plugin_by_id_or_slug(&existing.id)
+    }
+
+    pub fn list_plugin_records(&self, id_or_slug: &str) -> Result<Vec<PluginRecord>> {
+        let plugin = self.get_plugin_by_id_or_slug(id_or_slug)?;
+        let conn = self.conn.lock().unwrap();
+        let mut stmt = conn.prepare(
+            "SELECT id, plugin_id, title, status, amount_cents, owner, data_json, created_at, updated_at
+             FROM plugin_records
+             WHERE plugin_id = ?1
+             ORDER BY updated_at DESC",
+        )?;
+
+        let records = stmt
+            .query_map(params![plugin.id], |row| {
+                let c_str: String = row.get(7)?;
+                let u_str: String = row.get(8)?;
+                Ok(PluginRecord {
+                    id: row.get(0)?,
+                    plugin_id: row.get(1)?,
+                    title: row.get(2)?,
+                    status: row.get(3)?,
+                    amount_cents: row.get(4)?,
+                    owner: row.get(5)?,
+                    data_json: row.get(6)?,
+                    created_at: chrono::DateTime::parse_from_rfc3339(&c_str)
+                        .map(|d| d.with_timezone(&Utc))
+                        .unwrap_or_else(|_| Utc::now()),
+                    updated_at: chrono::DateTime::parse_from_rfc3339(&u_str)
+                        .map(|d| d.with_timezone(&Utc))
+                        .unwrap_or_else(|_| Utc::now()),
+                })
+            })?
+            .filter_map(Result::ok)
+            .collect();
+
+        Ok(records)
+    }
+
+    pub fn create_plugin_record(&self, id_or_slug: &str, input: NewPluginRecord) -> Result<PluginRecord> {
+        let plugin_id = if let Ok(p) = self.get_plugin_by_id_or_slug(id_or_slug) {
+            p.id
+        } else {
+            id_or_slug.to_string()
+        };
+
+        let now = Utc::now();
+        let id = Uuid::new_v4().to_string();
+        let status = input.status.unwrap_or_else(|| "Aktiv".to_string());
+        let amount_cents = input.amount_cents.unwrap_or(0);
+        let owner = input.owner.unwrap_or_else(|| "Merlin Conrad".to_string());
+        let data_json = input
+            .data
+            .map(|v| serde_json::to_string(&v).unwrap_or_else(|_| "{}".to_string()))
+            .unwrap_or_else(|| "{}".to_string());
+
+        let conn = self.conn.lock().unwrap();
+        conn.execute(
+            "INSERT INTO plugin_records (id, plugin_id, title, status, amount_cents, owner, data_json, created_at, updated_at)
+             VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9)",
+            params![
+                id,
+                plugin_id,
+                input.title,
+                status,
+                amount_cents,
+                owner,
+                data_json,
+                now.to_rfc3339(),
+                now.to_rfc3339(),
+            ],
+        )?;
+
+        let _ = Self::log_gobd_internal(
+            &conn,
+            "plugin_record",
+            &id,
+            "CREATE",
+            &format!("Plugin-Datensatz in '{}' angelegt: {}", plugin_id, input.title),
+            &owner,
+        );
+
+        Ok(PluginRecord {
+            id,
+            plugin_id,
+            title: input.title,
+            status,
+            amount_cents,
+            owner,
+            data_json,
+            created_at: now,
+            updated_at: now,
+        })
+    }
+
+    pub fn update_plugin_record(&self, record_id: &str, input: UpdatePluginRecord) -> Result<PluginRecord> {
+        let now = Utc::now();
+        let conn = self.conn.lock().unwrap();
+        let existing: PluginRecord = conn.query_row(
+            "SELECT id, plugin_id, title, status, amount_cents, owner, data_json, created_at, updated_at
+             FROM plugin_records WHERE id = ?1",
+            params![record_id],
+            |row| {
+                let c_str: String = row.get(7)?;
+                let u_str: String = row.get(8)?;
+                Ok(PluginRecord {
+                    id: row.get(0)?,
+                    plugin_id: row.get(1)?,
+                    title: row.get(2)?,
+                    status: row.get(3)?,
+                    amount_cents: row.get(4)?,
+                    owner: row.get(5)?,
+                    data_json: row.get(6)?,
+                    created_at: chrono::DateTime::parse_from_rfc3339(&c_str)
+                        .map(|d| d.with_timezone(&Utc))
+                        .unwrap_or_else(|_| Utc::now()),
+                    updated_at: chrono::DateTime::parse_from_rfc3339(&u_str)
+                        .map(|d| d.with_timezone(&Utc))
+                        .unwrap_or_else(|_| Utc::now()),
+                })
+            },
+        )?;
+
+        let title = input.title.unwrap_or(existing.title);
+        let status = input.status.unwrap_or(existing.status);
+        let amount_cents = input.amount_cents.unwrap_or(existing.amount_cents);
+        let owner = input.owner.unwrap_or(existing.owner);
+        let data_json = match input.data {
+            Some(v) => serde_json::to_string(&v).unwrap_or(existing.data_json),
+            None => existing.data_json,
+        };
+
+        conn.execute(
+            "UPDATE plugin_records SET title = ?1, status = ?2, amount_cents = ?3, owner = ?4, data_json = ?5, updated_at = ?6 WHERE id = ?7",
+            params![title, status, amount_cents, owner, data_json, now.to_rfc3339(), record_id],
+        )?;
+
+        let _ = Self::log_gobd_internal(
+            &conn,
+            "plugin_record",
+            record_id,
+            "UPDATE",
+            &format!("Plugin-Datensatz aktualisiert: {} (Status: {})", title, status),
+            &owner,
+        );
+
+        Ok(PluginRecord {
+            id: existing.id,
+            plugin_id: existing.plugin_id,
+            title,
+            status,
+            amount_cents,
+            owner,
+            data_json,
+            created_at: existing.created_at,
+            updated_at: now,
+        })
+    }
+
+    pub fn delete_plugin_record(&self, record_id: &str) -> Result<()> {
+        let conn = self.conn.lock().unwrap();
+        conn.execute("DELETE FROM plugin_records WHERE id = ?1", params![record_id])?;
+        let _ = Self::log_gobd_internal(
+            &conn,
+            "plugin_record",
+            record_id,
+            "DELETE",
+            &format!("Plugin-Datensatz {} gelöscht", record_id),
+            "Operator",
+        );
+        Ok(())
+    }
 }
 
 #[cfg(test)]
@@ -2519,6 +3221,48 @@ mod tests {
         let (valid_after, count_after, _) = db.verify_gobd_integrity()?;
         assert!(valid_after);
         assert!(count_after > count);
+
+        // 6. Test Odoo × DeepSeek Harness Plugin Engine ("Everything is a Plugin")
+        let plugins = db.list_plugins()?;
+        assert!(plugins.len() >= 10, "Mindestens 10 Harness-Plugins müssen vorinstalliert sein");
+
+        let custom_plugin = db.create_plugin(NewHarnessPlugin {
+            name: "Fuhrpark & Leasing".to_string(),
+            slug: Some("fuhrpark".to_string()),
+            category: Some("Operations & ERP".to_string()),
+            description: Some("Tesla & Firmenwagen Verwaltung".to_string()),
+            accent_color: Some("#0284c7".to_string()),
+            fields: None,
+        })?;
+        assert_eq!(custom_plugin.slug, "fuhrpark");
+        assert!(custom_plugin.installed);
+
+        let rec = db.create_plugin_record(
+            &custom_plugin.id,
+            NewPluginRecord {
+                title: "Tesla Model Y Long Range — MA-MC 2026".to_string(),
+                status: Some("Aktiv".to_string()),
+                amount_cents: Some(54900),
+                owner: Some("Merlin Conrad".to_string()),
+                data: Some(serde_json::json!({"category": "Elektrofahrzeug", "notes": "Pendeln Mannheim"})),
+            },
+        )?;
+        assert_eq!(rec.title, "Tesla Model Y Long Range — MA-MC 2026");
+
+        let updated_rec = db.update_plugin_record(
+            &rec.id,
+            UpdatePluginRecord {
+                title: None,
+                status: Some("Geprüft".to_string()),
+                amount_cents: None,
+                owner: None,
+                data: None,
+            },
+        )?;
+        assert_eq!(updated_rec.status, "Geprüft");
+
+        let (valid_final, _, _) = db.verify_gobd_integrity()?;
+        assert!(valid_final);
 
         Ok(())
     }

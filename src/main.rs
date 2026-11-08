@@ -25,8 +25,9 @@ use mcp::{JsonRpcRequest, McpServer};
 use models::{
     AuthSessionPayload, CopilotRequest, DatevExportConfig, EmailInboundPayload, FunnelLeadPayload,
     HubSpotCsvPayload, NewBooking, NewContact, NewCustomFieldDef, NewDeal, NewFollowUpTask,
-    NewInteraction, NewInvoice, NewMarketingCampaign, NewRetainerSubscription, NewWorkflowRule,
-    UpdateContactPayload, WhatsAppWebhookPayload,
+    NewHarnessPlugin, NewInteraction, NewInvoice, NewMarketingCampaign, NewPluginRecord,
+    NewRetainerSubscription, NewWorkflowRule, UpdateContactPayload, UpdatePluginRecord,
+    WhatsAppWebhookPayload,
 };
 use serde::Deserialize;
 use serde_json::json;
@@ -199,8 +200,13 @@ async fn main() -> anyhow::Result<()> {
         .route("/api/webhooks/whatsapp", post(whatsapp_webhook_handler))
         .route("/api/webhooks/email", post(email_inbound_webhook_handler))
         .route("/api/workflows", get(list_workflows_handler).post(create_workflow_handler))
+        .route("/api/workflows/:id/toggle", patch(toggle_workflow_handler))
         .route("/api/tasks", get(list_tasks_handler).post(create_task_handler))
         .route("/api/tasks/:id/toggle", patch(toggle_task_handler))
+        .route("/api/plugins", get(list_plugins_handler).post(create_plugin_handler))
+        .route("/api/plugins/:id/toggle", patch(toggle_plugin_handler))
+        .route("/api/plugins/:id/records", get(list_plugin_records_handler).post(create_plugin_record_handler))
+        .route("/api/plugins/records/:record_id", patch(update_plugin_record_handler).delete(delete_plugin_record_handler))
         .route("/api/auth/session", post(auth_session_cookie_handler))
         .route("/mcp", post(mcp_handler))
         .route("/api/copilot/chat", post(copilot_chat_handler))
@@ -213,6 +219,7 @@ async fn main() -> anyhow::Result<()> {
         .route("/api/contacts/:id", patch(update_contact_handler))
         .route("/api/contacts/:id/timeline", get(contact_timeline_handler).post(create_contact_interaction_handler))
         .route("/api/deals", get(list_deals_handler).post(create_deal_handler))
+        .route("/api/deals/:id/stage", patch(update_deal_stage_handler))
         .route("/api/invoices", get(list_invoices_handler).post(create_invoice_handler))
         .route("/api/invoices/:id/status", patch(update_invoice_status_handler))
         .route("/api/invoices/:id/xrechnung", get(get_invoice_xrechnung_handler))
@@ -893,6 +900,105 @@ async fn update_setting_handler(
             );
             (StatusCode::OK, Json(json!({ "success": true, "key": payload.key, "value": payload.value }))).into_response()
         }
+        Err(err) => (StatusCode::BAD_REQUEST, Json(json!({ "error": err.to_string() }))).into_response(),
+    }
+}
+
+#[derive(Deserialize)]
+struct DealStagePayload {
+    stage: String,
+}
+
+async fn update_deal_stage_handler(
+    State(state): State<AppState>,
+    Path(id): Path<String>,
+    Json(payload): Json<DealStagePayload>,
+) -> impl IntoResponse {
+    match state.db.update_deal_stage(&id, &payload.stage) {
+        Ok(_) => (StatusCode::OK, Json(json!({ "status": "updated", "deal_id": id, "stage": payload.stage }))).into_response(),
+        Err(err) => (StatusCode::BAD_REQUEST, Json(json!({ "error": err.to_string() }))).into_response(),
+    }
+}
+
+async fn toggle_workflow_handler(
+    State(state): State<AppState>,
+    Path(id): Path<String>,
+) -> impl IntoResponse {
+    match state.db.toggle_workflow_rule(&id) {
+        Ok(active) => (StatusCode::OK, Json(json!({ "id": id, "active": active }))).into_response(),
+        Err(err) => (StatusCode::BAD_REQUEST, Json(json!({ "error": err.to_string() }))).into_response(),
+    }
+}
+
+// =========================================================================
+// Odoo × DeepSeek Harness Plugin Engine Handlers
+// =========================================================================
+
+async fn list_plugins_handler(State(state): State<AppState>) -> impl IntoResponse {
+    match state.db.list_plugins() {
+        Ok(list) => (StatusCode::OK, Json(serde_json::to_value(list).unwrap())).into_response(),
+        Err(err) => (StatusCode::INTERNAL_SERVER_ERROR, Json(json!({ "error": err.to_string() }))).into_response(),
+    }
+}
+
+async fn create_plugin_handler(
+    State(state): State<AppState>,
+    Json(payload): Json<NewHarnessPlugin>,
+) -> impl IntoResponse {
+    match state.db.create_plugin(payload) {
+        Ok(p) => (StatusCode::CREATED, Json(serde_json::to_value(p).unwrap())).into_response(),
+        Err(err) => (StatusCode::BAD_REQUEST, Json(json!({ "error": err.to_string() }))).into_response(),
+    }
+}
+
+async fn toggle_plugin_handler(
+    State(state): State<AppState>,
+    Path(id): Path<String>,
+) -> impl IntoResponse {
+    match state.db.toggle_plugin(&id) {
+        Ok(p) => (StatusCode::OK, Json(serde_json::to_value(p).unwrap())).into_response(),
+        Err(err) => (StatusCode::BAD_REQUEST, Json(json!({ "error": err.to_string() }))).into_response(),
+    }
+}
+
+async fn list_plugin_records_handler(
+    State(state): State<AppState>,
+    Path(id): Path<String>,
+) -> impl IntoResponse {
+    match state.db.list_plugin_records(&id) {
+        Ok(records) => (StatusCode::OK, Json(serde_json::to_value(records).unwrap())).into_response(),
+        Err(err) => (StatusCode::BAD_REQUEST, Json(json!({ "error": err.to_string() }))).into_response(),
+    }
+}
+
+async fn create_plugin_record_handler(
+    State(state): State<AppState>,
+    Path(id): Path<String>,
+    Json(payload): Json<NewPluginRecord>,
+) -> impl IntoResponse {
+    match state.db.create_plugin_record(&id, payload) {
+        Ok(rec) => (StatusCode::CREATED, Json(serde_json::to_value(rec).unwrap())).into_response(),
+        Err(err) => (StatusCode::BAD_REQUEST, Json(json!({ "error": err.to_string() }))).into_response(),
+    }
+}
+
+async fn update_plugin_record_handler(
+    State(state): State<AppState>,
+    Path(record_id): Path<String>,
+    Json(payload): Json<UpdatePluginRecord>,
+) -> impl IntoResponse {
+    match state.db.update_plugin_record(&record_id, payload) {
+        Ok(rec) => (StatusCode::OK, Json(serde_json::to_value(rec).unwrap())).into_response(),
+        Err(err) => (StatusCode::BAD_REQUEST, Json(json!({ "error": err.to_string() }))).into_response(),
+    }
+}
+
+async fn delete_plugin_record_handler(
+    State(state): State<AppState>,
+    Path(record_id): Path<String>,
+) -> impl IntoResponse {
+    match state.db.delete_plugin_record(&record_id) {
+        Ok(_) => (StatusCode::OK, Json(json!({ "deleted": true, "id": record_id }))).into_response(),
         Err(err) => (StatusCode::BAD_REQUEST, Json(json!({ "error": err.to_string() }))).into_response(),
     }
 }

@@ -8,14 +8,14 @@ pub fn render_app_html() -> &'static str {
     <meta name="apple-mobile-web-app-status-bar-style" content="default">
     <meta name="apple-mobile-web-app-title" content="Conrad OS">
     <link rel="manifest" href="/manifest.json">
-    <title>Conrad OS — Enterprise CRM, ERP &amp; DMS</title>
+    <title>Conrad OS — AI-First Modular Company OS (Odoo × DeepSeek Harness)</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
     <style>
-        /* ── Twenty CRM & HubSpot Enterprise Design System ── */
+        /* ── Apple HIG × Microsoft Fluent × Odoo × DeepSeek Harness Design System ── */
         :root {
-            --font-sans: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            --font-sans: "Plus Jakarta Sans", -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", sans-serif;
             --font-mono: "JetBrains Mono", SFMono-Regular, Menlo, monospace;
 
             /* Light Theme (Twenty CRM Clean Slate) */
@@ -1071,15 +1071,138 @@ pub fn render_app_html() -> &'static str {
             gap: 16px;
         }
 
+        /* ── Odoo 9-Dot App Launcher & Bento Matrix ── */
+        .app-launcher-btn {
+            width: 30px;
+            height: 30px;
+            border-radius: 6px;
+            border: 1px solid var(--border-color);
+            background: var(--bg-surface);
+            color: var(--text-primary);
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.12s ease;
+        }
+        .app-launcher-btn:hover {
+            border-color: var(--accent);
+            color: var(--accent);
+            background: var(--accent-soft);
+        }
+
+        .app-matrix-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+            gap: 10px;
+            margin-top: 12px;
+        }
+        .app-matrix-tile {
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            padding: 12px;
+            background: var(--bg-subtle);
+            cursor: pointer;
+            transition: all 0.12s ease;
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+        .app-matrix-tile:hover {
+            border-color: var(--accent);
+            background: var(--bg-surface);
+            transform: translateY(-1px);
+            box-shadow: var(--shadow-sm);
+        }
+
+        /* ── AI-First Omni Bar in Topbar ── */
+        .ai-omni-bar {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            background: var(--bg-subtle);
+            border: 1px solid var(--border-color);
+            border-radius: 6px;
+            padding: 0 8px;
+            height: 28px;
+            width: 280px;
+            transition: border-color 0.12s ease, width 0.15s ease;
+        }
+        .ai-omni-bar:focus-within {
+            border-color: var(--accent);
+            background: var(--bg-surface);
+            width: 320px;
+        }
+        .ai-omni-input {
+            border: none;
+            background: transparent;
+            color: var(--text-primary);
+            font-size: 12px;
+            font-family: inherit;
+            width: 100%;
+            outline: none;
+        }
+
+        /* ── DeepSeek Harness Plugin Store Cards ── */
+        .plugin-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(310px, 1fr));
+            gap: 14px;
+        }
+        .plugin-card {
+            background: var(--bg-surface);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            padding: 16px;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            gap: 12px;
+            box-shadow: var(--shadow-xs);
+            transition: border-color 0.12s ease, box-shadow 0.12s ease;
+        }
+        .plugin-card:hover {
+            border-color: var(--border-strong);
+            box-shadow: var(--shadow-sm);
+        }
+        .plugin-layer-pill {
+            font-family: var(--font-mono);
+            font-size: 10px;
+            font-weight: 600;
+            padding: 2px 6px;
+            border-radius: 4px;
+            background: var(--bg-subtle);
+            border: 1px solid var(--border-color);
+            color: var(--text-secondary);
+        }
+
+        /* ── Harness Telemetry Status Footer ── */
+        .harness-footer {
+            height: 26px;
+            border-top: 1px solid var(--border-color);
+            background: var(--bg-sidebar);
+            padding: 0 16px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            font-size: 11px;
+            color: var(--text-muted);
+            font-family: var(--font-mono);
+            flex-shrink: 0;
+        }
+
         @media (max-width: 900px) {
             .dashboard-split-grid {
                 grid-template-columns: 1fr;
+            }
+            .ai-omni-bar {
+                display: none;
             }
         }
 
         @media (max-width: 768px) {
             #mobileMenuBtn { display: inline-flex !important; }
-            .breadcrumb-root, .breadcrumb-sep, #topbarModePill, #btnBookingTopbar, #topbarActionBtn {
+            .breadcrumb-root, .breadcrumb-sep, #topbarModePill, #btnBookingTopbar, #topbarActionBtn, .harness-footer {
                 display: none !important;
             }
             .topbar {
@@ -1174,10 +1297,29 @@ pub fn render_app_html() -> &'static str {
                     <span>Marketing Attribution</span>
                 </button>
             </li>
+            <li>
+                <button class="nav-item-btn" id="nav-btn-workflows" onclick="switchView('workflows')">
+                    <svg class="icon" viewBox="0 0 24 24"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
+                    <span>Workflows &amp; Trigger</span>
+                </button>
+            </li>
         </ul>
+
+        <div class="nav-group-title" style="display:flex; justify-content:space-between; align-items:center;">
+            <span>Harness Plugins</span>
+            <span style="cursor:pointer; color:var(--accent);" onclick="openNewPluginModal()" title="Eigenes Plugin bauen">+ Studio</span>
+        </div>
+        <ul class="nav-list" id="sidebarDynamicPluginsList"></ul>
 
         <div class="nav-group-title">Compliance &amp; System</div>
         <ul class="nav-list">
+            <li>
+                <button class="nav-item-btn" id="nav-btn-plugins" onclick="switchView('plugins')">
+                    <svg class="icon" viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/></svg>
+                    <span>Plugin Store (Harness)</span>
+                    <span class="nav-count" id="badge-plugins-count">10</span>
+                </button>
+            </li>
             <li>
                 <button class="nav-item-btn" id="nav-btn-dms" onclick="switchView('dms')">
                     <svg class="icon" viewBox="0 0 24 24"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
@@ -1206,7 +1348,10 @@ pub fn render_app_html() -> &'static str {
         <header class="topbar">
             <div class="topbar-left">
                 <button class="btn" style="display:none; padding:0 8px;" id="mobileMenuBtn" onclick="toggleMobileSidebar()">☰</button>
-                <span class="breadcrumb-root">Workspace</span>
+                <button class="app-launcher-btn" id="odooAppLauncherBtn" onclick="openAppMatrixModal()" title="Odoo App-Matrix &amp; Harness Launcher (9-Dot)">
+                    <svg class="icon" viewBox="0 0 24 24"><circle cx="5" cy="5" r="1.5"/><circle cx="12" cy="5" r="1.5"/><circle cx="19" cy="5" r="1.5"/><circle cx="5" cy="12" r="1.5"/><circle cx="12" cy="12" r="1.5"/><circle cx="19" cy="12" r="1.5"/><circle cx="5" cy="19" r="1.5"/><circle cx="12" cy="19" r="1.5"/><circle cx="19" cy="19" r="1.5"/></svg>
+                </button>
+                <span class="breadcrumb-root">Conrad OS</span>
                 <span class="breadcrumb-sep">/</span>
                 <span class="topbar-title" id="currentViewTitle">Cockpit &amp; Aufgaben</span>
                 <span class="badge info" id="topbarModePill" style="margin-left:8px;">
@@ -1216,6 +1361,10 @@ pub fn render_app_html() -> &'static str {
             </div>
 
             <div class="topbar-right">
+                <div class="ai-omni-bar" id="aiOmniBar">
+                    <span style="color:var(--accent); font-weight:700; font-size:11px;">AI</span>
+                    <input type="text" id="aiOmniInput" class="ai-omni-input" placeholder="KI-Befehl oder „Baue Plugin ...“ (↵)" onkeydown="if(event.key==='Enter') executeOmniBarCommand()">
+                </div>
                 <a href="/book/merlin" id="btnBookingTopbar" target="_blank" class="btn" style="text-decoration:none;" title="Öffentliche Terminbuchungsseite">
                     <svg class="icon" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
                     <span>Buchungs-Link</span>
@@ -1300,6 +1449,7 @@ pub fn render_app_html() -> &'static str {
                     </div>
                     <div style="display:flex; gap:8px; align-items:center;">
                         <input type="text" id="contactSearchInput" class="form-input" style="height:28px; width:240px; font-size:12px;" placeholder="Tabelle filtern (Name, Firma, E-Mail)..." oninput="filterContactsList()">
+                        <button class="btn" onclick="exportContactsCsv()">↓ CSV Export</button>
                         <button class="btn btn-primary" onclick="openNewContactModal()">+ Neuer Kontakt</button>
                     </div>
                 </div>
@@ -1396,7 +1546,10 @@ pub fn render_app_html() -> &'static str {
                     <div style="font-size:12px; color:var(--text-secondary);">
                         Wiederkehrende Service-Verträge (MRR) &amp; automatischer Monatsabrechnungslauf
                     </div>
-                    <button class="btn btn-primary" onclick="triggerRetainerRun()">Fällige Retainer jetzt abrechnen</button>
+                    <div style="display:flex; gap:8px;">
+                        <button class="btn" onclick="openModal('modalNewRetainer')">+ Neues Abo</button>
+                        <button class="btn btn-primary" onclick="triggerRetainerRun()">Fällige Retainer jetzt abrechnen</button>
+                    </div>
                 </div>
                 <div class="sheet-wrapper">
                     <table class="data-grid">
@@ -1443,6 +1596,7 @@ pub fn render_app_html() -> &'static str {
                 <div class="card-panel">
                     <div class="card-panel-header">
                         <span class="card-panel-title">Kampagnen-Attribution</span>
+                        <button class="btn btn-primary" onclick="openModal('modalNewCampaign')">+ Kampagne / Spend erfassen</button>
                     </div>
                     <table class="data-grid">
                         <thead>
@@ -1541,7 +1695,84 @@ pub fn render_app_html() -> &'static str {
                 </div>
             </section>
 
+            <!-- VIEW 9: WORKFLOWS & TRIGGER AUTOMATION -->
+            <section id="view-workflows" style="display:none;">
+                <div class="sub-toolbar">
+                    <div style="font-size:12px; color:var(--text-secondary);">
+                        Ereignisgesteuerte Regeln · Alle ausgehenden E-Mails werden revisionssicher als Entwurf (Draft) angelegt.
+                    </div>
+                    <button class="btn btn-primary" onclick="openModal('modalNewWorkflow')">+ Neuer Workflow</button>
+                </div>
+                <div class="sheet-wrapper">
+                    <table class="data-grid">
+                        <thead>
+                            <tr>
+                                <th>Regel-Name</th>
+                                <th>Trigger-Ereignis</th>
+                                <th>Bedingung</th>
+                                <th>Aktion</th>
+                                <th>Verzögerung</th>
+                                <th>Ausführungen</th>
+                                <th>Status</th>
+                            </tr>
+                        </thead>
+                        <tbody id="workflowsFullTable"></tbody>
+                    </table>
+                </div>
+            </section>
+
+            <!-- VIEW 10: ODOO × DEEPSEEK HARNESS PLUGIN STORE ("Everything is a Plugin") -->
+            <section id="view-plugins" class="view-padded" style="display:none;">
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px; flex-wrap:wrap; gap:10px;">
+                    <div>
+                        <h2 style="font-size:16px; font-weight:700;">Odoo × DeepSeek Harness — Plugin Layer Architecture</h2>
+                        <p style="font-size:12px; color:var(--text-secondary); margin-top:2px;">
+                            Geordneter Stack von Plugin-Layern. Jedes Modul besitzt ein eigenes JSON-Schema, SQLite-Persistenz und MCP-Tools.
+                        </p>
+                    </div>
+                    <div style="display:flex; gap:8px;">
+                        <button class="btn" onclick="toggleCopilot(); document.getElementById('copilotInput').value='Baue mir ein neues Plugin Fuhrpark & Leasing';">KI-Architekt fragen</button>
+                        <button class="btn btn-primary" id="btnOpenPluginStudio" onclick="openNewPluginModal()">+ Eigenes Plugin bauen (Studio)</button>
+                    </div>
+                </div>
+                <div class="plugin-grid" id="pluginsRegistryGrid"></div>
+            </section>
+
+            <!-- VIEW 11: DYNAMIC PLUGIN WORKSPACE VIEW -->
+            <section id="view-plugin-dynamic" style="display:none;">
+                <div class="sub-toolbar">
+                    <div style="display:flex; align-items:center; gap:10px;">
+                        <span class="plugin-layer-pill" id="dynPluginLayerPill">LAYER #110</span>
+                        <span style="font-size:12px; color:var(--text-secondary);" id="dynPluginDesc">Plugin Beschreibung</span>
+                    </div>
+                    <div style="display:flex; gap:8px; align-items:center;">
+                        <input type="text" id="dynPluginSearch" class="form-input" style="height:28px; width:200px; font-size:12px;" placeholder="Einträge filtern..." oninput="renderActivePluginRecords()">
+                        <button class="btn btn-primary" id="btnNewPluginRecord" onclick="openNewPluginRecordModal()">+ Neuer Eintrag</button>
+                    </div>
+                </div>
+                <div class="sheet-wrapper">
+                    <table class="data-grid">
+                        <thead id="dynPluginTableHead"></thead>
+                        <tbody id="dynPluginTableBody"></tbody>
+                    </table>
+                </div>
+            </section>
+
         </div>
+
+        <!-- ── DeepSeek Harness Status Telemetry Strip ── -->
+        <footer class="harness-footer" id="harnessStatusFooter">
+            <div style="display:flex; align-items:center; gap:14px;">
+                <span><strong style="color:var(--text-primary);">HARNESS:</strong> production-enterprise</span>
+                <span id="footerMountedLayers">LAYERS: 10 ACTIVE</span>
+                <span>ENGINE: Pure Rust / SQLite WAL (&lt;0.4ms)</span>
+                <span style="color:var(--status-green-fg);">● GoBD SHA-256 VERIFIED</span>
+            </div>
+            <div style="display:flex; align-items:center; gap:12px;">
+                <span style="cursor:pointer;" onclick="switchView('plugins')">Plugin-Architektur ↗</span>
+                <span style="cursor:pointer;" onclick="openCmdKModal()">⌘K Spotlight</span>
+            </div>
+        </footer>
     </div>
 
     <!-- ── HubSpot / Twenty 360° Contact Record Inspector Drawer ── -->
@@ -1802,6 +2033,233 @@ pub fn render_app_html() -> &'static str {
         </div>
     </div>
 
+    <!-- ── Modal: Odoo 9-Dot App Matrix Launcher ── -->
+    <div class="modal-backdrop" id="odooAppMatrixModal" onclick="if(event.target===this)closeModal('odooAppMatrixModal')">
+        <div class="modal-card" style="width: 680px; max-width: 96vw;">
+            <div class="modal-header">
+                <div>
+                    <span class="modal-title">Conrad OS · App &amp; Plugin Matrix</span>
+                    <div style="font-size:11.5px; color:var(--text-muted); margin-top:2px;">Wähle eine gemountete Harness-App oder baue neue Plugins im Studio</div>
+                </div>
+                <button class="modal-close-btn" onclick="closeModal('odooAppMatrixModal')">✕</button>
+            </div>
+            <div class="app-matrix-grid" id="appMatrixGridContainer"></div>
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-top:16px; padding-top:12px; border-top:1px solid var(--border-color);">
+                <span style="font-size:11.5px; color:var(--text-muted);">Odoo × DeepSeek Harness Architecture · Zero-Lock-in Rust Engine</span>
+                <button class="btn btn-primary" onclick="closeModal('odooAppMatrixModal'); switchView('plugins');">+ Plugin Studio öffnen</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ── Modal: Neues Plugin bauen (DeepSeek Harness Builder) ── -->
+    <div class="modal-backdrop" id="modalNewPlugin">
+        <div class="modal-card" style="width: 540px;">
+            <div class="modal-header">
+                <span class="modal-title">Neues Harness-Plugin konstruieren</span>
+                <button class="modal-close-btn" onclick="closeModal('modalNewPlugin')">✕</button>
+            </div>
+            <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px;">
+                <div class="form-group">
+                    <label class="form-label">Plugin-Name *</label>
+                    <input type="text" id="np-name" class="form-input" placeholder="z.B. Fuhrpark &amp; Leasing">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Technischer Slug *</label>
+                    <input type="text" id="np-slug" class="form-input" placeholder="z.B. fleet">
+                </div>
+            </div>
+            <div style="display:grid; grid-template-columns:1fr 1fr 100px; gap:10px;">
+                <div class="form-group">
+                    <label class="form-label">Kategorie</label>
+                    <select id="np-category" class="form-input">
+                        <option value="ERP">ERP &amp; Betrieb</option>
+                        <option value="Assets">Vermögen &amp; Immobilien</option>
+                        <option value="Operations">Service &amp; Operations</option>
+                        <option value="Custom">Eigenes Modul</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Icon</label>
+                    <select id="np-icon" class="form-input">
+                        <option value="cube">Cube (Standard)</option>
+                        <option value="building">Immobilie / Gebäude</option>
+                        <option value="folder">Projekt / Akte</option>
+                        <option value="lifebuoy">Helpdesk / Ticket</option>
+                        <option value="package">Katalog / Inventar</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Layer #</label>
+                    <input type="number" id="np-layer" class="form-input" value="210">
+                </div>
+            </div>
+            <div class="form-group">
+                <label class="form-label">Beschreibung &amp; KI-Kontext *</label>
+                <input type="text" id="np-desc" class="form-input" placeholder="z.B. Verwaltung von Firmenfahrzeugen, Kilometern, Leasingraten und Wartung.">
+            </div>
+            <div class="form-group">
+                <label class="form-label">Datenfelder (Kommagetrennt: Label:key:typ)</label>
+                <input type="text" id="np-fields" class="form-input" value="Kennzeichen:plate:text, Leasingrate (EUR):rate_eur:number, Verantwortlich:owner:text">
+            </div>
+            <div style="display:flex; justify-content:flex-end; gap:8px; margin-top:16px;">
+                <button class="btn" onclick="closeModal('modalNewPlugin')">Abbrechen</button>
+                <button class="btn btn-primary" onclick="submitCreatePlugin()">Plugin kompilieren &amp; mounten</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ── Modal: Neuer Datensatz in dynamischem Plugin ── -->
+    <div class="modal-backdrop" id="modalNewPluginRecord">
+        <div class="modal-card" style="width: 500px;">
+            <div class="modal-header">
+                <span class="modal-title" id="modalNewPluginRecordTitle">Neuer Datensatz</span>
+                <button class="modal-close-btn" onclick="closeModal('modalNewPluginRecord')">✕</button>
+            </div>
+            <div class="form-group">
+                <label class="form-label">Bezeichnung / Titel *</label>
+                <input type="text" id="npr-title" class="form-input" placeholder="Primärbezeichnung eingeben...">
+            </div>
+            <div class="form-group">
+                <label class="form-label">Status</label>
+                <select id="npr-status" class="form-input">
+                    <option value="active">Aktiv</option>
+                    <option value="in_progress">In Bearbeitung</option>
+                    <option value="planned">Geplant / Prüfung</option>
+                    <option value="completed">Abgeschlossen</option>
+                </select>
+            </div>
+            <div id="npr-dynamic-fields"></div>
+            <div style="display:flex; justify-content:flex-end; gap:8px; margin-top:16px;">
+                <button class="btn" onclick="closeModal('modalNewPluginRecord')">Abbrechen</button>
+                <button class="btn btn-primary" onclick="submitCreatePluginRecord()">Datensatz speichern</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ── Modal: Neuer Retainer ── -->
+    <div class="modal-backdrop" id="modalNewRetainer">
+        <div class="modal-card">
+            <div class="modal-header">
+                <span class="modal-title">Neues Retainer-Mandat anlegen</span>
+                <button class="modal-close-btn" onclick="closeModal('modalNewRetainer')">✕</button>
+            </div>
+            <div class="form-group">
+                <label class="form-label">Mandant / Kunde *</label>
+                <select id="nr-contact-select" class="form-input"></select>
+            </div>
+            <div class="form-group">
+                <label class="form-label">Leistungs-Paket *</label>
+                <input type="text" id="nr-plan" class="form-input" placeholder="z.B. Conrad KI Managed Agents (Pro)">
+            </div>
+            <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px;">
+                <div class="form-group">
+                    <label class="form-label">Monatsbetrag Netto (EUR) *</label>
+                    <input type="number" id="nr-amount" class="form-input" value="99">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Nächste Abrechnung</label>
+                    <input type="date" id="nr-date" class="form-input" value="2026-12-01">
+                </div>
+            </div>
+            <div style="display:flex; justify-content:flex-end; gap:8px; margin-top:16px;">
+                <button class="btn" onclick="closeModal('modalNewRetainer')">Abbrechen</button>
+                <button class="btn btn-primary" onclick="submitCreateRetainer()">Retainer aktivieren</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ── Modal: Neue Kampagne ── -->
+    <div class="modal-backdrop" id="modalNewCampaign">
+        <div class="modal-card">
+            <div class="modal-header">
+                <span class="modal-title">Neue Marketing-Kampagne erfassen</span>
+                <button class="modal-close-btn" onclick="closeModal('modalNewCampaign')">✕</button>
+            </div>
+            <div class="form-group">
+                <label class="form-label">Kampagnen-Name *</label>
+                <input type="text" id="nmc-name" class="form-input" placeholder="z.B. LinkedIn Outbound Q4 Rhein-Neckar">
+            </div>
+            <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px;">
+                <div class="form-group">
+                    <label class="form-label">Plattform</label>
+                    <select id="nmc-platform" class="form-input">
+                        <option value="linkedin">LinkedIn</option>
+                        <option value="meta">Meta / Instagram</option>
+                        <option value="google">Google Search</option>
+                        <option value="organic">Organic / Referral</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Ad Spend (EUR)</label>
+                    <input type="number" id="nmc-spend" class="form-input" value="250">
+                </div>
+            </div>
+            <div style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:10px;">
+                <div class="form-group">
+                    <label class="form-label">Klicks</label>
+                    <input type="number" id="nmc-clicks" class="form-input" value="180">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Leads</label>
+                    <input type="number" id="nmc-leads" class="form-input" value="12">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Kunden</label>
+                    <input type="number" id="nmc-customers" class="form-input" value="2">
+                </div>
+            </div>
+            <div class="form-group">
+                <label class="form-label">Zugeordneter Umsatz (EUR)</label>
+                <input type="number" id="nmc-revenue" class="form-input" value="2400">
+            </div>
+            <div style="display:flex; justify-content:flex-end; gap:8px; margin-top:16px;">
+                <button class="btn" onclick="closeModal('modalNewCampaign')">Abbrechen</button>
+                <button class="btn btn-primary" onclick="submitCreateCampaign()">Kampagne speichern</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ── Modal: Neue Workflow-Regel ── -->
+    <div class="modal-backdrop" id="modalNewWorkflow">
+        <div class="modal-card">
+            <div class="modal-header">
+                <span class="modal-title">Neuen Automations-Trigger anlegen</span>
+                <button class="modal-close-btn" onclick="closeModal('modalNewWorkflow')">✕</button>
+            </div>
+            <div class="form-group">
+                <label class="form-label">Bezeichnung der Regel *</label>
+                <input type="text" id="nw-name" class="form-input" placeholder="z.B. Deal Gewonnen -> Onboarding-Checkliste &amp; Willkommens-Entwurf">
+            </div>
+            <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px;">
+                <div class="form-group">
+                    <label class="form-label">Trigger-Event</label>
+                    <select id="nw-trigger" class="form-input">
+                        <option value="deal_stage_changed">Deal-Phase geändert</option>
+                        <option value="contact_created">Neuer Kontakt erstellt</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Ziel-Bedingung (Phase)</label>
+                    <select id="nw-stage" class="form-input">
+                        <option value="proposal">Angebot (proposal)</option>
+                        <option value="negotiation">Verhandlung (negotiation)</option>
+                        <option value="closed_won">Gewonnen (closed_won)</option>
+                    </select>
+                </div>
+            </div>
+            <div class="form-group">
+                <label class="form-label">Aktion</label>
+                <select id="nw-action" class="form-input">
+                    <option value="create_task_and_followup_draft">Aufgabe (+3 Tage) + E-Mail-Entwurf generieren</option>
+                </select>
+            </div>
+            <div style="display:flex; justify-content:flex-end; gap:8px; margin-top:16px;">
+                <button class="btn" onclick="closeModal('modalNewWorkflow')">Abbrechen</button>
+                <button class="btn btn-primary" onclick="submitCreateWorkflow()">Workflow aktivieren</button>
+            </div>
+        </div>
+    </div>
+
     <script>
         let currentMode = 'user';
         let currentRole = 'admin';
@@ -1810,6 +2268,10 @@ pub fn render_app_html() -> &'static str {
         let dealsData = [];
         let invoicesData = [];
         let tasksData = [];
+        let pluginsData = [];
+        let workflowsData = [];
+        let activePlugin = null;
+        let activePluginRecords = [];
         let settingsData = {};
         let contactStatusFilter = 'all';
         let activeContactId = null;
@@ -1839,10 +2301,24 @@ pub fn render_app_html() -> &'static str {
                 paid: ['success', 'Bezahlt'],
                 sent: ['info', 'Versendet'],
                 draft: ['neutral', 'Entwurf'],
-                cancelled: ['danger', 'Storniert']
+                cancelled: ['danger', 'Storniert'],
+                active: ['success', 'Aktiv'],
+                in_progress: ['info', 'In Arbeit'],
+                planned: ['warning', 'Geplant'],
+                completed: ['neutral', 'Erledigt']
             };
             const [cls, label] = map[status] || ['neutral', status];
             return `<span class="badge ${cls}"><span class="badge-dot"></span>${escapeHtml(label)}</span>`;
+        }
+
+        function pluginIconSvg(iconName) {
+            const icons = {
+                folder: '<svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg>',
+                building: '<svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect width="16" height="20" x="4" y="2" rx="2"/><path d="M9 22v-4h6v4"/><path d="M8 6h.01"/><path d="M16 6h.01"/><path d="M8 10h.01"/><path d="M16 10h.01"/><path d="M8 14h.01"/><path d="M16 14h.01"/></svg>',
+                lifebuoy: '<svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="4"/><line x1="4.93" y1="4.93" x2="9.17" y2="9.17"/><line x1="14.83" y1="14.83" x2="19.07" y2="19.07"/></svg>',
+                package: '<svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16.5 9.4 7.55 4.24"/><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><polyline points="3.29 7 12 12 20.71 7"/><line x1="12" y1="22" x2="12" y2="12"/></svg>'
+            };
+            return icons[iconName] || '<svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2l9 4.9V17L12 22l-9-4.9V7z"/></svg>';
         }
 
         function switchAppMode(mode) {
@@ -1861,15 +2337,23 @@ pub fn render_app_html() -> &'static str {
         }
 
         function switchView(viewId) {
-            currentView = viewId;
             document.getElementById('appSidebar')?.classList.remove('mobile-open');
-            const views = ['dashboard', 'contacts', 'deals', 'invoices', 'retainers', 'marketing', 'dms', 'settings'];
+
+            if (viewId && viewId.startsWith('plugin:')) {
+                const plugRef = viewId.substring('plugin:'.length);
+                openPluginWorkspace(plugRef);
+                return;
+            }
+
+            currentView = viewId;
+            const views = ['dashboard', 'contacts', 'deals', 'invoices', 'retainers', 'marketing', 'workflows', 'plugins', 'plugin-dynamic', 'dms', 'settings'];
             views.forEach(v => {
                 const el = document.getElementById(`view-${v}`);
                 if (el) el.style.display = v === viewId ? 'block' : 'none';
                 const btn = document.getElementById(`nav-btn-${v}`);
                 if (btn) btn.classList.toggle('active', v === viewId);
             });
+            document.querySelectorAll('.dyn-plugin-nav-btn').forEach(b => b.classList.remove('active'));
 
             const titles = {
                 dashboard: 'Cockpit & Aufgaben',
@@ -1878,6 +2362,8 @@ pub fn render_app_html() -> &'static str {
                 invoices: 'Faktura & E-Rechnung',
                 retainers: 'Retainer & Abos',
                 marketing: 'Marketing Attribution',
+                workflows: 'Workflows & Automationen',
+                plugins: 'Plugin Studio (Odoo × DeepSeek Harness)',
                 dms: 'GoBD Audit Journal',
                 settings: 'Datenmodell & System'
             };
@@ -1885,13 +2371,15 @@ pub fn render_app_html() -> &'static str {
 
             if (viewId === 'marketing') loadMarketingView();
             if (viewId === 'retainers') loadRetainersView();
+            if (viewId === 'workflows') loadWorkflowsView();
+            if (viewId === 'plugins') renderPluginsStore();
             if (viewId === 'dms') loadGobdAuditView();
             if (viewId === 'settings') loadSettingsView();
         }
 
         async function refreshData() {
             try {
-                const [statsRes, contacts, deals, invoices, tasks] = await Promise.all([
+                const [statsRes, contacts, deals, invoices, tasks, plugins, workflows] = await Promise.all([
                     fetch('/mcp', {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
@@ -1900,16 +2388,26 @@ pub fn render_app_html() -> &'static str {
                     fetch('/api/contacts').then(r => r.json()),
                     fetch('/api/deals').then(r => r.json()),
                     fetch('/api/invoices').then(r => r.json()),
-                    fetch('/api/tasks').then(r => r.json()).catch(() => [])
+                    fetch('/api/tasks').then(r => r.json()).catch(() => []),
+                    fetch('/api/plugins').then(r => r.json()).catch(() => []),
+                    fetch('/api/workflows').then(r => r.json()).catch(() => [])
                 ]);
 
                 contactsData = contacts || [];
                 dealsData = deals || [];
                 invoicesData = invoices || [];
                 tasksData = tasks || [];
+                pluginsData = plugins || [];
+                workflowsData = workflows || [];
 
                 document.getElementById('badge-contacts-count').innerText = contactsData.length;
                 document.getElementById('badge-deals-count').innerText = dealsData.length;
+
+                const installedCount = pluginsData.filter(p => p.installed).length;
+                const badgePlug = document.getElementById('badge-plugins-count');
+                if (badgePlug) badgePlug.innerText = `${installedCount} aktiv`;
+                const footerLayers = document.getElementById('footerMountedLayers');
+                if (footerLayers) footerLayers.innerText = `Layers: ${installedCount}/${pluginsData.length} mounted`;
 
                 if (statsRes?.result?.content?.[0]?.text) {
                     const stats = JSON.parse(statsRes.result.content[0].text);
@@ -1919,13 +2417,432 @@ pub fn render_app_html() -> &'static str {
                     document.getElementById('kpi-contacts').innerText = stats.total_contacts;
                 }
 
+                renderSidebarDynamicPlugins();
                 renderDashboardTables();
                 renderContactsTable();
                 renderDealsKanban();
                 renderInvoicesTable();
+                if (currentView === 'plugins') renderPluginsStore();
+                if (currentView === 'workflows') loadWorkflowsView();
+                if (currentView === 'plugin-dynamic' && activePlugin) {
+                    await openPluginWorkspace(activePlugin.id);
+                }
             } catch (err) {
                 console.error("Refresh error:", err);
             }
+        }
+
+        function renderSidebarDynamicPlugins() {
+            const box = document.getElementById('sidebarDynamicPluginsList');
+            if (!box) return;
+            const dynamicInstalled = pluginsData.filter(p => !p.is_core && p.installed);
+            box.innerHTML = dynamicInstalled.map(p => {
+                const layer = p.layer_order || p.harness_layer || 100;
+                const icon = p.icon_svg || p.icon || 'cube';
+                return `
+                    <li>
+                        <button class="nav-item-btn dyn-plugin-nav-btn ${currentView==='plugin-dynamic' && activePlugin && activePlugin.id===p.id ? 'active' : ''}" id="nav-btn-plug-${p.slug}" onclick="openPluginWorkspace('${p.id}')">
+                            ${pluginIconSvg(icon)}
+                            <span>${escapeHtml(p.name)}</span>
+                            <span class="nav-count">#${layer}</span>
+                        </button>
+                    </li>
+                `;
+            }).join('');
+        }
+
+        // ── Odoo × DeepSeek Harness Plugin Studio & Dynamic Workspaces ──
+        function renderPluginsStore() {
+            const grid = document.getElementById('pluginsRegistryGrid') || document.getElementById('pluginsStoreGrid');
+            if (!grid) return;
+            grid.innerHTML = pluginsData.map(p => {
+                let fields = [];
+                try { fields = JSON.parse(p.schema_json || p.fields_json || '[]'); } catch (_) {}
+                const layer = p.layer_order || p.harness_layer || 100;
+                const icon = p.icon_svg || p.icon || 'cube';
+                const fieldsTags = fields.map(f => `<span class="tag-chip">${escapeHtml(f.label)}</span>`).join('');
+                return `
+                    <div class="plugin-card">
+                        <div style="display:flex; justify-content:space-between; align-items:flex-start; gap:10px;">
+                            <div style="display:flex; align-items:center; gap:10px;">
+                                <div style="width:34px; height:34px; border-radius:8px; background:var(--accent-subtle); color:var(--accent); display:flex; align-items:center; justify-content:center; flex-shrink:0;">
+                                    ${pluginIconSvg(icon)}
+                                </div>
+                                <div>
+                                    <div style="font-weight:700; font-size:13.5px;">${escapeHtml(p.name)}</div>
+                                    <div style="font-size:11px; color:var(--text-muted); font-family:var(--font-mono);">${escapeHtml(p.id)} · ${escapeHtml(p.category)}</div>
+                                </div>
+                            </div>
+                            <span class="plugin-layer-pill">LAYER #${layer}</span>
+                        </div>
+                        <div style="font-size:12px; color:var(--text-secondary); line-height:1.45;">
+                            ${escapeHtml(p.description)}
+                        </div>
+                        <div>${fieldsTags || '<span class="tag-chip">Core OS Layer</span>'}</div>
+                        <div style="display:flex; justify-content:space-between; align-items:center; margin-top:auto; padding-top:10px; border-top:1px solid var(--border-color);">
+                            <span class="badge ${p.installed ? 'success' : 'neutral'}"><span class="badge-dot"></span>${p.installed ? 'Gemountet' : 'Inaktiv'}</span>
+                            <div style="display:flex; gap:6px;">
+                                ${!p.is_core && p.installed ? `<button class="btn btn-primary" style="height:26px; padding:0 10px; font-size:11.5px;" onclick="openPluginWorkspace('${p.id}')">Öffnen →</button>` : ''}
+                                ${p.is_core ? `<span style="font-size:11px; color:var(--text-muted);">System-Kern</span>` : `
+                                    <button class="btn" style="height:26px; padding:0 10px; font-size:11.5px;" onclick="togglePluginInstall('${p.id}')">
+                                        ${p.installed ? 'Aushängen' : 'Mounten'}
+                                    </button>
+                                `}
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        async function togglePluginInstall(pluginId) {
+            await fetch(`/api/plugins/${encodeURIComponent(pluginId)}/toggle`, { method: 'PATCH' });
+            await refreshData();
+        }
+
+        function openNewPluginModal() {
+            openModal('modalNewPlugin');
+            setTimeout(() => document.getElementById('np-name')?.focus(), 50);
+        }
+
+        async function submitCreatePlugin() {
+            const name = document.getElementById('np-name').value.trim();
+            if (!name) return;
+            const slug = document.getElementById('np-slug').value.trim() || name.toLowerCase().replace(/[^a-z0-9]+/g, '_');
+            const category = document.getElementById('np-category').value;
+            const description = document.getElementById('np-desc').value.trim() || 'Benutzerdefiniertes Harness-Plugin';
+            const rawFields = document.getElementById('np-fields').value.trim();
+
+            const fields = rawFields.split(',').map(part => {
+                const segs = part.trim().split(':');
+                const label = (segs[0] || 'Feld').trim();
+                const key = (segs[1] || label.toLowerCase().replace(/[^a-z0-9]+/g, '_')).trim();
+                const field_type = (segs[2] || 'text').trim();
+                return { key, label, field_type };
+            }).filter(f => f.key);
+
+            const res = await fetch('/api/plugins', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ name, slug, category, description, fields })
+            }).then(r => r.json());
+
+            closeModal('modalNewPlugin');
+            await refreshData();
+            if (res && res.id) {
+                await openPluginWorkspace(res.id);
+            }
+        }
+
+        async function openPluginWorkspace(pluginIdOrSlug) {
+            let plug = pluginsData.find(p => p.id === pluginIdOrSlug || p.slug === pluginIdOrSlug);
+            if (!plug) {
+                await refreshData();
+                plug = pluginsData.find(p => p.id === pluginIdOrSlug || p.slug === pluginIdOrSlug);
+            }
+            if (!plug) return;
+            activePlugin = plug;
+            currentView = 'plugin-dynamic';
+            const layer = plug.layer_order || plug.harness_layer || 100;
+
+            const views = ['dashboard', 'contacts', 'deals', 'invoices', 'retainers', 'marketing', 'workflows', 'plugins', 'plugin-dynamic', 'dms', 'settings'];
+            views.forEach(v => {
+                const el = document.getElementById(`view-${v}`);
+                if (el) el.style.display = v === 'plugin-dynamic' ? 'block' : 'none';
+                const btn = document.getElementById(`nav-btn-${v}`);
+                if (btn) btn.classList.remove('active');
+            });
+            document.querySelectorAll('.dyn-plugin-nav-btn').forEach(b => b.classList.remove('active'));
+            document.getElementById(`nav-btn-plug-${plug.slug}`)?.classList.add('active');
+
+            document.getElementById('currentViewTitle').innerText = `${plug.name} (Plugin #${layer})`;
+            const pillEl = document.getElementById('dynPluginLayerPill') || document.getElementById('dyn-plugin-layer-badge');
+            if (pillEl) pillEl.innerText = `LAYER #${layer} · ${plug.id}`;
+            const descEl = document.getElementById('dynPluginDesc') || document.getElementById('dyn-plugin-desc');
+            if (descEl) descEl.innerText = plug.description;
+
+            activePluginRecords = await fetch(`/api/plugins/${encodeURIComponent(plug.id)}/records`).then(r => r.json()).catch(() => []);
+            renderActivePluginRecords();
+        }
+
+        function renderActivePluginRecords() {
+            if (!activePlugin) return;
+            let schema = [];
+            try { schema = JSON.parse(activePlugin.schema_json || activePlugin.fields_json || '[]'); } catch (_) {}
+
+            const thead = document.getElementById('dynPluginTableHead') || document.getElementById('dyn-plugin-thead');
+            if (thead) {
+                thead.innerHTML = `
+                    <tr>
+                        <th>Bezeichnung / Titel</th>
+                        <th>Status</th>
+                        ${schema.map(f => `<th>${escapeHtml(f.label)}</th>`).join('')}
+                        <th>Wert / Betrag</th>
+                        <th>Verantwortlich</th>
+                        <th>Aktion</th>
+                    </tr>
+                `;
+            }
+
+            const q = (document.getElementById('dynPluginSearch')?.value || '').trim().toLowerCase();
+            const filtered = activePluginRecords.filter(r => !q || (r.title || '').toLowerCase().includes(q) || (r.data_json || '').toLowerCase().includes(q));
+
+            const tbody = document.getElementById('dynPluginTableBody') || document.getElementById('dyn-plugin-tbody');
+            if (!tbody) return;
+            if (!filtered.length) {
+                tbody.innerHTML = `<tr><td colspan="${schema.length + 5}" style="text-align:center; color:var(--text-muted); padding:24px;">Keine passenden Datensätze in diesem Plugin.</td></tr>`;
+                return;
+            }
+
+            tbody.innerHTML = filtered.map(rec => {
+                let payload = {};
+                try { payload = JSON.parse(rec.data_json || rec.payload_json || '{}'); } catch (_) {}
+                return `
+                    <tr>
+                        <td><strong>${escapeHtml(rec.title)}</strong></td>
+                        <td>${statusBadge(rec.status)}</td>
+                        ${schema.map(f => {
+                            const val = payload[f.key] !== undefined ? payload[f.key] : '—';
+                            return `<td class="${f.field_type === 'number' ? 'mono-val' : ''}">${escapeHtml(String(val))}</td>`;
+                        }).join('')}
+                        <td class="mono-val"><strong>${((rec.amount_cents || 0) / 100).toLocaleString('de-DE', { style: 'currency', currency: 'EUR' })}</strong></td>
+                        <td>${escapeHtml(rec.owner || 'Merlin Conrad')}</td>
+                        <td>
+                            <div style="display:flex; gap:6px;">
+                                <button class="btn" style="height:24px; padding:0 8px; font-size:11px;" onclick="cyclePluginRecordStatus('${rec.id}', '${rec.status}')">Status ↻</button>
+                                <button class="btn" style="height:24px; padding:0 8px; font-size:11px; color:var(--status-red-fg);" onclick="deletePluginRecord('${rec.id}')">✕</button>
+                            </div>
+                        </td>
+                    </tr>
+                `;
+            }).join('');
+        }
+
+        function openNewPluginRecordModal() {
+            if (!activePlugin) return;
+            document.getElementById('modalNewPluginRecordTitle').innerText = `Neuer Datensatz · ${activePlugin.name}`;
+            document.getElementById('npr-title').value = '';
+            let schema = [];
+            try { schema = JSON.parse(activePlugin.schema_json || activePlugin.fields_json || '[]'); } catch (_) {}
+            const container = document.getElementById('npr-dynamic-fields');
+            container.innerHTML = schema.map(f => `
+                <div class="form-group">
+                    <label class="form-label">${escapeHtml(f.label)}</label>
+                    <input type="${f.field_type === 'number' ? 'number' : 'text'}" class="form-input npr-dyn-input" data-key="${escapeHtml(f.key)}" placeholder="${escapeHtml(f.label)}...">
+                </div>
+            `).join('') + `
+                <div class="form-group">
+                    <label class="form-label">Wert / Betrag (EUR)</label>
+                    <input type="number" id="npr-amount-eur" class="form-input" value="0">
+                </div>
+            `;
+            openModal('modalNewPluginRecord');
+            setTimeout(() => document.getElementById('npr-title')?.focus(), 50);
+        }
+
+        async function submitCreatePluginRecord() {
+            if (!activePlugin) return;
+            const title = document.getElementById('npr-title').value.trim();
+            if (!title) return;
+            const status = document.getElementById('npr-status').value;
+            const amountEur = parseFloat(document.getElementById('npr-amount-eur')?.value) || 0;
+            const data = {};
+            document.querySelectorAll('.npr-dyn-input').forEach(inp => {
+                const k = inp.dataset.key;
+                if (k) data[k] = inp.type === 'number' ? (parseFloat(inp.value) || 0) : inp.value.trim();
+            });
+
+            await fetch(`/api/plugins/${encodeURIComponent(activePlugin.id)}/records`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ title, status, amount_cents: Math.round(amountEur * 100), owner: 'Merlin Conrad', data })
+            });
+            closeModal('modalNewPluginRecord');
+            await openPluginWorkspace(activePlugin.id);
+        }
+
+        async function cyclePluginRecordStatus(recordId, currentStatus) {
+            const order = ['Aktiv', 'In Arbeit', 'Geplant', 'Abgeschlossen'];
+            const next = order[(order.indexOf(currentStatus) + 1) % order.length];
+            await fetch(`/api/plugins/records/${encodeURIComponent(recordId)}`, {
+                method: 'PATCH',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ status: next })
+            });
+            if (activePlugin) await openPluginWorkspace(activePlugin.id);
+        }
+
+        async function deletePluginRecord(recordId) {
+            await fetch(`/api/plugins/records/${encodeURIComponent(recordId)}`, { method: 'DELETE' });
+            if (activePlugin) await openPluginWorkspace(activePlugin.id);
+        }
+
+        // ── Odoo 9-Dot App Matrix Modal ──
+        function openAppMatrixModal() {
+            const container = document.getElementById('appMatrixGridContainer');
+            const coreItems = [
+                { title: 'Cockpit', sub: 'Core #10', view: 'dashboard', icon: '📊' },
+                { title: 'Kontakte & Akten', sub: 'Core #20', view: 'contacts', icon: '👥' },
+                { title: 'Deals Pipeline', sub: 'Core #30', view: 'deals', icon: '💼' },
+                { title: 'Faktura & GoBD', sub: 'Core #40', view: 'invoices', icon: '🧾' },
+                { title: 'Retainer & MRR', sub: 'Core #50', view: 'retainers', icon: '🔄' },
+                { title: 'Marketing ROI', sub: 'Core #55', view: 'marketing', icon: '📈' },
+                { title: 'Workflows', sub: 'Core #60', view: 'workflows', icon: '⚡' },
+                { title: 'Plugin Studio', sub: 'Harness Builder', view: 'plugins', icon: '🧩' }
+            ];
+            const dynItems = pluginsData.filter(p => !p.is_core && p.installed).map(p => ({
+                title: p.name,
+                sub: `Plugin #${p.layer_order || p.harness_layer || 100}`,
+                view: `plugin:${p.id}`,
+                icon: p.slug === 'realestate' ? '🏢' : p.slug === 'projects' ? '📁' : p.slug === 'helpdesk' ? '🎧' : '📦'
+            }));
+            const all = [...coreItems, ...dynItems];
+            container.innerHTML = all.map(item => `
+                <div class="app-matrix-tile" onclick="closeModal('odooAppMatrixModal'); switchView('${item.view}');">
+                    <div class="app-matrix-icon" style="font-size:18px;">${item.icon}</div>
+                    <div class="app-matrix-title">${escapeHtml(item.title)}</div>
+                    <div class="app-matrix-sub">${escapeHtml(item.sub)}</div>
+                </div>
+            `).join('');
+            openModal('odooAppMatrixModal');
+        }
+
+        // ── AI Omni-Bar Execution ──
+        async function executeOmniBarCommand() {
+            const inp = document.getElementById('aiOmniInput') || document.getElementById('omniBarInput');
+            const prompt = (inp?.value || '').trim();
+            if (!prompt) return;
+            inp.value = '';
+            document.getElementById('copilotPanel').classList.add('open');
+            const box = document.getElementById('copilotMessages');
+            box.innerHTML += `<div class="chat-bubble user">${escapeHtml(prompt)}</div>`;
+            await handleAiInteraction(prompt, box);
+        }
+
+        // ── Workflows View ──
+        async function loadWorkflowsView() {
+            workflowsData = await fetch('/api/workflows').then(r => r.json()).catch(() => []);
+            const tbody = document.getElementById('workflowsFullTable');
+            if (!tbody) return;
+            tbody.innerHTML = workflowsData.map(w => `
+                <tr>
+                    <td><strong>${escapeHtml(w.name)}</strong></td>
+                    <td><span class="badge info">${escapeHtml(w.trigger_type || w.trigger_event || 'deal_stage_changed')}</span></td>
+                    <td class="mono-val">${escapeHtml(w.trigger_filter || w.condition_stage || '*')}</td>
+                    <td>${escapeHtml(w.action_type)}</td>
+                    <td class="mono-val">+${w.delay_days || 3} Tage</td>
+                    <td class="mono-val">${w.executions_count || 0}×</td>
+                    <td>
+                        <div style="display:flex; align-items:center; gap:8px;">
+                            <span class="badge ${w.active ? 'success' : 'neutral'}">${w.active ? 'Aktiv' : 'Pausiert'}</span>
+                            <button class="btn" style="height:24px; padding:0 8px; font-size:11px;" onclick="toggleWorkflowRule('${w.id}')">
+                                ${w.active ? 'Pausieren' : 'Aktivieren'}
+                            </button>
+                        </div>
+                    </td>
+                </tr>
+            `).join('');
+        }
+
+        async function toggleWorkflowRule(id) {
+            await fetch(`/api/workflows/${encodeURIComponent(id)}/toggle`, { method: 'PATCH' });
+            await loadWorkflowsView();
+        }
+
+        function openNewWorkflowModal() {
+            openModal('modalNewWorkflow');
+        }
+
+        async function submitCreateWorkflow() {
+            const name = document.getElementById('nw-name').value.trim();
+            if (!name) return;
+            const trigger_type = document.getElementById('nw-trigger').value;
+            const trigger_filter = document.getElementById('nw-stage').value;
+            const action_type = document.getElementById('nw-action').value;
+            await fetch('/api/workflows', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    name,
+                    trigger_type,
+                    trigger_filter,
+                    action_type,
+                    delay_days: 3,
+                    template_subject: 'Follow-up — Conrad KI',
+                    template_body: 'Hallo {{name}}, kurzes Follow-up zu unserem Vorgang.'
+                })
+            });
+            closeModal('modalNewWorkflow');
+            await loadWorkflowsView();
+        }
+
+        function openNewRetainerModal() {
+            const sel = document.getElementById('nr-contact-select');
+            sel.innerHTML = contactsData.map(c => `<option value="${c.id}">${escapeHtml(c.name)} (${escapeHtml(c.company || 'Privat')})</option>`).join('');
+            openModal('modalNewRetainer');
+        }
+
+        async function submitCreateRetainer() {
+            const contact_id = document.getElementById('nr-contact-select').value;
+            const plan_name = document.getElementById('nr-plan').value.trim() || 'Conrad KI Retainer';
+            const amount = parseFloat(document.getElementById('nr-amount').value) || 99;
+            const next_billing_date = document.getElementById('nr-date').value || '2026-12-01';
+            await fetch('/api/retainers', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    contact_id,
+                    plan_name,
+                    amount_cents: Math.round(amount * 100),
+                    interval_months: 1,
+                    next_billing_date
+                })
+            });
+            closeModal('modalNewRetainer');
+            await loadRetainersView();
+        }
+
+        function openNewCampaignModal() {
+            openModal('modalNewCampaign');
+        }
+
+        async function submitCreateCampaign() {
+            const name = document.getElementById('nmc-name').value.trim();
+            if (!name) return;
+            const platform = document.getElementById('nmc-platform').value;
+            const spend = parseFloat(document.getElementById('nmc-spend').value) || 0;
+            const clicks = parseInt(document.getElementById('nmc-clicks').value) || 0;
+            const leads = parseInt(document.getElementById('nmc-leads').value) || 0;
+            const customers = parseInt(document.getElementById('nmc-customers').value) || 0;
+            const revenue = parseFloat(document.getElementById('nmc-revenue').value) || 0;
+            await fetch('/api/marketing/campaigns', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    name,
+                    platform,
+                    spend_cents: Math.round(spend * 100),
+                    clicks,
+                    leads,
+                    customers,
+                    revenue_cents: Math.round(revenue * 100)
+                })
+            });
+            closeModal('modalNewCampaign');
+            await loadMarketingView();
+        }
+
+        function exportContactsCsv() {
+            const headers = ['ID', 'Name', 'Firma', 'E-Mail', 'Telefon', 'Status', 'Tags'];
+            const rows = contactsData.map(c => [c.id, c.name, c.company, c.email, c.phone, c.status, c.tags].map(v => `"${String(v || '').replace(/"/g, '""')}"`).join(','));
+            const csv = [headers.join(','), ...rows].join('\n');
+            const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'conrad-os-contacts.csv';
+            a.click();
+            URL.revokeObjectURL(url);
         }
 
         function renderDashboardTables() {
@@ -2505,6 +3422,7 @@ pub fn render_app_html() -> &'static str {
                     if (res.ui_mutations.theme_mode) document.documentElement.setAttribute('data-theme', res.ui_mutations.theme_mode);
                     if (res.ui_mutations.theme_accent) setThemeAccent(res.ui_mutations.theme_accent);
                     if (res.ui_mutations.refresh_schema) await loadSettingsView();
+                    if (res.ui_mutations.refresh_plugins) await refreshData();
                 }
                 if (res.navigate_to) switchView(res.navigate_to);
 
@@ -2545,6 +3463,11 @@ pub fn render_app_html() -> &'static str {
         function openCreateModal() {
             if (currentView === 'deals') openNewDealModal();
             else if (currentView === 'invoices') openNewInvoiceModal();
+            else if (currentView === 'retainers') openNewRetainerModal();
+            else if (currentView === 'marketing') openNewCampaignModal();
+            else if (currentView === 'workflows') openNewWorkflowModal();
+            else if (currentView === 'plugins') openNewPluginModal();
+            else if (currentView === 'plugin-dynamic') openNewPluginRecordModal();
             else openNewContactModal();
         }
 
