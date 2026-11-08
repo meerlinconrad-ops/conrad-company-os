@@ -1,0 +1,1 @@
+cargo:rustc-env=MIME_TYPES_GENERATED_PATH=/Users/merlinconrad/Arbeit/Conrad KI/02_Projekte/conrad-crm/target/debug/build/mime_guess-01e5cdbf2d1e1887/out/mime_types_generated.rs

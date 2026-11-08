@@ -1,0 +1,21 @@
+[package]
+name = "conrad-crm"
+version = "0.1.0"
+edition = "2021"
+authors = ["Merlin Conrad <merlin@conrad-ki.com>"]
+description = "Ultra-lightweight, high-volume self-hosted CRM & DMS in pure Rust with native Model Context Protocol (MCP) server."
+license = "MIT"
+
+[dependencies]
+tokio = { version = "1.40", features = ["full"] }
+axum = { version = "0.7", features = ["macros", "multipart"] }
+tower-http = { version = "0.6", features = ["cors", "trace", "fs"] }
+rusqlite = { version = "0.32", features = ["bundled"] }
+serde = { version = "1.0", features = ["derive"] }
+serde_json = { version = "1.0" }
+chrono = { version = "0.4", features = ["serde"] }
+uuid = { version = "1.10", features = ["v4", "serde"] }
+tracing = "0.1"
+tracing-subscriber = { version = "0.3", features = ["env-filter"] }
+async-trait = "0.1"
+anyhow = "1.0"
