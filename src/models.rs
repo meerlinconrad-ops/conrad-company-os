@@ -253,3 +253,50 @@ pub struct CopilotResponse {
     pub actions_performed: Vec<String>,
     pub model_used: String,
 }
+
+// =========================================================================
+// Germany Compliance & Holzhey Company OS Extensions
+// =========================================================================
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct GobdAuditEntry {
+    pub id: String,
+    pub seq: i64,
+    pub timestamp: DateTime<Utc>,
+    pub entity_type: String, // "invoice", "payment", "contact", "deal"
+    pub entity_id: String,
+    pub action: String,      // "CREATE", "LOCK", "STATUS_CHANGE", "STORNO", "DATEV_EXPORT"
+    pub details: String,
+    pub actor: String,
+    pub prev_hash: String,
+    pub entry_hash: String,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct StornoRequest {
+    pub invoice_id: String,
+    pub reason: String,
+    pub actor: Option<String>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct HubSpotImportResult {
+    pub imported_count: usize,
+    pub skipped_count: usize,
+    pub errors: Vec<String>,
+    pub summary: String,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct HubSpotCsvPayload {
+    pub csv_content: String,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct DatevExportConfig {
+    pub year: i32,
+    pub month: Option<i32>,
+    pub skr: String, // "skr03" or "skr04"
+    pub consultant_number: Option<i64>,
+    pub client_number: Option<i64>,
+}

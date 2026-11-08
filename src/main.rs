@@ -1,14 +1,18 @@
 mod channels;
 mod copilot;
+mod datev;
 mod db;
 mod dms;
+mod gobd;
+mod hubspot;
 mod mcp;
 mod models;
 mod ui;
+mod zugferd;
 
 use axum::{
-    extract::{Path, State},
-    http::StatusCode,
+    extract::{Path, Query, State},
+    http::{header, HeaderMap, HeaderValue, StatusCode},
     response::{Html, IntoResponse},
     routing::{get, patch, post},
     Json, Router,
@@ -16,8 +20,12 @@ use axum::{
 use copilot::CopilotEngine;
 use db::Database;
 use mcp::{JsonRpcRequest, McpServer};
-use models::{CopilotRequest, NewContact, NewCustomFieldDef, NewDeal, NewInvoice};
+use models::{
+    CopilotRequest, DatevExportConfig, HubSpotCsvPayload, NewContact, NewCustomFieldDef, NewDeal,
+    NewInvoice,
+};
 use serde::Deserialize;
+use serde_json::json;
 use std::net::SocketAddr;
 use std::sync::Arc;
 use tower_http::cors::CorsLayer;
@@ -55,6 +63,14 @@ async fn main() -> anyhow::Result<()> {
         .route("/api/deals", get(list_deals_handler).post(create_deal_handler))
         .route("/api/invoices", get(list_invoices_handler).post(create_invoice_handler))
         .route("/api/invoices/:id/status", patch(update_invoice_status_handler))
+        .route("/api/invoices/:id/xrechnung", get(get_invoice_xrechnung_handler))
+        .route("/api/invoices/:id/storno", post(storno_invoice_handler))
+        .route("/api/gobd/verify", get(gobd_verify_handler))
+        .route("/api/gobd/audit-log", get(gobd_audit_log_handler))
+        .route("/api/export/datev", get(datev_export_handler))
+        .route("/api/import/hubspot/contacts", post(import_hubspot_contacts_handler))
+        .route("/api/import/hubspot/deals", post(import_hubspot_deals_handler))
+        .route("/api/consulting/savings-report", get(consulting_savings_report_handler))
         .route("/api/documents", get(list_documents_handler))
         .route("/api/custom-fields", get(list_custom_fields_handler).post(add_custom_field_handler))
         .layer(CorsLayer::permissive())
@@ -185,4 +201,145 @@ async fn add_custom_field_handler(
         Ok(fdef) => (StatusCode::CREATED, Json(serde_json::to_value(fdef).unwrap())).into_response(),
         Err(err) => (StatusCode::INTERNAL_SERVER_ERROR, err.to_string()).into_response(),
     }
+}
+
+#[derive(Deserialize)]
+struct DatevQuery {
+    year: Option<i32>,
+    skr: Option<String>,
+}
+
+#[derive(Deserialize)]
+struct StornoPayload {
+    reason: String,
+    actor: Option<String>,
+}
+
+#[derive(Deserialize)]
+struct HubSpotDealPayload {
+    csv_content: String,
+    contact_id: Option<String>,
+}
+
+async fn get_invoice_xrechnung_handler(
+    State(state): State<AppState>,
+    Path(id): Path<String>,
+) -> impl IntoResponse {
+    let company_name = std::env::var("COMPANY_NAME").unwrap_or_else(|_| "Holzhey Consulting GmbH".to_string());
+    let vat_id = std::env::var("VAT_ID").unwrap_or_else(|_| "DE312345678".to_string());
+    let iban = std::env::var("IBAN").unwrap_or_else(|_| "DE02100100100123456789".to_string());
+    let bic = std::env::var("BIC").unwrap_or_else(|_| "PBNKDEFFXXX".to_string());
+
+    match state.db.get_xrechnung_xml(&id, &company_name, &vat_id, &iban, &bic) {
+        Ok(xml) => {
+            let mut headers = HeaderMap::new();
+            headers.insert(header::CONTENT_TYPE, HeaderValue::from_static("application/xml; charset=utf-8"));
+            let filename = format!("attachment; filename=\"xrechnung_{}.xml\"", id);
+            if let Ok(cd) = HeaderValue::from_str(&filename) {
+                headers.insert(header::CONTENT_DISPOSITION, cd);
+            }
+            (StatusCode::OK, headers, xml).into_response()
+        }
+        Err(err) => (StatusCode::INTERNAL_SERVER_ERROR, err.to_string()).into_response(),
+    }
+}
+
+async fn storno_invoice_handler(
+    State(state): State<AppState>,
+    Path(id): Path<String>,
+    Json(payload): Json<StornoPayload>,
+) -> impl IntoResponse {
+    let actor = payload.actor.as_deref().unwrap_or("Benutzer");
+    match state.db.storno_invoice(&id, &payload.reason, actor) {
+        Ok(storno) => (StatusCode::CREATED, Json(serde_json::to_value(storno).unwrap())).into_response(),
+        Err(err) => (StatusCode::BAD_REQUEST, err.to_string()).into_response(),
+    }
+}
+
+async fn gobd_verify_handler(State(state): State<AppState>) -> impl IntoResponse {
+    match state.db.verify_gobd_integrity() {
+        Ok((valid, total, msg)) => (
+            StatusCode::OK,
+            Json(json!({
+                "valid": valid,
+                "total_entries": total,
+                "message": msg
+            })),
+        )
+            .into_response(),
+        Err(err) => (StatusCode::INTERNAL_SERVER_ERROR, err.to_string()).into_response(),
+    }
+}
+
+async fn gobd_audit_log_handler(State(state): State<AppState>) -> impl IntoResponse {
+    match state.db.list_gobd_audit_log(100) {
+        Ok(entries) => (StatusCode::OK, Json(serde_json::to_value(entries).unwrap())).into_response(),
+        Err(err) => (StatusCode::INTERNAL_SERVER_ERROR, err.to_string()).into_response(),
+    }
+}
+
+async fn datev_export_handler(
+    State(state): State<AppState>,
+    Query(q): Query<DatevQuery>,
+) -> impl IntoResponse {
+    let company_name = std::env::var("COMPANY_NAME").unwrap_or_else(|_| "Holzhey Consulting GmbH".to_string());
+    let cfg = DatevExportConfig {
+        year: q.year.unwrap_or(2026),
+        month: None,
+        skr: q.skr.unwrap_or_else(|| "skr03".to_string()),
+        consultant_number: Some(10001),
+        client_number: Some(20002),
+    };
+
+    match state.db.export_datev_csv(cfg, &company_name) {
+        Ok(csv) => {
+            let mut headers = HeaderMap::new();
+            headers.insert(header::CONTENT_TYPE, HeaderValue::from_static("text/csv; charset=utf-8"));
+            let filename = format!("attachment; filename=\"DATEV_EXTF_{}.csv\"", q.year.unwrap_or(2026));
+            if let Ok(cd) = HeaderValue::from_str(&filename) {
+                headers.insert(header::CONTENT_DISPOSITION, cd);
+            }
+            (StatusCode::OK, headers, csv).into_response()
+        }
+        Err(err) => (StatusCode::INTERNAL_SERVER_ERROR, err.to_string()).into_response(),
+    }
+}
+
+async fn import_hubspot_contacts_handler(
+    State(state): State<AppState>,
+    Json(payload): Json<HubSpotCsvPayload>,
+) -> impl IntoResponse {
+    match state.db.import_hubspot_contacts(&payload.csv_content) {
+        Ok(res) => (StatusCode::OK, Json(serde_json::to_value(res).unwrap())).into_response(),
+        Err(err) => (StatusCode::BAD_REQUEST, err.to_string()).into_response(),
+    }
+}
+
+async fn import_hubspot_deals_handler(
+    State(state): State<AppState>,
+    Json(payload): Json<HubSpotDealPayload>,
+) -> impl IntoResponse {
+    let contact_id = payload.contact_id.as_deref().unwrap_or("");
+    match state.db.import_hubspot_deals(&payload.csv_content, contact_id) {
+        Ok(res) => (StatusCode::OK, Json(serde_json::to_value(res).unwrap())).into_response(),
+        Err(err) => (StatusCode::BAD_REQUEST, err.to_string()).into_response(),
+    }
+}
+
+async fn consulting_savings_report_handler() -> impl IntoResponse {
+    Json(json!({
+        "client": "Holzhey Consulting GmbH",
+        "previous_crm": "HubSpot Enterprise / Professional",
+        "hubspot_annual_cost_eur": 18400.0,
+        "conrad_os_annual_cost_eur": 120.0,
+        "annual_cashflow_saved_eur": 18280.0,
+        "roi_percentage": 99.3,
+        "features": [
+            "Revisionssichere GoBD-Audit-Hash-Chain (SHA-256)",
+            "ZUGFeRD 2.2 / XRechnung 3.0 (EN 16931) E-Rechnung ab Werk",
+            "DATEV EXTF-Export für SKR03 / SKR04",
+            "0% SEPA GiroCode Zahlungen ohne Stripe Gebühren",
+            "HubSpot CSV 1-Click Migrations-Engine"
+        ]
+    }))
 }

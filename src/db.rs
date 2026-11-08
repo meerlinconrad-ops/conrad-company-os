@@ -5,11 +5,15 @@ use rusqlite::{params, Connection};
 use std::sync::{Arc, Mutex};
 use uuid::Uuid;
 
+use crate::datev::generate_datev_csv;
+use crate::gobd::{calculate_entry_hash, GENESIS_HASH};
+use crate::hubspot::{parse_hubspot_contacts_csv, parse_hubspot_deals_csv};
 use crate::models::{
-    CashflowStats, Contact, CustomFieldDef, Deal, DocumentMeta, InteractionMessage, Invoice,
-    InvoiceItem, NewContact, NewCustomFieldDef, NewDeal, NewDocument, NewInvoice, NewProductService,
-    ProductService,
+    CashflowStats, Contact, CustomFieldDef, DatevExportConfig, Deal, DocumentMeta, GobdAuditEntry,
+    HubSpotImportResult, InteractionMessage, Invoice, InvoiceItem, NewContact, NewCustomFieldDef,
+    NewDeal, NewDocument, NewInvoice, NewProductService, ProductService,
 };
+use crate::zugferd::generate_xrechnung_xml;
 
 #[derive(Clone)]
 pub struct Database {
@@ -139,15 +143,61 @@ impl Database {
                 PRIMARY KEY (entity_id, field_id)
             );
 
+            CREATE TABLE IF NOT EXISTS gobd_audit_log (
+                id TEXT PRIMARY KEY,
+                seq INTEGER NOT NULL,
+                timestamp TEXT NOT NULL,
+                entity_type TEXT NOT NULL,
+                entity_id TEXT NOT NULL,
+                action TEXT NOT NULL,
+                details TEXT NOT NULL,
+                actor TEXT NOT NULL,
+                prev_hash TEXT NOT NULL,
+                entry_hash TEXT NOT NULL
+            );
+
             CREATE INDEX IF NOT EXISTS idx_contacts_name ON contacts(name);
             CREATE INDEX IF NOT EXISTS idx_deals_stage ON deals(stage);
             CREATE INDEX IF NOT EXISTS idx_invoices_status ON invoices(status);
-            CREATE INDEX IF NOT EXISTS idx_docs_category ON documents(category);",
+            CREATE INDEX IF NOT EXISTS idx_docs_category ON documents(category);
+            CREATE INDEX IF NOT EXISTS idx_gobd_seq ON gobd_audit_log(seq);
+            CREATE INDEX IF NOT EXISTS idx_gobd_entity ON gobd_audit_log(entity_type, entity_id);",
         )?;
         Ok(())
     }
 
     fn seed_defaults_if_empty(&self) -> Result<()> {
+        // Initialize Genesis block for GoBD audit trail if empty
+        let gobd_count: i64 = {
+            let conn = self.conn.lock().unwrap();
+            conn.query_row("SELECT COUNT(*) FROM gobd_audit_log", [], |r| r.get(0)).unwrap_or(0)
+        };
+        if gobd_count == 0 {
+            let genesis_id = Uuid::new_v4().to_string();
+            let genesis_now = Utc::now().to_rfc3339();
+            let genesis_hash = calculate_entry_hash(
+                GENESIS_HASH,
+                1,
+                &genesis_now,
+                "system",
+                "genesis",
+                "INIT_GOBD_LEDGER",
+                "Revisionssicheres GoBD-Audit-Journal initialisiert (Holzhey Consulting Company OS)",
+                "System",
+            );
+            let conn = self.conn.lock().unwrap();
+            conn.execute(
+                "INSERT INTO gobd_audit_log (id, seq, timestamp, entity_type, entity_id, action, details, actor, prev_hash, entry_hash)
+                 VALUES (?1, 1, ?2, 'system', 'genesis', 'INIT_GOBD_LEDGER', ?3, 'System', ?4, ?5)",
+                params![
+                    genesis_id,
+                    genesis_now,
+                    "Revisionssicheres GoBD-Audit-Journal initialisiert (Holzhey Consulting Company OS)",
+                    GENESIS_HASH,
+                    genesis_hash
+                ],
+            )?;
+        }
         let count: i64 = {
             let conn = self.conn.lock().unwrap();
             conn.query_row("SELECT COUNT(*) FROM contacts", [], |r| r.get(0))?
@@ -559,6 +609,16 @@ impl Database {
             .query_row("SELECT name FROM contacts WHERE id = ?1", [&input.contact_id], |r| r.get(0))
             .ok();
 
+        // GoBD Audit Log: Record creation
+        let _ = Self::log_gobd_internal(
+            &conn,
+            "invoice",
+            &id,
+            "CREATE",
+            &format!("Rechnung angelegt: {} (Netto: {:.2} €)", invoice_num, net_cents as f64 / 100.0),
+            "System",
+        );
+
         Ok(Invoice {
             id,
             invoice_number: invoice_num,
@@ -611,7 +671,42 @@ impl Database {
 
     pub fn update_invoice_status(&self, invoice_id: &str, new_status: &str) -> Result<()> {
         let conn = self.conn.lock().unwrap();
+
+        // Check GoBD immutability constraints
+        let (current_status, invoice_num): (String, String) = conn
+            .query_row(
+                "SELECT status, invoice_number FROM invoices WHERE id = ?1",
+                params![invoice_id],
+                |r| Ok((r.get(0)?, r.get(1)?)),
+            )
+            .map_err(|e| anyhow::anyhow!("Rechnung {} nicht gefunden: {}", invoice_id, e))?;
+
+        if current_status == "cancelled" {
+            return Err(anyhow::anyhow!(
+                "GoBD-Sperre: Rechnung {} ist storniert und kann nicht mehr geändert werden.",
+                invoice_num
+            ));
+        }
+
+        if (current_status == "sent" || current_status == "paid") && new_status == "draft" {
+            return Err(anyhow::anyhow!(
+                "GoBD-Sperre: Festgeschriebene Rechnung {} (Status: '{}') darf nicht auf Entwurf zurückgesetzt werden. Korrekturen erfordern eine Stornorechnung.",
+                invoice_num,
+                current_status
+            ));
+        }
+
         conn.execute("UPDATE invoices SET status = ?1 WHERE id = ?2", params![new_status, invoice_id])?;
+
+        let _ = Self::log_gobd_internal(
+            &conn,
+            "invoice",
+            invoice_id,
+            "STATUS_CHANGE",
+            &format!("Status von Rechnung {} geändert von '{}' auf '{}'", invoice_num, current_status, new_status),
+            "System",
+        );
+
         Ok(())
     }
 
@@ -764,5 +859,428 @@ impl Database {
             .filter_map(Result::ok)
             .collect();
         Ok(fields)
+    }
+
+    // =========================================================================
+    // GoBD Revisionssicheres Audit-Log & Storno-Logik
+    // =========================================================================
+
+    fn log_gobd_internal(
+        conn: &Connection,
+        entity_type: &str,
+        entity_id: &str,
+        action: &str,
+        details: &str,
+        actor: &str,
+    ) -> Result<GobdAuditEntry> {
+        let last: Option<(i64, String)> = conn
+            .query_row(
+                "SELECT seq, entry_hash FROM gobd_audit_log ORDER BY seq DESC LIMIT 1",
+                [],
+                |r| Ok((r.get(0)?, r.get(1)?)),
+            )
+            .ok();
+
+        let (last_seq, prev_hash) = match last {
+            Some((s, h)) => (s, h),
+            None => (0, GENESIS_HASH.to_string()),
+        };
+
+        let new_seq = last_seq + 1;
+        let id = Uuid::new_v4().to_string();
+        let now = Utc::now();
+        let timestamp = now.to_rfc3339();
+
+        let entry_hash = calculate_entry_hash(
+            &prev_hash,
+            new_seq,
+            &timestamp,
+            entity_type,
+            entity_id,
+            action,
+            details,
+            actor,
+        );
+
+        conn.execute(
+            "INSERT INTO gobd_audit_log (id, seq, timestamp, entity_type, entity_id, action, details, actor, prev_hash, entry_hash)
+             VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10)",
+            params![id, new_seq, timestamp, entity_type, entity_id, action, details, actor, prev_hash, entry_hash],
+        )?;
+
+        Ok(GobdAuditEntry {
+            id,
+            seq: new_seq,
+            timestamp: now,
+            entity_type: entity_type.to_string(),
+            entity_id: entity_id.to_string(),
+            action: action.to_string(),
+            details: details.to_string(),
+            actor: actor.to_string(),
+            prev_hash,
+            entry_hash,
+        })
+    }
+
+    pub fn log_gobd(
+        &self,
+        entity_type: &str,
+        entity_id: &str,
+        action: &str,
+        details: &str,
+        actor: &str,
+    ) -> Result<GobdAuditEntry> {
+        let conn = self.conn.lock().unwrap();
+        Self::log_gobd_internal(&conn, entity_type, entity_id, action, details, actor)
+    }
+
+    pub fn verify_gobd_integrity(&self) -> Result<(bool, usize, String)> {
+        let conn = self.conn.lock().unwrap();
+        let mut stmt = conn.prepare(
+            "SELECT id, seq, timestamp, entity_type, entity_id, action, details, actor, prev_hash, entry_hash
+             FROM gobd_audit_log
+             ORDER BY seq ASC",
+        )?;
+
+        let rows: Vec<GobdAuditEntry> = stmt
+            .query_map([], |row| {
+                let ts_str: String = row.get(2)?;
+                Ok(GobdAuditEntry {
+                    id: row.get(0)?,
+                    seq: row.get(1)?,
+                    timestamp: chrono::DateTime::parse_from_rfc3339(&ts_str).map(|d| d.with_timezone(&Utc)).unwrap_or_else(|_| Utc::now()),
+                    entity_type: row.get(3)?,
+                    entity_id: row.get(4)?,
+                    action: row.get(5)?,
+                    details: row.get(6)?,
+                    actor: row.get(7)?,
+                    prev_hash: row.get(8)?,
+                    entry_hash: row.get(9)?,
+                })
+            })?
+            .filter_map(Result::ok)
+            .collect();
+
+        if rows.is_empty() {
+            return Ok((true, 0, "GoBD-Audit-Journal ist leer.".to_string()));
+        }
+
+        let mut expected_prev = GENESIS_HASH.to_string();
+
+        for (idx, entry) in rows.iter().enumerate() {
+            if idx > 0 && entry.prev_hash != expected_prev {
+                return Ok((
+                    false,
+                    idx,
+                    format!(
+                        "GoBD-Integritätsfehler bei Seq {}: Vorheriger Hash stimmt nicht überein (Erwartet: {}, Gefunden: {})",
+                        entry.seq, expected_prev, entry.prev_hash
+                    ),
+                ));
+            }
+
+            let recomputed = calculate_entry_hash(
+                &entry.prev_hash,
+                entry.seq,
+                &entry.timestamp.to_rfc3339(),
+                &entry.entity_type,
+                &entry.entity_id,
+                &entry.action,
+                &entry.details,
+                &entry.actor,
+            );
+
+            if recomputed != entry.entry_hash {
+                return Ok((
+                    false,
+                    idx,
+                    format!(
+                        "GoBD-Manipulationsalarm bei Seq {}: Hash stimmt nicht mit Datensatz überein!",
+                        entry.seq
+                    ),
+                ));
+            }
+
+            expected_prev = entry.entry_hash.clone();
+        }
+
+        Ok((
+            true,
+            rows.len(),
+            format!(
+                "GoBD-Konformität bestätigt: Alle {} Journal-Einträge sind kryptografisch intakt und revisionssicher unverändert.",
+                rows.len()
+            ),
+        ))
+    }
+
+    pub fn list_gobd_audit_log(&self, limit: usize) -> Result<Vec<GobdAuditEntry>> {
+        let conn = self.conn.lock().unwrap();
+        let mut stmt = conn.prepare(
+            "SELECT id, seq, timestamp, entity_type, entity_id, action, details, actor, prev_hash, entry_hash
+             FROM gobd_audit_log
+             ORDER BY seq DESC
+             LIMIT ?1",
+        )?;
+
+        let entries = stmt
+            .query_map(params![limit as i64], |row| {
+                let ts_str: String = row.get(2)?;
+                Ok(GobdAuditEntry {
+                    id: row.get(0)?,
+                    seq: row.get(1)?,
+                    timestamp: chrono::DateTime::parse_from_rfc3339(&ts_str).map(|d| d.with_timezone(&Utc)).unwrap_or_else(|_| Utc::now()),
+                    entity_type: row.get(3)?,
+                    entity_id: row.get(4)?,
+                    action: row.get(5)?,
+                    details: row.get(6)?,
+                    actor: row.get(7)?,
+                    prev_hash: row.get(8)?,
+                    entry_hash: row.get(9)?,
+                })
+            })?
+            .filter_map(Result::ok)
+            .collect();
+
+        Ok(entries)
+    }
+
+    pub fn get_invoice_by_id(&self, invoice_id: &str) -> Result<Invoice> {
+        let conn = self.conn.lock().unwrap();
+        conn.query_row(
+            "SELECT i.id, i.invoice_number, i.contact_id, c.name, i.deal_id, i.status, i.issued_date, i.due_date, i.net_cents, i.vat_cents, i.gross_cents, i.items_json, i.created_at
+             FROM invoices i
+             LEFT JOIN contacts c ON i.contact_id = c.id
+             WHERE i.id = ?1 OR i.invoice_number = ?1",
+            params![invoice_id],
+            |row| {
+                let c_str: String = row.get(12)?;
+                Ok(Invoice {
+                    id: row.get(0)?,
+                    invoice_number: row.get(1)?,
+                    contact_id: row.get(2)?,
+                    contact_name: row.get(3)?,
+                    deal_id: row.get(4)?,
+                    status: row.get(5)?,
+                    issued_date: row.get(6)?,
+                    due_date: row.get(7)?,
+                    net_cents: row.get(8)?,
+                    vat_cents: row.get(9)?,
+                    gross_cents: row.get(10)?,
+                    items_json: row.get(11)?,
+                    created_at: chrono::DateTime::parse_from_rfc3339(&c_str).map(|d| d.with_timezone(&Utc)).unwrap_or_else(|_| Utc::now()),
+                })
+            },
+        ).map_err(|e| anyhow::anyhow!("Rechnung '{}' nicht gefunden: {}", invoice_id, e))
+    }
+
+    pub fn get_contact_by_id(&self, contact_id: &str) -> Result<Contact> {
+        let conn = self.conn.lock().unwrap();
+        conn.query_row(
+            "SELECT id, name, email, phone, company, status, tags, created_at, updated_at FROM contacts WHERE id = ?1",
+            params![contact_id],
+            |row| {
+                let c_str: String = row.get(7)?;
+                let u_str: String = row.get(8)?;
+                Ok(Contact {
+                    id: row.get(0)?,
+                    name: row.get(1)?,
+                    email: row.get(2)?,
+                    phone: row.get(3)?,
+                    company: row.get(4)?,
+                    status: row.get(5)?,
+                    tags: row.get(6)?,
+                    created_at: chrono::DateTime::parse_from_rfc3339(&c_str).map(|d| d.with_timezone(&Utc)).unwrap_or_else(|_| Utc::now()),
+                    updated_at: chrono::DateTime::parse_from_rfc3339(&u_str).map(|d| d.with_timezone(&Utc)).unwrap_or_else(|_| Utc::now()),
+                })
+            },
+        ).map_err(|e| anyhow::anyhow!("Kontakt '{}' nicht gefunden: {}", contact_id, e))
+    }
+
+    pub fn storno_invoice(&self, invoice_id: &str, reason: &str, actor: &str) -> Result<Invoice> {
+        let orig = self.get_invoice_by_id(invoice_id)?;
+        if orig.status == "cancelled" {
+            return Err(anyhow::anyhow!("Rechnung {} ist bereits storniert.", orig.invoice_number));
+        }
+
+        let now = Utc::now();
+        let storno_id = Uuid::new_v4().to_string();
+        let storno_number = format!("ST-{}", orig.invoice_number);
+
+        let items: Vec<InvoiceItem> = serde_json::from_str(&orig.items_json).unwrap_or_default();
+        let storno_items: Vec<InvoiceItem> = items
+            .into_iter()
+            .map(|mut item| {
+                item.description = format!("Stornierung: {}", item.description);
+                item.total_cents = -item.total_cents;
+                item
+            })
+            .collect();
+        let storno_items_json = serde_json::to_string(&storno_items).unwrap_or_else(|_| "[]".to_string());
+
+        let storno_net = -orig.net_cents;
+        let storno_vat = -orig.vat_cents;
+        let storno_gross = -orig.gross_cents;
+
+        {
+            let conn = self.conn.lock().unwrap();
+            conn.execute("UPDATE invoices SET status = 'cancelled' WHERE id = ?1", params![orig.id])?;
+
+            conn.execute(
+                "INSERT INTO invoices (id, invoice_number, contact_id, deal_id, status, issued_date, due_date, net_cents, vat_cents, gross_cents, items_json, created_at)
+                 VALUES (?1, ?2, ?3, ?4, 'sent', ?5, ?6, ?7, ?8, ?9, ?10, ?11)",
+                params![
+                    storno_id,
+                    storno_number,
+                    orig.contact_id,
+                    orig.deal_id,
+                    now.format("%Y-%m-%d").to_string(),
+                    now.format("%Y-%m-%d").to_string(),
+                    storno_net,
+                    storno_vat,
+                    storno_gross,
+                    storno_items_json,
+                    now.to_rfc3339(),
+                ],
+            )?;
+
+            Self::log_gobd_internal(
+                &conn,
+                "invoice",
+                &orig.id,
+                "STORNO",
+                &format!(
+                    "Storno durchgeführt: Beleg {} erstellt für {} (Begründung: '{}')",
+                    storno_number, orig.invoice_number, reason
+                ),
+                actor,
+            )?;
+        }
+
+        Ok(Invoice {
+            id: storno_id,
+            invoice_number: storno_number,
+            contact_id: orig.contact_id,
+            contact_name: orig.contact_name,
+            deal_id: orig.deal_id,
+            status: "sent".to_string(),
+            issued_date: now.format("%Y-%m-%d").to_string(),
+            due_date: now.format("%Y-%m-%d").to_string(),
+            net_cents: storno_net,
+            vat_cents: storno_vat,
+            gross_cents: storno_gross,
+            items_json: storno_items_json,
+            created_at: now,
+        })
+    }
+
+    pub fn get_xrechnung_xml(
+        &self,
+        invoice_id: &str,
+        seller_name: &str,
+        vat_id: &str,
+        iban: &str,
+        bic: &str,
+    ) -> Result<String> {
+        let inv = self.get_invoice_by_id(invoice_id)?;
+        let items: Vec<InvoiceItem> = serde_json::from_str(&inv.items_json).unwrap_or_default();
+        let buyer = self.get_contact_by_id(&inv.contact_id).ok();
+
+        let xml = generate_xrechnung_xml(
+            &inv,
+            &items,
+            seller_name,
+            vat_id,
+            iban,
+            bic,
+            buyer.as_ref(),
+        );
+
+        let _ = self.log_gobd(
+            "invoice",
+            &inv.id,
+            "XRECHNUNG_GENERATED",
+            &format!("XRechnung / ZUGFeRD 2.2 XML für {} generiert", inv.invoice_number),
+            "System",
+        );
+
+        Ok(xml)
+    }
+
+    pub fn export_datev_csv(&self, config: DatevExportConfig, company_name: &str) -> Result<String> {
+        let invs = self.list_invoices()?;
+        let csv = generate_datev_csv(&invs, &config, company_name);
+
+        let _ = self.log_gobd(
+            "accounting",
+            "datev_export",
+            "DATEV_EXPORT",
+            &format!("DATEV-Buchungsstapel für Jahr {} (SKR: {}) exportiert", config.year, config.skr),
+            "System",
+        );
+
+        Ok(csv)
+    }
+
+    pub fn import_hubspot_contacts(&self, csv_content: &str) -> Result<HubSpotImportResult> {
+        let (parsed_contacts, mut res) = parse_hubspot_contacts_csv(csv_content);
+        let mut actual_imported = 0;
+
+        for c in parsed_contacts {
+            match self.create_contact(c) {
+                Ok(_) => actual_imported += 1,
+                Err(e) => {
+                    res.errors.push(format!("Fehler beim Anlegen: {}", e));
+                    res.skipped_count += 1;
+                }
+            }
+        }
+
+        res.imported_count = actual_imported;
+        res.summary = format!(
+            "HubSpot-Kontakte erfolgreich importiert: {} angelegt, {} übersprungen.",
+            res.imported_count, res.skipped_count
+        );
+
+        let _ = self.log_gobd(
+            "crm",
+            "hubspot_import",
+            "HUBSPOT_IMPORT",
+            &format!("HubSpot Kontakt-Import: {} Kontakte importiert", actual_imported),
+            "System",
+        );
+
+        Ok(res)
+    }
+
+    pub fn import_hubspot_deals(&self, csv_content: &str, default_contact_id: &str) -> Result<HubSpotImportResult> {
+        let (parsed_deals, mut res) = parse_hubspot_deals_csv(csv_content, default_contact_id);
+        let mut actual_imported = 0;
+
+        for d in parsed_deals {
+            match self.create_deal(d) {
+                Ok(_) => actual_imported += 1,
+                Err(e) => {
+                    res.errors.push(format!("Fehler beim Anlegen Deal: {}", e));
+                    res.skipped_count += 1;
+                }
+            }
+        }
+
+        res.imported_count = actual_imported;
+        res.summary = format!(
+            "HubSpot-Deals erfolgreich importiert: {} Deals angelegt, {} übersprungen.",
+            res.imported_count, res.skipped_count
+        );
+
+        let _ = self.log_gobd(
+            "crm",
+            "hubspot_import",
+            "HUBSPOT_DEALS_IMPORT",
+            &format!("HubSpot Deal-Import: {} Deals importiert", actual_imported),
+            "System",
+        );
+
+        Ok(res)
     }
 }
