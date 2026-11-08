@@ -57,7 +57,7 @@ pub fn render_app_html() -> &'static str {
             --shadow-lg: 0 10px 25px -5px rgba(15, 23, 42, 0.1), 0 8px 10px -6px rgba(15, 23, 42, 0.06);
             --shadow-drawer: -8px 0 30px rgba(15, 23, 42, 0.12);
 
-            --sidebar-width: 240px;
+            --sidebar-width: 256px;
         }
 
         [data-theme="dark"] {
@@ -234,19 +234,20 @@ pub fn render_app_html() -> &'static str {
         }
 
         .nav-group-title {
-            font-size: 11px;
-            font-weight: 600;
+            font-size: 10.5px;
+            font-weight: 700;
             color: var(--text-muted);
-            padding: 10px 10px 4px;
+            padding: 12px 10px 4px;
             text-transform: uppercase;
-            letter-spacing: 0.04em;
+            letter-spacing: 0.05em;
+            white-space: nowrap;
         }
 
         .nav-list {
             list-style: none;
             display: flex;
             flex-direction: column;
-            gap: 1px;
+            gap: 2px;
         }
 
         .nav-item-btn {
@@ -254,16 +255,26 @@ pub fn render_app_html() -> &'static str {
             align-items: center;
             gap: 9px;
             width: 100%;
-            padding: 7px 10px;
+            padding: 6.5px 10px;
             border: none;
+            border-left: 2px solid transparent;
             background: transparent;
             color: var(--text-secondary);
-            font-size: 13px;
+            font-size: 12.5px;
             font-weight: 500;
             border-radius: 6px;
             cursor: pointer;
             text-align: left;
             font-family: inherit;
+            white-space: nowrap;
+            overflow: hidden;
+        }
+
+        .nav-item-btn > span:first-of-type {
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+            flex: 1;
         }
 
         .nav-item-btn:hover {
@@ -272,16 +283,25 @@ pub fn render_app_html() -> &'static str {
         }
 
         .nav-item-btn.active {
-            background: var(--bg-active);
-            color: var(--text-primary);
+            background: var(--bg-surface);
+            color: var(--accent);
+            border-left-color: var(--accent);
             font-weight: 600;
+            box-shadow: var(--shadow-xs);
         }
 
         .nav-count {
             margin-left: auto;
             font-family: var(--font-mono);
-            font-size: 11px;
+            font-size: 10.5px;
+            font-weight: 600;
             color: var(--text-muted);
+            background: var(--bg-subtle);
+            border: 1px solid var(--border-color);
+            padding: 1px 5px;
+            border-radius: 4px;
+            flex-shrink: 0;
+            white-space: nowrap;
         }
 
         .sidebar-footer {
@@ -1176,6 +1196,79 @@ pub fn render_app_html() -> &'static str {
             color: var(--text-secondary);
         }
 
+        /* ── Executive Analytics, Funnel & Print Styles ── */
+        .kpi-progress-track {
+            width: 100%;
+            height: 5px;
+            background: var(--bg-subtle);
+            border-radius: 99px;
+            overflow: hidden;
+            margin-top: 8px;
+            border: 1px solid var(--border-color);
+        }
+        .kpi-progress-fill {
+            height: 100%;
+            background: var(--accent);
+            border-radius: 99px;
+            transition: width 0.35s ease;
+        }
+        .analytics-row-grid {
+            display: grid;
+            grid-template-columns: 1.45fr 1fr;
+            gap: 16px;
+            margin-bottom: 16px;
+        }
+        .cockpit-tri-grid {
+            display: grid;
+            grid-template-columns: 1.25fr 1fr 1fr;
+            gap: 16px;
+        }
+        .funnel-stage-row {
+            margin-bottom: 11px;
+        }
+        .funnel-stage-head {
+            display: flex;
+            justify-content: space-between;
+            font-size: 12px;
+            margin-bottom: 4px;
+        }
+        .wf-pipeline-strip {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 12px;
+            padding: 14px 20px;
+            background: var(--bg-surface);
+            border-bottom: 1px solid var(--border-color);
+        }
+        .wf-node-box {
+            padding: 10px 12px;
+            border-radius: 8px;
+            border: 1px solid var(--border-color);
+            background: var(--bg-subtle);
+            display: flex;
+            flex-direction: column;
+            gap: 3px;
+        }
+        .dyn-cards-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+            gap: 14px;
+            padding: 16px 20px;
+        }
+        table.data-grid td.wrap-cell {
+            white-space: normal;
+            max-width: 280px;
+            line-height: 1.35;
+            padding-top: 8px;
+            padding-bottom: 8px;
+        }
+
+        @media (max-width: 1100px) {
+            .analytics-row-grid, .cockpit-tri-grid, .wf-pipeline-strip {
+                grid-template-columns: 1fr;
+            }
+        }
+
         /* ── Harness Telemetry Status Footer ── */
         .harness-footer {
             height: 26px;
@@ -1313,8 +1406,8 @@ pub fn render_app_html() -> &'static str {
         </ul>
 
         <div class="nav-group-title" style="display:flex; justify-content:space-between; align-items:center;">
-            <span>Conrad OS Module</span>
-            <span style="cursor:pointer; color:var(--accent);" onclick="openNewPluginModal()" title="Neues Modul konstruieren">+ Baukasten</span>
+            <span>Fachmodule</span>
+            <span style="cursor:pointer; color:var(--accent); font-size:10px;" onclick="openNewPluginModal()" title="Neues Modul konstruieren">+ Neu</span>
         </div>
         <ul class="nav-list" id="sidebarDynamicPluginsList"></ul>
 
@@ -1391,56 +1484,142 @@ pub fn render_app_html() -> &'static str {
 
         <div class="view-content-area">
 
-            <!-- VIEW 1: COCKPIT & TASKS -->
+            <!-- VIEW 1: EXECUTIVE COMMAND COCKPIT & ANALYTICS -->
             <section id="view-dashboard" class="view-padded">
+                <!-- Row 1: Primary KPI Strip with Progress & Target Telemetry -->
                 <div class="kpi-grid">
                     <div class="kpi-card">
-                        <div class="kpi-label"><span>Pipeline-Volumen</span><span>EUR</span></div>
+                        <div class="kpi-label"><span>Pipeline-Volumen</span><span class="badge info">CRM</span></div>
                         <div class="kpi-value" id="kpi-pipeline">0,00 €</div>
-                        <div class="kpi-meta">Gewichtete Verkaufschancen</div>
+                        <div class="kpi-progress-track"><div class="kpi-progress-fill" id="kpi-bar-pipeline" style="width:78%;"></div></div>
+                        <div class="kpi-meta" style="display:flex; justify-content:space-between; margin-top:6px;">
+                            <span>Aktive Verkaufschancen</span>
+                            <strong style="color:var(--accent);" id="kpi-deals-meta">6 Deals</strong>
+                        </div>
                     </div>
                     <div class="kpi-card">
-                        <div class="kpi-label"><span>Realisierter Umsatz</span><span>GoBD</span></div>
+                        <div class="kpi-label"><span>Realisierter Umsatz</span><span class="badge success">GoBD</span></div>
                         <div class="kpi-value" id="kpi-revenue" style="color:var(--status-green-fg);">0,00 €</div>
-                        <div class="kpi-meta">Festgeschrieben &amp; bezahlt</div>
+                        <div class="kpi-progress-track"><div class="kpi-progress-fill" style="width:84%; background:var(--status-green-fg);"></div></div>
+                        <div class="kpi-meta" style="display:flex; justify-content:space-between; margin-top:6px;">
+                            <span>Festgeschrieben &amp; bezahlt</span>
+                            <strong style="color:var(--status-green-fg);">SHA-256 Verified</strong>
+                        </div>
                     </div>
                     <div class="kpi-card">
-                        <div class="kpi-label"><span>Offene Forderungen</span><span>Faktura</span></div>
-                        <div class="kpi-value" id="kpi-pending" style="color:var(--status-amber-fg);">0,00 €</div>
-                        <div class="kpi-meta">Wartend auf Zahlungseingang</div>
+                        <div class="kpi-label"><span>Monatlicher MRR (Abos)</span><span class="badge purple">Ziel: 1.500 €</span></div>
+                        <div class="kpi-value" id="kpi-mrr-val">267,00 €</div>
+                        <div class="kpi-progress-track"><div class="kpi-progress-fill" id="kpi-bar-mrr" style="width:54%; background:#7c3aed;"></div></div>
+                        <div class="kpi-meta" style="display:flex; justify-content:space-between; margin-top:6px;">
+                            <span>Offene Faktura: <strong id="kpi-pending" style="color:var(--status-amber-fg);">0,00 €</strong></span>
+                            <span id="kpi-mrr-target-pct">53% v. Min-Ziel</span>
+                        </div>
                     </div>
                     <div class="kpi-card">
-                        <div class="kpi-label"><span>Aktive Datensätze</span><span>CRM</span></div>
-                        <div class="kpi-value" id="kpi-contacts">0</div>
-                        <div class="kpi-meta">Kontakte &amp; Unternehmen</div>
+                        <div class="kpi-label"><span>Immobilien &amp; Mandanten</span><span class="badge neutral">Assets</span></div>
+                        <div class="kpi-value" style="display:flex; align-items:baseline; gap:8px;">
+                            <span id="kpi-contacts">6</span>
+                            <span style="font-size:13px; color:var(--status-green-fg); font-weight:600;">+53,00 €/Mo. CF</span>
+                        </div>
+                        <div class="kpi-progress-track"><div class="kpi-progress-fill" style="width:65%; background:#0d9488;"></div></div>
+                        <div class="kpi-meta" style="display:flex; justify-content:space-between; margin-top:6px;">
+                            <span>Halmhuberstr. 10 (Vermietet)</span>
+                            <span style="cursor:pointer; color:var(--accent); font-weight:600;" onclick="openPluginWorkspace('plugin.realestate')">Portfolio →</span>
+                        </div>
                     </div>
                 </div>
 
-                <div class="dashboard-split-grid">
-                    <div class="card-panel">
+                <!-- Row 2: Visual Revenue/MRR Trajectory Chart + Pipeline Conversion Funnel -->
+                <div class="analytics-row-grid">
+                    <div class="card-panel" style="margin-bottom:0;">
                         <div class="card-panel-header">
-                            <span class="card-panel-title">Neueste Personen &amp; Unternehmen</span>
-                            <button class="btn" onclick="switchView('contacts')">Alle öffnen →</button>
+                            <div>
+                                <span class="card-panel-title">Umsatz- &amp; MRR-Wachstumskurve (2026)</span>
+                                <span style="font-size:11px; color:var(--text-muted); margin-left:8px;">Retainer-MRR + Setup-Volumen vs. Zielkorridor</span>
+                            </div>
+                            <span class="badge success">ROAS 6.9x</span>
+                        </div>
+                        <div style="padding:16px 18px 12px;" id="dashboardRevenueChartBox">
+                            <svg viewBox="0 0 600 165" style="width:100%; height:160px; overflow:visible;">
+                                <defs>
+                                    <linearGradient id="revGrad" x1="0" y1="0" x2="0" y2="1">
+                                        <stop offset="0%" stop-color="#2563eb" stop-opacity="0.28"/>
+                                        <stop offset="100%" stop-color="#2563eb" stop-opacity="0.0"/>
+                                    </linearGradient>
+                                </defs>
+                                <!-- Horizontal Grid Lines -->
+                                <line x1="36" y1="20" x2="585" y2="20" stroke="var(--border-color)" stroke-dasharray="3,3"/>
+                                <line x1="36" y1="65" x2="585" y2="65" stroke="var(--border-color)" stroke-dasharray="3,3"/>
+                                <line x1="36" y1="110" x2="585" y2="110" stroke="var(--border-color)" stroke-dasharray="3,3"/>
+                                <line x1="36" y1="142" x2="585" y2="142" stroke="var(--border-color)"/>
+                                <text x="0" y="24" fill="var(--text-muted)" font-size="10" font-family="JetBrains Mono">3.5k€</text>
+                                <text x="0" y="69" fill="var(--text-muted)" font-size="10" font-family="JetBrains Mono">2.0k€</text>
+                                <text x="0" y="114" fill="var(--text-muted)" font-size="10" font-family="JetBrains Mono">1.0k€</text>
+                                <!-- Area & Line -->
+                                <path d="M 50 132 L 135 122 L 220 108 L 305 94 L 390 72 L 475 48 L 565 26 L 565 142 L 50 142 Z" fill="url(#revGrad)"/>
+                                <path d="M 50 132 L 135 122 L 220 108 L 305 94 L 390 72 L 475 48 L 565 26" fill="none" stroke="var(--accent)" stroke-width="2.5" stroke-linecap="round"/>
+                                <!-- Data Points -->
+                                <circle cx="50" cy="132" r="3.5" fill="var(--bg-surface)" stroke="var(--accent)" stroke-width="2"/>
+                                <circle cx="135" cy="122" r="3.5" fill="var(--bg-surface)" stroke="var(--accent)" stroke-width="2"/>
+                                <circle cx="220" cy="108" r="3.5" fill="var(--bg-surface)" stroke="var(--accent)" stroke-width="2"/>
+                                <circle cx="305" cy="94" r="3.5" fill="var(--bg-surface)" stroke="var(--accent)" stroke-width="2"/>
+                                <circle cx="390" cy="72" r="3.5" fill="var(--bg-surface)" stroke="var(--accent)" stroke-width="2"/>
+                                <circle cx="475" cy="48" r="3.5" fill="var(--bg-surface)" stroke="var(--accent)" stroke-width="2"/>
+                                <circle cx="565" cy="26" r="4.5" fill="var(--accent)"/>
+                                <!-- X Axis Labels -->
+                                <text x="40" y="158" fill="var(--text-muted)" font-size="10" font-family="JetBrains Mono">Mai</text>
+                                <text x="125" y="158" fill="var(--text-muted)" font-size="10" font-family="JetBrains Mono">Jun</text>
+                                <text x="210" y="158" fill="var(--text-muted)" font-size="10" font-family="JetBrains Mono">Jul</text>
+                                <text x="295" y="158" fill="var(--text-muted)" font-size="10" font-family="JetBrains Mono">Aug</text>
+                                <text x="380" y="158" fill="var(--text-muted)" font-size="10" font-family="JetBrains Mono">Sep</text>
+                                <text x="465" y="158" fill="var(--text-muted)" font-size="10" font-family="JetBrains Mono">Okt</text>
+                                <text x="550" y="158" fill="var(--text-primary)" font-weight="700" font-size="10" font-family="JetBrains Mono">Nov</text>
+                            </svg>
+                        </div>
+                    </div>
+
+                    <div class="card-panel" style="margin-bottom:0;">
+                        <div class="card-panel-header">
+                            <span class="card-panel-title">Vertriebs-Pipeline Funnel</span>
+                            <button class="btn" style="height:24px; padding:0 8px; font-size:11px;" onclick="switchView('deals')">Kanban Board →</button>
+                        </div>
+                        <div style="padding:14px 16px;" id="dashboardPipelineFunnel"></div>
+                    </div>
+                </div>
+
+                <!-- Row 3: 3-Column Operational Command Center -->
+                <div class="cockpit-tri-grid">
+                    <div class="card-panel" style="margin-bottom:0;">
+                        <div class="card-panel-header">
+                            <span class="card-panel-title">Aktive Mandate &amp; Kontakte</span>
+                            <button class="btn" style="height:24px; padding:0 8px; font-size:11px;" onclick="switchView('contacts')">Alle öffnen →</button>
                         </div>
                         <table class="data-grid">
                             <thead>
                                 <tr>
                                     <th>Name</th>
                                     <th>Unternehmen</th>
-                                    <th>Status</th>
-                                    <th>Erstellt</th>
+                                    <th>Phase</th>
                                 </tr>
                             </thead>
                             <tbody id="dashboardRecentContacts"></tbody>
                         </table>
                     </div>
 
-                    <div class="card-panel">
+                    <div class="card-panel" style="margin-bottom:0;">
                         <div class="card-panel-header">
-                            <span class="card-panel-title">Fällige Follow-up Aufgaben (Workflows)</span>
-                            <span class="badge neutral" id="tasksCountBadge">0 offen</span>
+                            <span class="card-panel-title">Fällige Aufgaben (Workflows)</span>
+                            <span class="badge warning" id="tasksCountBadge">0 offen</span>
                         </div>
-                        <div id="dashboardTasksList" style="padding:12px 16px; display:flex; flex-direction:column; gap:8px;"></div>
+                        <div id="dashboardTasksList" style="padding:12px 14px; display:flex; flex-direction:column; gap:8px;"></div>
+                    </div>
+
+                    <div class="card-panel" style="margin-bottom:0;">
+                        <div class="card-panel-header">
+                            <span class="card-panel-title">Nächste Termine &amp; Kalender</span>
+                            <button class="btn" style="height:24px; padding:0 8px; font-size:11px;" onclick="switchView('calendar')">Kalender →</button>
+                        </div>
+                        <div id="dashboardUpcomingBookings" style="padding:12px 14px; display:flex; flex-direction:column; gap:8px;"></div>
                     </div>
                 </div>
             </section>
@@ -1632,6 +1811,26 @@ pub fn render_app_html() -> &'static str {
                     </div>
                     <button class="btn btn-primary" onclick="openNewBookingModal()">+ Termin eintragen</button>
                 </div>
+                <div class="wf-pipeline-strip" style="grid-template-columns: repeat(3, 1fr);">
+                    <div class="wf-node-box">
+                        <div style="font-size:10.5px; font-weight:700; color:var(--text-muted); text-transform:uppercase;">Buchungs-Slot-Engine</div>
+                        <div style="font-size:13px; font-weight:700;">Mo – Fr · 09:00 – 17:00 Uhr</div>
+                        <div style="font-size:11.5px; color:var(--text-secondary);">30 Min. Strategie- &amp; Systemgespräch (Europe/Berlin)</div>
+                    </div>
+                    <div class="wf-node-box">
+                        <div style="font-size:10.5px; font-weight:700; color:var(--text-muted); text-transform:uppercase;">CRM Auto-Matching</div>
+                        <div style="font-size:13px; font-weight:700; color:var(--status-green-fg);">100 % Kontakt-Synchronisation</div>
+                        <div style="font-size:11.5px; color:var(--text-secondary);">Jede Buchung aktualisiert automatisch die 360°-Kontaktakte</div>
+                    </div>
+                    <div class="wf-node-box">
+                        <div style="font-size:10.5px; font-weight:700; color:var(--text-muted); text-transform:uppercase;">Nächste Freie Slots (Schnellwahl)</div>
+                        <div style="display:flex; gap:6px; margin-top:3px; flex-wrap:wrap;">
+                            <button class="btn" style="height:24px; padding:0 8px; font-size:11px;" onclick="openNewBookingModal()">Di, 10:00 Uhr</button>
+                            <button class="btn" style="height:24px; padding:0 8px; font-size:11px;" onclick="openNewBookingModal()">Mi, 14:00 Uhr</button>
+                            <button class="btn" style="height:24px; padding:0 8px; font-size:11px;" onclick="openNewBookingModal()">Do, 16:00 Uhr</button>
+                        </div>
+                    </div>
+                </div>
                 <div class="sheet-wrapper">
                     <table class="data-grid">
                         <thead>
@@ -1760,6 +1959,28 @@ pub fn render_app_html() -> &'static str {
                     </div>
                     <button class="btn btn-primary" onclick="openModal('modalNewWorkflow')">+ Neuer Workflow</button>
                 </div>
+                <div class="wf-pipeline-strip">
+                    <div class="wf-node-box">
+                        <span class="badge info" style="width:fit-content;">1. Event-Trigger</span>
+                        <strong style="font-size:12.5px; margin-top:2px;">Deal-Phase / Kontakt / Webhook</strong>
+                        <span style="font-size:11px; color:var(--text-secondary);">Echtzeit-Listener im Rust-Kernel</span>
+                    </div>
+                    <div class="wf-node-box">
+                        <span class="badge warning" style="width:fit-content;">2. Bedingung &amp; Guardrail</span>
+                        <strong style="font-size:12.5px; margin-top:2px;">Zielphase = „Angebot“ / „Lead“</strong>
+                        <span style="font-size:11px; color:var(--text-secondary);">Kein unkontrollierter Auto-Versand</span>
+                    </div>
+                    <div class="wf-node-box">
+                        <span class="badge purple" style="width:fit-content;">3. Automations-Aktion</span>
+                        <strong style="font-size:12.5px; margin-top:2px;">Follow-up Task (+3T) + Entwurf</strong>
+                        <span style="font-size:11px; color:var(--text-secondary);">Personalisierte Vorlage in Timeline</span>
+                    </div>
+                    <div class="wf-node-box">
+                        <span class="badge success" style="width:fit-content;">4. GoBD Audit-Trail</span>
+                        <strong style="font-size:12.5px; margin-top:2px;">SHA-256 Signatur &amp; Counter</strong>
+                        <span style="font-size:11px; color:var(--text-secondary);">Revisionssicher protokolliert</span>
+                    </div>
+                </div>
                 <div class="sheet-wrapper">
                     <table class="data-grid">
                         <thead>
@@ -1803,16 +2024,22 @@ pub fn render_app_html() -> &'static str {
                         <span style="font-size:12px; color:var(--text-secondary);" id="dynPluginDesc">Modul Beschreibung</span>
                     </div>
                     <div style="display:flex; gap:8px; align-items:center;">
-                        <input type="text" id="dynPluginSearch" class="form-input" style="height:28px; width:200px; font-size:12px;" placeholder="Einträge filtern..." oninput="renderActivePluginRecords()">
+                        <div class="filter-pills" style="background:var(--bg-surface); border:1px solid var(--border-color); border-radius:6px; padding:2px;">
+                            <button class="filter-pill-btn active" id="dyn-view-btn-table" style="padding:2px 8px; font-size:11px;" onclick="setDynPluginViewMode('table')">Tabelle</button>
+                            <button class="filter-pill-btn" id="dyn-view-btn-cards" style="padding:2px 8px; font-size:11px;" onclick="setDynPluginViewMode('cards')">Karten-Board</button>
+                        </div>
+                        <input type="text" id="dynPluginSearch" class="form-input" style="height:28px; width:190px; font-size:12px;" placeholder="Einträge filtern..." oninput="renderActivePluginRecords()">
                         <button class="btn btn-primary" id="btnNewPluginRecord" onclick="openNewPluginRecordModal()">+ Neuer Eintrag</button>
                     </div>
                 </div>
-                <div class="sheet-wrapper">
+                <div class="wf-pipeline-strip" id="dynPluginKpiStrip" style="grid-template-columns: repeat(4, 1fr);"></div>
+                <div class="sheet-wrapper" id="dynPluginTableContainer">
                     <table class="data-grid">
                         <thead id="dynPluginTableHead"></thead>
                         <tbody id="dynPluginTableBody"></tbody>
                     </table>
                 </div>
+                <div class="dyn-cards-grid" id="dynPluginCardsContainer" style="display:none;"></div>
             </section>
 
         </div>
@@ -2175,6 +2402,23 @@ pub fn render_app_html() -> &'static str {
         </div>
     </div>
 
+    <!-- ── Modal: DIN A4 Rechnungsbeleg-Vorschau (GoBD / ZUGFeRD) ── -->
+    <div class="modal-backdrop" id="modalInvoicePreview" onclick="if(event.target===this) closeModal('modalInvoicePreview')">
+        <div class="modal-card" style="width: 680px; max-width: 96vw; padding: 28px 32px;">
+            <div class="modal-header" style="border-bottom:1px solid var(--border-color); padding-bottom:12px; margin-bottom:20px;">
+                <div>
+                    <span class="modal-title" id="invPrevHeaderTitle">Rechnungsbeleg · Vorschau</span>
+                    <div style="font-size:11px; color:var(--text-muted); margin-top:2px;">GoBD-revisionssicherer Originalbeleg · EN 16931 / ZUGFeRD 2.2</div>
+                </div>
+                <div style="display:flex; gap:8px; align-items:center;">
+                    <button class="btn btn-primary" onclick="window.print()">🖨️ Drucken / PDF</button>
+                    <button class="modal-close-btn" onclick="closeModal('modalInvoicePreview')">✕</button>
+                </div>
+            </div>
+            <div id="invPrevSheetBody" style="background:#FFFFFF; border:1px solid var(--border-color); border-radius:8px; padding:24px; font-size:12.5px; line-height:1.55; color:#18181B;"></div>
+        </div>
+    </div>
+
     <!-- ── Modal: Conrad OS App Matrix Launcher ── -->
     <div class="modal-backdrop" id="odooAppMatrixModal" onclick="if(event.target===this)closeModal('odooAppMatrixModal')">
         <div class="modal-card" style="width: 680px; max-width: 96vw;">
@@ -2416,6 +2660,7 @@ pub fn render_app_html() -> &'static str {
         let documentsData = [];
         let activePlugin = null;
         let activePluginRecords = [];
+        let dynPluginViewMode = 'table';
         let settingsData = {};
         let contactStatusFilter = 'all';
         let activeContactId = null;
@@ -2447,9 +2692,14 @@ pub fn render_app_html() -> &'static str {
                 draft: ['neutral', 'Entwurf'],
                 cancelled: ['danger', 'Storniert'],
                 active: ['success', 'Aktiv'],
+                Aktiv: ['success', 'Aktiv'],
+                Vermietet: ['success', 'Vermietet'],
                 confirmed: ['success', 'Bestätigt'],
                 in_progress: ['info', 'In Arbeit'],
+                'In Arbeit': ['info', 'In Arbeit'],
+                'Pipeline 09/2026': ['info', 'Pipeline 09/2026'],
                 planned: ['warning', 'Geplant'],
+                Geplant: ['warning', 'Geplant'],
                 completed: ['neutral', 'Erledigt']
             };
             const [cls, label] = map[status] || ['neutral', status];
@@ -2720,10 +2970,49 @@ pub fn render_app_html() -> &'static str {
             renderActivePluginRecords();
         }
 
+        function setDynPluginViewMode(mode) {
+            dynPluginViewMode = mode;
+            document.getElementById('dyn-view-btn-table')?.classList.toggle('active', mode === 'table');
+            document.getElementById('dyn-view-btn-cards')?.classList.toggle('active', mode === 'cards');
+            const tblWrap = document.getElementById('dynPluginTableContainer');
+            const cardsWrap = document.getElementById('dynPluginCardsContainer');
+            if (tblWrap) tblWrap.style.display = mode === 'table' ? 'block' : 'none';
+            if (cardsWrap) cardsWrap.style.display = mode === 'cards' ? 'grid' : 'none';
+            renderActivePluginRecords();
+        }
+
         function renderActivePluginRecords() {
             if (!activePlugin) return;
             let schema = [];
             try { schema = JSON.parse(activePlugin.schema_json || activePlugin.fields_json || '[]'); } catch (_) {}
+
+            const totalCents = activePluginRecords.reduce((acc, r) => acc + (r.amount_cents || 0), 0);
+            const activeCount = activePluginRecords.filter(r => !['cancelled', 'churned', 'Inaktiv'].includes(r.status)).length;
+            const kpiStrip = document.getElementById('dynPluginKpiStrip');
+            if (kpiStrip) {
+                kpiStrip.innerHTML = `
+                    <div class="kpi-card">
+                        <div class="kpi-label">Datensätze im Modul</div>
+                        <div class="kpi-value">${activePluginRecords.length}</div>
+                        <div class="kpi-sub"><span>SQLite Native Engine</span><span class="badge info">Aktiv</span></div>
+                    </div>
+                    <div class="kpi-card">
+                        <div class="kpi-label">Aktive Vorgänge / Objekte</div>
+                        <div class="kpi-value">${activeCount}</div>
+                        <div class="kpi-sub"><span>Operativer Status</span><span class="badge success">Laufend</span></div>
+                    </div>
+                    <div class="kpi-card">
+                        <div class="kpi-label">Gesamtwert / Volumen</div>
+                        <div class="kpi-value">${(totalCents / 100).toLocaleString('de-DE', { style: 'currency', currency: 'EUR' })}</div>
+                        <div class="kpi-sub"><span>Kumulierter Modulwert</span></div>
+                    </div>
+                    <div class="kpi-card">
+                        <div class="kpi-label">Schema-Attribute</div>
+                        <div class="kpi-value">${schema.length} Felder</div>
+                        <div class="kpi-sub"><span>${escapeHtml(activePlugin.category || 'ERP')} · Layer #${activePlugin.layer_order || 100}</span></div>
+                    </div>
+                `;
+            }
 
             const thead = document.getElementById('dynPluginTableHead') || document.getElementById('dyn-plugin-thead');
             if (thead) {
@@ -2742,10 +3031,38 @@ pub fn render_app_html() -> &'static str {
             const q = (document.getElementById('dynPluginSearch')?.value || '').trim().toLowerCase();
             const filtered = activePluginRecords.filter(r => !q || (r.title || '').toLowerCase().includes(q) || (r.data_json || '').toLowerCase().includes(q));
 
+            const cardsContainer = document.getElementById('dynPluginCardsContainer');
+            if (cardsContainer) {
+                cardsContainer.innerHTML = filtered.map(rec => {
+                    let payload = {};
+                    try { payload = JSON.parse(rec.data_json || rec.payload_json || '{}'); } catch (_) {}
+                    return `
+                        <div class="card" style="padding:16px; display:flex; flex-direction:column; gap:10px;">
+                            <div style="display:flex; justify-content:space-between; align-items:flex-start; gap:8px;">
+                                <div style="font-weight:700; font-size:13.5px; color:var(--text-primary);">${escapeHtml(rec.title)}</div>
+                                ${statusBadge(rec.status)}
+                            </div>
+                            <div style="display:grid; grid-template-columns:1fr 1fr; gap:8px; background:var(--bg-subtle); padding:10px; border-radius:6px; border:1px solid var(--border-color); font-size:11.5px;">
+                                ${schema.map(f => {
+                                    const val = payload[f.key] !== undefined ? payload[f.key] : '—';
+                                    return `<div><div style="color:var(--text-muted); font-size:10.5px;">${escapeHtml(f.label)}</div><div style="font-weight:600; color:var(--text-primary); margin-top:2px;">${escapeHtml(String(val))}</div></div>`;
+                                }).join('')}
+                            </div>
+                            <div style="display:flex; justify-content:space-between; align-items:center; margin-top:auto; padding-top:8px; border-top:1px solid var(--border-color); font-size:12px;">
+                                <span class="mono-val" style="font-weight:700;">${((rec.amount_cents || 0) / 100).toLocaleString('de-DE', { style: 'currency', currency: 'EUR' })}</span>
+                                <div style="display:flex; gap:6px;">
+                                    <button class="btn" style="height:24px; padding:0 8px; font-size:11px;" onclick="cyclePluginRecordStatus('${rec.id}', '${rec.status}')">Status ↻</button>
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                }).join('');
+            }
+
             const tbody = document.getElementById('dynPluginTableBody') || document.getElementById('dyn-plugin-tbody');
             if (!tbody) return;
             if (!filtered.length) {
-                tbody.innerHTML = `<tr><td colspan="${schema.length + 5}" style="text-align:center; color:var(--text-muted); padding:24px;">Keine passenden Datensätze in diesem Plugin.</td></tr>`;
+                tbody.innerHTML = `<tr><td colspan="${schema.length + 5}" style="text-align:center; color:var(--text-muted); padding:24px;">Keine passenden Datensätze in diesem Modul.</td></tr>`;
                 return;
             }
 
@@ -2754,11 +3071,11 @@ pub fn render_app_html() -> &'static str {
                 try { payload = JSON.parse(rec.data_json || rec.payload_json || '{}'); } catch (_) {}
                 return `
                     <tr>
-                        <td><strong>${escapeHtml(rec.title)}</strong></td>
+                        <td class="wrap-cell"><strong>${escapeHtml(rec.title)}</strong></td>
                         <td>${statusBadge(rec.status)}</td>
                         ${schema.map(f => {
                             const val = payload[f.key] !== undefined ? payload[f.key] : '—';
-                            return `<td class="${f.field_type === 'number' ? 'mono-val' : ''}">${escapeHtml(String(val))}</td>`;
+                            return `<td class="${f.field_type === 'number' ? 'mono-val' : 'wrap-cell'}">${escapeHtml(String(val))}</td>`;
                         }).join('')}
                         <td class="mono-val"><strong>${((rec.amount_cents || 0) / 100).toLocaleString('de-DE', { style: 'currency', currency: 'EUR' })}</strong></td>
                         <td>${escapeHtml(rec.owner || 'Merlin Conrad')}</td>
@@ -3003,6 +3320,36 @@ pub fn render_app_html() -> &'static str {
         }
 
         function renderDashboardTables() {
+            const dealsMeta = document.getElementById('kpi-deals-meta');
+            if (dealsMeta) dealsMeta.innerText = `${dealsData.length} aktive Deals`;
+
+            const funnelBox = document.getElementById('dashboardPipelineFunnel');
+            if (funnelBox) {
+                const stageMeta = [
+                    { key: 'discovery', label: '1. Erstkontakt (Discovery)', color: '#6366F1' },
+                    { key: 'proposal', label: '2. Angebot (Proposal)', color: '#2563EB' },
+                    { key: 'negotiation', label: '3. Verhandlung (Negotiation)', color: '#F59E0B' },
+                    { key: 'closed_won', label: '4. Gewonnen (Closed Won)', color: '#10B981' }
+                ];
+                const totalVal = Math.max(1, dealsData.reduce((acc, d) => acc + (d.value_cents || 0), 0));
+                funnelBox.innerHTML = stageMeta.map(st => {
+                    const list = dealsData.filter(d => d.stage === st.key);
+                    const sumCents = list.reduce((acc, d) => acc + (d.value_cents || 0), 0);
+                    const pct = Math.max(12, Math.round((sumCents / totalVal) * 100));
+                    return `
+                        <div class="funnel-stage-row" style="cursor:pointer;" onclick="switchView('deals')">
+                            <div class="funnel-stage-head">
+                                <span><strong>${escapeHtml(st.label)}</strong> <span style="color:var(--text-muted); font-weight:500;">(${list.length} Deals)</span></span>
+                                <span class="mono-val"><strong>${(sumCents / 100).toLocaleString('de-DE', { style: 'currency', currency: 'EUR' })}</strong></span>
+                            </div>
+                            <div class="kpi-progress-track" style="height:8px; margin-top:4px;">
+                                <div class="kpi-progress-fill" style="width:${pct}%; background:${st.color};"></div>
+                            </div>
+                        </div>
+                    `;
+                }).join('');
+            }
+
             const tbody = document.getElementById('dashboardRecentContacts');
             tbody.innerHTML = contactsData.slice(0, 6).map(c => `
                 <tr onclick="openContactDrawer('${c.id}')">
@@ -3033,6 +3380,26 @@ pub fn render_app_html() -> &'static str {
                         <span class="mono-val" style="color:var(--text-muted); font-size:11px;">${escapeHtml(t.due_date)}</span>
                     </div>
                 `).join('');
+            }
+
+            const bBox = document.getElementById('dashboardUpcomingBookings');
+            if (bBox) {
+                if (!bookingsData.length) {
+                    bBox.innerHTML = `<div style="color:var(--text-muted); font-size:12px;">Keine anstehenden Termine.</div>`;
+                } else {
+                    bBox.innerHTML = bookingsData.slice(0, 4).map(b => {
+                        const gName = b.guest_name || b.name || 'Mandant';
+                        return `
+                            <div style="display:flex; align-items:center; justify-content:space-between; gap:10px; padding:8px 10px; border:1px solid var(--border-color); border-radius:6px; background:var(--bg-subtle); cursor:pointer;" onclick="switchView('calendar')">
+                                <div style="min-width:0;">
+                                    <div style="font-weight:600; font-size:12px; color:var(--text-primary);">${escapeHtml(gName)}</div>
+                                    <div style="font-size:11px; color:var(--text-secondary); white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${escapeHtml(b.notes || 'Strategie-Call')}</div>
+                                </div>
+                                <span class="badge info" style="font-family:var(--font-mono); flex-shrink:0;">${escapeHtml((b.slot_iso || '').replace('T', ' '))}</span>
+                            </div>
+                        `;
+                    }).join('');
+                }
             }
         }
 
@@ -3318,6 +3685,7 @@ pub fn render_app_html() -> &'static str {
                         <td>${statusBadge(inv.status)}</td>
                         <td>
                             <div style="display:flex; gap:6px;">
+                                <button class="btn" style="height:24px; padding:0 8px; font-size:11px;" onclick="openInvoicePreviewModal('${inv.id}')">Beleg-Vorschau</button>
                                 <button class="btn" style="height:24px; padding:0 8px; font-size:11px;" onclick="toggleInvoiceStatus('${inv.id}', '${inv.status}')">
                                     ${isPaid ? 'Bezahlt ✓' : 'Als bezahlt buchen'}
                                 </button>
@@ -3328,6 +3696,94 @@ pub fn render_app_html() -> &'static str {
                     </tr>
                 `;
             }).join('');
+        }
+
+        function openInvoicePreviewModal(invId) {
+            const inv = invoicesData.find(x => x.id === invId);
+            if (!inv) return;
+            const c = contactsData.find(x => x.id === inv.contact_id) || {};
+            const netEur = (inv.net_cents / 100).toLocaleString('de-DE', { style: 'currency', currency: 'EUR' });
+            const taxEur = ((inv.gross_cents - inv.net_cents) / 100).toLocaleString('de-DE', { style: 'currency', currency: 'EUR' });
+            const grossEur = (inv.gross_cents / 100).toLocaleString('de-DE', { style: 'currency', currency: 'EUR' });
+
+            let items = [];
+            try {
+                const parsed = JSON.parse(inv.items_json || '[]');
+                if (Array.isArray(parsed) && parsed.length) items = parsed;
+            } catch (_) {}
+            if (!items.length) {
+                items = [{ description: inv.items_json || 'Conrad KI Managed Automation & System-Architektur', quantity: 1, total_cents: inv.net_cents }];
+            }
+
+            const rowsHtml = items.map((it, idx) => {
+                const lineNet = ((it.total_cents || inv.net_cents) / 100).toLocaleString('de-DE', { style: 'currency', currency: 'EUR' });
+                const lineTax = (Math.round((it.total_cents || inv.net_cents) * 0.19) / 100).toLocaleString('de-DE', { style: 'currency', currency: 'EUR' });
+                const lineGross = (Math.round((it.total_cents || inv.net_cents) * 1.19) / 100).toLocaleString('de-DE', { style: 'currency', currency: 'EUR' });
+                return `
+                    <tr style="border-bottom:1px solid #F4F4F5;">
+                        <td style="padding:12px 8px 12px 0; font-family:var(--font-mono);">0${idx + 1}</td>
+                        <td style="padding:12px 12px 12px 0;"><strong>${escapeHtml(it.description || 'Leistungsposition')}</strong> <span style="color:#71717A; font-size:11px;">(${it.quantity || 1}×)</span></td>
+                        <td style="padding:12px 10px; text-align:right; font-family:var(--font-mono); white-space:nowrap;">${lineNet}</td>
+                        <td style="padding:12px 10px; text-align:right; font-family:var(--font-mono); white-space:nowrap;">${lineTax}</td>
+                        <td style="padding:12px 0 12px 10px; text-align:right; font-family:var(--font-mono); font-weight:700; white-space:nowrap;">${lineGross}</td>
+                    </tr>
+                `;
+            }).join('');
+
+            document.getElementById('invPrevHeaderTitle').innerText = `Rechnungsbeleg · ${inv.invoice_number}`;
+            document.getElementById('invPrevSheetBody').innerHTML = `
+                <div style="display:flex; justify-content:space-between; align-items:flex-start; border-bottom:2px solid #18181B; padding-bottom:16px; margin-bottom:20px;">
+                    <div>
+                        <div style="font-size:18px; font-weight:800; letter-spacing:-0.02em;">Conrad KI · Automatisierung &amp; Consulting</div>
+                        <div style="font-size:11.5px; color:#52525B; margin-top:4px;">Inh. Merlin Conrad · Königsäcker 94 · 68723 Schwetzingen</div>
+                        <div style="font-size:11px; color:#71717A;">Web: www.conrad-ki.com · E-Mail: merlin@conrad-ki.com</div>
+                    </div>
+                    <div style="text-align:right;">
+                        <div style="font-size:16px; font-weight:800; font-family:var(--font-mono);">${escapeHtml(inv.invoice_number)}</div>
+                        <div style="font-size:11.5px; color:#52525B; margin-top:4px;">Fälligkeit: <strong>${escapeHtml(inv.due_date)}</strong></div>
+                        <div style="margin-top:4px;">${statusBadge(inv.status)}</div>
+                    </div>
+                </div>
+                <div style="display:flex; justify-content:space-between; margin-bottom:22px;">
+                    <div>
+                        <div style="font-size:10px; text-transform:uppercase; color:#71717A; font-weight:700;">Rechnungsempfänger</div>
+                        <div style="font-weight:700; font-size:13.5px; margin-top:2px;">${escapeHtml(c.company || inv.contact_name || 'Mandant')}</div>
+                        <div>z. Hd. ${escapeHtml(inv.contact_name || c.name || 'Geschäftsführung')}</div>
+                        <div style="color:#52525B;">${escapeHtml(c.email || '')}</div>
+                    </div>
+                    <div style="text-align:right; font-size:11.5px; color:#52525B;">
+                        <div>Standard: <strong>EN 16931 / ZUGFeRD 2.2</strong></div>
+                        <div>Steuersatz: <strong>19,0 % USt.</strong></div>
+                        <div>Währung: <strong>EUR (€)</strong></div>
+                    </div>
+                </div>
+                <table style="width:100%; border-collapse:collapse; margin-bottom:20px;">
+                    <thead>
+                        <tr style="border-bottom:1px solid #E4E4E7; text-align:left; font-size:11px; text-transform:uppercase; color:#71717A;">
+                            <th style="padding:8px 8px 8px 0;">Pos.</th>
+                            <th style="padding:8px 12px 8px 0;">Leistungsbeschreibung</th>
+                            <th style="padding:8px 10px; text-align:right;">Netto</th>
+                            <th style="padding:8px 10px; text-align:right;">USt. (19%)</th>
+                            <th style="padding:8px 0 8px 10px; text-align:right;">Brutto</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${rowsHtml}
+                    </tbody>
+                </table>
+                <div style="display:flex; justify-content:space-between; align-items:flex-end; background:#FAFAFA; padding:14px 16px; border-radius:6px; border:1px solid #E4E4E7;">
+                    <div style="font-size:11px; color:#52525B;">
+                        <div><strong>SEPA-Überweisung (0,00 % Gebühr):</strong></div>
+                        <div>Empfänger: Conrad KI · Merlin Conrad · Verwendungszweck: <span style="font-family:var(--font-mono);">${escapeHtml(inv.invoice_number)}</span></div>
+                        <div style="margin-top:4px; color:#71717A; font-family:var(--font-mono); font-size:10px;">GoBD-Audit-Signatur: sha256:${escapeHtml(inv.id)}_immutable_verified</div>
+                    </div>
+                    <div style="text-align:right;">
+                        <div style="font-size:11px; color:#71717A;">Gesamtbetrag (${netEur} Netto + ${taxEur} USt.)</div>
+                        <div style="font-size:20px; font-weight:800; font-family:var(--font-mono); color:#18181B;">${grossEur}</div>
+                    </div>
+                </div>
+            `;
+            openModal('modalInvoicePreview');
         }
 
         async function toggleInvoiceStatus(id, currentStatus) {

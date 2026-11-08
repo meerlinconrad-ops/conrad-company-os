@@ -914,6 +914,197 @@ impl Database {
             );
         }
 
+        // Enrich dataset if fewer than 5 contacts exist so every Kanban column, KPI, and module is richly populated
+        let current_contact_count: i64 = {
+            let conn = self.conn.lock().unwrap();
+            conn.query_row("SELECT COUNT(*) FROM contacts", [], |r| r.get(0)).unwrap_or(0)
+        };
+        if current_contact_count < 5 {
+            let c_weber = self.create_contact(NewContact {
+                name: "Dr. Markus Weber".to_string(),
+                email: Some("praxis@weber-zahnmedizin-hd.de".to_string()),
+                phone: Some("+49 6221 884420".to_string()),
+                company: Some("Zahnarztpraxis am Schlossplatz".to_string()),
+                status: Some("customer".to_string()),
+                tags: Some("Heidelberg, Sprach-Assistent, Retainer".to_string()),
+            })?;
+            let c_koch = self.create_contact(NewContact {
+                name: "Stefan Koch".to_string(),
+                email: Some("s.koch@koch-sanitaer-mannheim.de".to_string()),
+                phone: Some("+49 621 449910".to_string()),
+                company: Some("Koch Sanitär & Heizung GmbH".to_string()),
+                status: Some("qualified".to_string()),
+                tags: Some("Handwerk, WhatsApp-Triage, Mannheim".to_string()),
+            })?;
+            let c_bergmann = self.create_contact(NewContact {
+                name: "Thomas Bergmann".to_string(),
+                email: Some("t.bergmann@bergmann-spedition.de".to_string()),
+                phone: Some("+49 6202 77310".to_string()),
+                company: Some("Bergmann Logistik & Spedition".to_string()),
+                status: Some("lead".to_string()),
+                tags: Some("Schwetzingen, Beleg-KI, DMS".to_string()),
+            })?;
+            let c_gruia = self.create_contact(NewContact {
+                name: "Sebastian Gruia".to_string(),
+                email: Some("s.gruia@mannheim-resident.de".to_string()),
+                phone: Some("+49 176 9922811".to_string()),
+                company: Some("Bestandsmieter Halmhuberstraße 10".to_string()),
+                status: Some("customer".to_string()),
+                tags: Some("Immobilie, Mannheim, Mietvertrag".to_string()),
+            })?;
+
+            // Populate all 4 Kanban stages (discovery, proposal, negotiation, closed_won)
+            let _ = self.create_deal(NewDeal {
+                contact_id: c_bergmann.id.clone(),
+                title: "KI-Frachtbrief & Beleg-Extraktion (DMS)".to_string(),
+                value_cents: 185000,
+                currency: Some("EUR".to_string()),
+                stage: Some("discovery".to_string()),
+                expected_close_date: Some("2026-12-10".to_string()),
+            });
+            let _ = self.create_deal(NewDeal {
+                contact_id: c_koch.id.clone(),
+                title: "24/7 Notdienst WhatsApp- & Anruf-Triage".to_string(),
+                value_cents: 149000,
+                currency: Some("EUR".to_string()),
+                stage: Some("negotiation".to_string()),
+                expected_close_date: Some("2026-11-25".to_string()),
+            });
+            let d_weber = self.create_deal(NewDeal {
+                contact_id: c_weber.id.clone(),
+                title: "KI-Patienten-Recall & Termin-Autopilot".to_string(),
+                value_cents: 188000,
+                currency: Some("EUR".to_string()),
+                stage: Some("closed_won".to_string()),
+                expected_close_date: Some("2026-11-05".to_string()),
+            })?;
+            let _ = self.create_deal(NewDeal {
+                contact_id: c_koch.id.clone(),
+                title: "Monatlicher KI-Wartungs-Retainer (Pro)".to_string(),
+                value_cents: 118800,
+                currency: Some("EUR".to_string()),
+                stage: Some("proposal".to_string()),
+                expected_close_date: Some("2026-11-28".to_string()),
+            });
+
+            // Create paid & sent invoices so Realized Revenue and Open Receivables are realistic
+            let inv_weber = self.create_invoice(NewInvoice {
+                contact_id: c_weber.id.clone(),
+                deal_id: Some(d_weber.id),
+                invoice_number: Some("RE-2026-002".to_string()),
+                items: vec![InvoiceItem {
+                    description: "Einrichtung KI-Patienten-Recall & Praxis-Kalender-Integration".to_string(),
+                    quantity: 1.0,
+                    unit_price_cents: 188000,
+                    total_cents: 188000,
+                }],
+                due_days: Some(14),
+            })?;
+            let _ = self.update_invoice_status(&inv_weber.id, "paid");
+
+            let inv_koch = self.create_invoice(NewInvoice {
+                contact_id: c_koch.id.clone(),
+                deal_id: None,
+                invoice_number: Some("RE-2026-003".to_string()),
+                items: vec![InvoiceItem {
+                    description: "Konzeption & Prototyp WhatsApp-Notdienst-Triage (50% Anzahlung)".to_string(),
+                    quantity: 1.0,
+                    unit_price_cents: 89000,
+                    total_cents: 89000,
+                }],
+                due_days: Some(14),
+            })?;
+            let _ = self.update_invoice_status(&inv_koch.id, "sent");
+
+            // Additional Retainers
+            let _ = self.create_retainer(NewRetainerSubscription {
+                contact_id: c_weber.id.clone(),
+                plan_name: "Praxis-KI Managed Service & Recall-Engine".to_string(),
+                amount_cents: 9900,
+                vat_rate_percent: Some(19.0),
+                interval_months: Some(1),
+                next_billing_date: Some("2026-12-01".to_string()),
+            });
+            let _ = self.create_retainer(NewRetainerSubscription {
+                contact_id: c_koch.id.clone(),
+                plan_name: "Handwerk KI-Postfach & WhatsApp-Basis".to_string(),
+                amount_cents: 6900,
+                vat_rate_percent: Some(19.0),
+                interval_months: Some(1),
+                next_billing_date: Some("2026-12-01".to_string()),
+            });
+
+            // Additional Tasks & Calendar Bookings & Documents & Timeline
+            let _ = self.create_follow_up_task(NewFollowUpTask {
+                contact_id: c_koch.id.clone(),
+                deal_id: None,
+                title: "Vertragsentwurf Handwerker-Triage an Stefan Koch senden".to_string(),
+                due_date: Some("2026-11-10".to_string()),
+            });
+            let _ = self.create_follow_up_task(NewFollowUpTask {
+                contact_id: c_bergmann.id.clone(),
+                deal_id: None,
+                title: "Muster-Frachtbriefe für OCR-Benchmark prüfen".to_string(),
+                due_date: Some("2026-11-14".to_string()),
+            });
+
+            let _ = self.book_calendar_slot(NewBooking {
+                slug: Some("merlin".to_string()),
+                name: "Stefan Koch".to_string(),
+                email: "s.koch@koch-sanitaer-mannheim.de".to_string(),
+                phone: Some("+49 621 449910".to_string()),
+                start_time: "2026-11-11T14:00:00Z".to_string(),
+                duration_minutes: Some(30),
+                timezone: Some("Europe/Berlin".to_string()),
+                notes: Some("Finales Verhandlungsgespräch WhatsApp-Notdienst-Assistent".to_string()),
+            });
+            let _ = self.book_calendar_slot(NewBooking {
+                slug: Some("merlin".to_string()),
+                name: "Dr. Markus Weber".to_string(),
+                email: "praxis@weber-zahnmedizin-hd.de".to_string(),
+                phone: Some("+49 6221 884420".to_string()),
+                start_time: "2026-11-13T09:30:00Z".to_string(),
+                duration_minutes: Some(30),
+                timezone: Some("Europe/Berlin".to_string()),
+                notes: Some("Monats-Check-in Praxis-KI & Recall-Statistiken".to_string()),
+            });
+
+            let _ = self.add_document(NewDocument {
+                contact_id: Some(c_weber.id.clone()),
+                invoice_id: Some(inv_weber.id.clone()),
+                title: "AV-Vertrag nach Art. 28 DSGVO — Zahnarztpraxis Dr. Weber".to_string(),
+                filename: "AVV_DSGVO_Praxis_Weber_2026.pdf".to_string(),
+                file_path: "/vault/compliance/AVV_DSGVO_Praxis_Weber_2026.pdf".to_string(),
+                file_size_bytes: 342_000,
+                mime_type: "application/pdf".to_string(),
+                category: Some("Compliance".to_string()),
+                tags: Some("DSGVO, AVV, Gesundheitsdaten".to_string()),
+                extracted_text: Some("100% lokale KI-Verarbeitung ohne Drittlandtransfer.".to_string()),
+            });
+            let _ = self.add_document(NewDocument {
+                contact_id: Some(c_gruia.id.clone()),
+                invoice_id: None,
+                title: "Mietvertrag & Nebenkostenabrechnung Halmhuberstraße 10 (Sebastian Gruia)".to_string(),
+                filename: "Mietvertrag_Halmhuberstr10_Gruia.pdf".to_string(),
+                file_path: "/vault/realestate/Mietvertrag_Halmhuberstr10_Gruia.pdf".to_string(),
+                file_size_bytes: 518_000,
+                mime_type: "application/pdf".to_string(),
+                category: Some("Immobilien".to_string()),
+                tags: Some("Mietvertrag, Mannheim, Cashflow".to_string()),
+                extracted_text: Some("Monatlicher positiver Netto-Cashflow: +53,00 EUR.".to_string()),
+            });
+
+            let _ = self.create_workflow_rule(NewWorkflowRule {
+                name: "Neuer Lead (WhatsApp / Web) -> Qualifizierungs-Task + Entwurf".to_string(),
+                trigger_type: "contact_created".to_string(),
+                trigger_filter: "lead".to_string(),
+                action_type: "create_task_and_email_draft".to_string(),
+                delay_days: Some(1),
+                template_subject: Some("Ihre Anfrage bei Conrad KI — Erstgespräch".to_string()),
+                template_body: "Hallo {{name}},\nvielen Dank für Ihre Kontaktaufnahme. Hier ist der direkte Buchungslink für unser 30-minütiges Potenzialgespräch.\nBeste Grüße\nMerlin Conrad".to_string(),
+            });
+        }
+
         Ok(())
     }
 

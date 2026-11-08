@@ -108,6 +108,13 @@ with sync_playwright() as p:
     time.sleep(0.5)
     save_shot(page, "desktop_04_invoices.png", full_page=True)
 
+    # Open DIN A4 Invoice Preview Modal
+    page.click("#invoicesFullTable tr:first-child button:first-child")
+    time.sleep(0.4)
+    save_shot(page, "desktop_04b_invoice_preview.png")
+    page.keyboard.press("Escape")
+    time.sleep(0.3)
+
     # Retainers
     page.click("#nav-btn-retainers")
     time.sleep(0.5)
