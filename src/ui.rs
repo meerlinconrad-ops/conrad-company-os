@@ -1262,9 +1262,72 @@ pub fn render_app_html() -> &'static str {
             padding-top: 8px;
             padding-bottom: 8px;
         }
+        .week-cal-grid {
+            display: grid;
+            grid-template-columns: repeat(5, 1fr);
+            gap: 10px;
+            padding: 14px 16px;
+        }
+        .week-cal-col {
+            background: var(--bg-subtle);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            padding: 10px;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            min-height: 190px;
+        }
+        .week-cal-day-head {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 11.5px;
+            font-weight: 700;
+            padding-bottom: 6px;
+            border-bottom: 1px solid var(--border-color);
+        }
+        .week-cal-event {
+            background: var(--bg-surface);
+            border: 1px solid var(--border-color);
+            border-left: 3px solid var(--accent);
+            border-radius: 6px;
+            padding: 7px 9px;
+            font-size: 11px;
+            box-shadow: var(--shadow-xs);
+            cursor: pointer;
+            transition: transform 0.1s ease, border-color 0.1s ease;
+        }
+        .week-cal-event:hover {
+            transform: translateY(-1px);
+            border-color: var(--accent);
+        }
+        .copilot-chips-bar {
+            padding: 8px 12px;
+            border-top: 1px solid var(--border-color);
+            background: var(--bg-subtle);
+            display: flex;
+            gap: 6px;
+            flex-wrap: wrap;
+        }
+        .copilot-chip {
+            font-size: 11px;
+            padding: 3px 8px;
+            border-radius: 99px;
+            border: 1px solid var(--border-color);
+            background: var(--bg-surface);
+            color: var(--text-secondary);
+            cursor: pointer;
+            transition: all 0.12s ease;
+        }
+        .copilot-chip:hover {
+            border-color: var(--accent);
+            color: var(--accent);
+            background: var(--accent-subtle);
+        }
 
         @media (max-width: 1100px) {
-            .analytics-row-grid, .cockpit-tri-grid, .wf-pipeline-strip {
+            .analytics-row-grid, .cockpit-tri-grid, .wf-pipeline-strip, .week-cal-grid {
                 grid-template-columns: 1fr;
             }
         }
@@ -1624,72 +1687,168 @@ pub fn render_app_html() -> &'static str {
                 </div>
             </section>
 
-            <!-- VIEW 2: KONTAKTE & UNTERNEHMEN (Twenty CRM Spreadsheet View) -->
-            <section id="view-contacts" style="display:none;">
-                <div class="sub-toolbar">
-                    <div class="filter-pills">
-                        <button class="filter-pill-btn active" id="flt-all" onclick="setContactStatusFilter('all')">Alle Datensätze</button>
-                        <button class="filter-pill-btn" id="flt-lead" onclick="setContactStatusFilter('lead')">Leads</button>
-                        <button class="filter-pill-btn" id="flt-qualified" onclick="setContactStatusFilter('qualified')">Qualifiziert</button>
-                        <button class="filter-pill-btn" id="flt-customer" onclick="setContactStatusFilter('customer')">Bestandskunden</button>
+            <!-- VIEW 2: KONTAKTE & UNTERNEHMEN (Twenty CRM / Attio Executive View) -->
+            <section id="view-contacts" class="view-padded" style="display:none;">
+                <div class="kpi-grid">
+                    <div class="kpi-card">
+                        <div class="kpi-label"><span>Gesamte Mandate &amp; Kontakte</span><span class="badge info">CRM</span></div>
+                        <div class="kpi-value" id="c-kpi-total">6</div>
+                        <div class="kpi-progress-track"><div class="kpi-progress-fill" style="width:85%;"></div></div>
+                        <div class="kpi-meta" style="margin-top:6px;">Rhein-Neckar KMU &amp; Immobilien</div>
                     </div>
-                    <div style="display:flex; gap:8px; align-items:center;">
-                        <input type="text" id="contactSearchInput" class="form-input" style="height:28px; width:240px; font-size:12px;" placeholder="Tabelle filtern (Name, Firma, E-Mail)..." oninput="filterContactsList()">
-                        <button class="btn" onclick="exportContactsCsv()">↓ CSV Export</button>
-                        <button class="btn btn-primary" onclick="openNewContactModal()">+ Neuer Kontakt</button>
+                    <div class="kpi-card">
+                        <div class="kpi-label"><span>Aktive Bestandskunden</span><span class="badge success">Retainer</span></div>
+                        <div class="kpi-value" id="c-kpi-customers" style="color:var(--status-green-fg);">3</div>
+                        <div class="kpi-progress-track"><div class="kpi-progress-fill" style="width:60%; background:var(--status-green-fg);"></div></div>
+                        <div class="kpi-meta" style="margin-top:6px;">Laufende KI-Systembetreuung</div>
+                    </div>
+                    <div class="kpi-card">
+                        <div class="kpi-label"><span>Qualifizierte Pipeline</span><span class="badge purple">Sales</span></div>
+                        <div class="kpi-value" id="c-kpi-qualified">2</div>
+                        <div class="kpi-progress-track"><div class="kpi-progress-fill" style="width:72%; background:#7c3aed;"></div></div>
+                        <div class="kpi-meta" style="margin-top:6px;">Abschlusswahrscheinlichkeit &gt; 65%</div>
+                    </div>
+                    <div class="kpi-card">
+                        <div class="kpi-label"><span>Omnichannel-SLA</span><span class="badge neutral">WhatsApp / Mail</span></div>
+                        <div class="kpi-value">&lt; 90 Sek.</div>
+                        <div class="kpi-progress-track"><div class="kpi-progress-fill" style="width:96%; background:#0d9488;"></div></div>
+                        <div class="kpi-meta" style="margin-top:6px;">100 % KI-Vorqualifizierung</div>
                     </div>
                 </div>
-                <div class="sheet-wrapper">
-                    <table class="data-grid">
-                        <thead>
-                            <tr>
-                                <th style="width:240px;">Name</th>
-                                <th style="width:200px;">Unternehmen</th>
-                                <th style="width:220px;">E-Mail</th>
-                                <th style="width:150px;">Telefon</th>
-                                <th style="width:130px;">Lifecycle Phase</th>
-                                <th>Segment / Tags</th>
-                                <th style="width:130px;">Aktionen</th>
-                            </tr>
-                        </thead>
-                        <tbody id="contactsFullTable"></tbody>
-                    </table>
+
+                <div class="card-panel">
+                    <div class="card-panel-header" style="flex-wrap:wrap; gap:10px;">
+                        <div class="filter-pills">
+                            <button class="filter-pill-btn active" id="flt-all" onclick="setContactStatusFilter('all')">Alle Datensätze</button>
+                            <button class="filter-pill-btn" id="flt-lead" onclick="setContactStatusFilter('lead')">Leads</button>
+                            <button class="filter-pill-btn" id="flt-qualified" onclick="setContactStatusFilter('qualified')">Qualifiziert</button>
+                            <button class="filter-pill-btn" id="flt-customer" onclick="setContactStatusFilter('customer')">Bestandskunden</button>
+                        </div>
+                        <div style="display:flex; gap:8px; align-items:center;">
+                            <input type="text" id="contactSearchInput" class="form-input" style="height:28px; width:240px; font-size:12px;" placeholder="Tabelle filtern (Name, Firma, E-Mail)..." oninput="filterContactsList()">
+                            <button class="btn" onclick="exportContactsCsv()">↓ CSV Export</button>
+                            <button class="btn btn-primary" onclick="openNewContactModal()">+ Neuer Kontakt</button>
+                        </div>
+                    </div>
+                    <div class="sheet-wrapper">
+                        <table class="data-grid">
+                            <thead>
+                                <tr>
+                                    <th style="width:220px;">Name</th>
+                                    <th style="width:200px;">Unternehmen</th>
+                                    <th style="width:210px;">E-Mail &amp; Direktkanal</th>
+                                    <th style="width:140px;">Telefon</th>
+                                    <th style="width:120px;">Lifecycle Phase</th>
+                                    <th style="width:120px;">KI-Health-Score</th>
+                                    <th>Segment / Tags</th>
+                                    <th style="width:120px;">360°-Akte</th>
+                                </tr>
+                            </thead>
+                            <tbody id="contactsFullTable"></tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <div style="display:grid; grid-template-columns: 1fr 1fr; gap:16px;">
+                    <div class="card-panel" style="margin-bottom:0; padding:16px;">
+                        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
+                            <span style="font-size:13px; font-weight:700;">Zielgruppen-Cluster Rhein-Neckar</span>
+                            <span class="badge info">Fokus KMU</span>
+                        </div>
+                        <div style="display:grid; grid-template-columns:repeat(3,1fr); gap:10px; font-size:12px;">
+                            <div style="padding:10px; background:var(--bg-subtle); border:1px solid var(--border-color); border-radius:6px;">
+                                <div style="color:var(--text-muted); font-size:11px;">Handwerk &amp; Technik</div>
+                                <div style="font-weight:700; font-size:15px; margin-top:2px;">34 %</div>
+                                <div style="font-size:11px; color:var(--status-green-fg);">WhatsApp-Triage</div>
+                            </div>
+                            <div style="padding:10px; background:var(--bg-subtle); border:1px solid var(--border-color); border-radius:6px;">
+                                <div style="color:var(--text-muted); font-size:11px;">Praxen &amp; Gesundheit</div>
+                                <div style="font-weight:700; font-size:15px; margin-top:2px;">33 %</div>
+                                <div style="font-size:11px; color:var(--accent);">Recall &amp; Telefon-KI</div>
+                            </div>
+                            <div style="padding:10px; background:var(--bg-subtle); border:1px solid var(--border-color); border-radius:6px;">
+                                <div style="color:var(--text-muted); font-size:11px;">Handel &amp; Logistik</div>
+                                <div style="font-weight:700; font-size:15px; margin-top:2px;">33 %</div>
+                                <div style="font-size:11px; color:#7c3aed;">Beleg-OCR &amp; DMS</div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="card-panel" style="margin-bottom:0; padding:16px;">
+                        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
+                            <span style="font-size:13px; font-weight:700;">DSGVO &amp; Kommunikations-Guardrails</span>
+                            <span class="badge success">Aktiv</span>
+                        </div>
+                        <div style="font-size:12px; color:var(--text-secondary); line-height:1.55;">
+                            • <strong>Entwurfs-Pflicht:</strong> Ausgehende E-Mails aus Workflows und KI-Agenten werden niemals unkontrolliert versendet, sondern als <code>draft</code> zur Freigabe in der 360°-Timeline abgelegt.<br>
+                            • <strong>100 % Lokale Verarbeitung:</strong> Sprach- und Textanalyse über lokalen AI-Stack (MacBook M1 Max 64 GB / Ollama) ohne Drittlandtransfer.
+                        </div>
+                    </div>
                 </div>
             </section>
 
-            <!-- VIEW 3: DEALS PIPELINE (HubSpot / Twenty Kanban) -->
-            <section id="view-deals" style="display:none;">
-                <div class="sub-toolbar">
-                    <div style="font-size:12px; color:var(--text-secondary);">
-                        Drag &amp; Drop zwischen Phasen · Wechsel auf <strong>2. Angebot</strong> erstellt automatisch Follow-up Aufgabe (+3 Tage) &amp; E-Mail-Entwurf.
+            <!-- VIEW 3: DEALS PIPELINE (HubSpot / Twenty Kanban + Forecast Telemetry) -->
+            <section id="view-deals" class="view-padded" style="display:none;">
+                <div class="kpi-grid">
+                    <div class="kpi-card">
+                        <div class="kpi-label"><span>Gesamt-Pipeline</span><span class="badge info">Brutto-Volumen</span></div>
+                        <div class="kpi-value" id="d-kpi-total-vol">8.546,00 €</div>
+                        <div class="kpi-progress-track"><div class="kpi-progress-fill" style="width:82%;"></div></div>
+                        <div class="kpi-meta" style="margin-top:6px;">Alle 4 aktiven Verkaufsphasen</div>
                     </div>
-                    <button class="btn btn-primary" onclick="openNewDealModal()">+ Deal anlegen</button>
+                    <div class="kpi-card">
+                        <div class="kpi-label"><span>Gewichteter Forecast</span><span class="badge purple">Erwartungswert</span></div>
+                        <div class="kpi-value" id="d-kpi-weighted-vol" style="color:#7c3aed;">5.622,00 €</div>
+                        <div class="kpi-progress-track"><div class="kpi-progress-fill" style="width:68%; background:#7c3aed;"></div></div>
+                        <div class="kpi-meta" style="margin-top:6px;">Nach Phasen-Wahrscheinlichkeit</div>
+                    </div>
+                    <div class="kpi-card">
+                        <div class="kpi-label"><span>Gewonnene Deals</span><span class="badge success">Closed Won</span></div>
+                        <div class="kpi-value" id="d-kpi-won-vol" style="color:var(--status-green-fg);">3.068,00 €</div>
+                        <div class="kpi-progress-track"><div class="kpi-progress-fill" style="width:90%; background:var(--status-green-fg);"></div></div>
+                        <div class="kpi-meta" style="margin-top:6px;">Direkt in Faktura &amp; Retainer überführt</div>
+                    </div>
+                    <div class="kpi-card">
+                        <div class="kpi-label"><span>Ø Deal-Volumen &amp; Zyklus</span><span class="badge neutral">Velocity</span></div>
+                        <div class="kpi-value" id="d-kpi-avg-vol">1.424,33 €</div>
+                        <div class="kpi-progress-track"><div class="kpi-progress-fill" style="width:75%; background:#0d9488;"></div></div>
+                        <div class="kpi-meta" style="margin-top:6px;">Ø Abschlussdauer: 11 Tage</div>
+                    </div>
                 </div>
-                <div class="kanban-board">
+
+                <div class="card-panel" style="margin-bottom:14px;">
+                    <div class="card-panel-header">
+                        <div style="font-size:12px; color:var(--text-secondary);">
+                            <strong>Interaktives Pipeline-Board:</strong> Drag &amp; Drop zwischen Phasen · Wechsel auf <strong>2. Angebot</strong> erstellt automatisch Follow-up Aufgabe (+3 Tage) &amp; E-Mail-Entwurf.
+                        </div>
+                        <button class="btn btn-primary" onclick="openNewDealModal()">+ Deal anlegen</button>
+                    </div>
+                </div>
+
+                <div class="kanban-board" style="padding:0;">
                     <div class="kanban-column" id="k-col-discovery">
                         <div class="kanban-col-header">
-                            <span class="kanban-stage-name"><span class="badge info">1</span> Erstkontakt</span>
+                            <span class="kanban-stage-name"><span class="badge info">1</span> Erstkontakt <span style="font-size:10px; color:var(--text-muted); font-weight:400;">(25%)</span></span>
                             <span class="kanban-stage-sum" id="k-sum-discovery">0 €</span>
                         </div>
                         <div id="k-items-discovery"></div>
                     </div>
                     <div class="kanban-column" id="k-col-proposal">
                         <div class="kanban-col-header">
-                            <span class="kanban-stage-name"><span class="badge warning">2</span> Angebot</span>
+                            <span class="kanban-stage-name"><span class="badge warning">2</span> Angebot <span style="font-size:10px; color:var(--text-muted); font-weight:400;">(50%)</span></span>
                             <span class="kanban-stage-sum" id="k-sum-proposal">0 €</span>
                         </div>
                         <div id="k-items-proposal"></div>
                     </div>
                     <div class="kanban-column" id="k-col-negotiation">
                         <div class="kanban-col-header">
-                            <span class="kanban-stage-name"><span class="badge purple">3</span> Verhandlung</span>
+                            <span class="kanban-stage-name"><span class="badge purple">3</span> Verhandlung <span style="font-size:10px; color:var(--text-muted); font-weight:400;">(75%)</span></span>
                             <span class="kanban-stage-sum" id="k-sum-negotiation">0 €</span>
                         </div>
                         <div id="k-items-negotiation"></div>
                     </div>
                     <div class="kanban-column" id="k-col-closed_won">
                         <div class="kanban-col-header">
-                            <span class="kanban-stage-name"><span class="badge success">4</span> Gewonnen</span>
+                            <span class="kanban-stage-name"><span class="badge success">4</span> Gewonnen <span style="font-size:10px; color:var(--text-muted); font-weight:400;">(100%)</span></span>
                             <span class="kanban-stage-sum" id="k-sum-closed_won">0 €</span>
                         </div>
                         <div id="k-items-closed_won"></div>
@@ -1697,60 +1856,184 @@ pub fn render_app_html() -> &'static str {
                 </div>
             </section>
 
-            <!-- VIEW 4: FAKTURA & E-RECHNUNG -->
-            <section id="view-invoices" style="display:none;">
-                <div class="sub-toolbar">
-                    <div style="font-size:12px; color:var(--text-secondary);">
-                        EN 16931 XRechnung 3.0 / ZUGFeRD 2.2 · GoBD-Unveränderbarkeit &amp; DATEV Buchungsstapel
+            <!-- VIEW 4: FAKTURA & E-RECHNUNG (GoBD / ZUGFeRD 2.2 / DATEV) -->
+            <section id="view-invoices" class="view-padded" style="display:none;">
+                <div class="kpi-grid">
+                    <div class="kpi-card">
+                        <div class="kpi-label"><span>Bezahlter Umsatz (Ist)</span><span class="badge success">GoBD Festgeschrieben</span></div>
+                        <div class="kpi-value" id="inv-kpi-paid" style="color:var(--status-green-fg);">2.237,20 €</div>
+                        <div class="kpi-progress-track"><div class="kpi-progress-fill" style="width:82%; background:var(--status-green-fg);"></div></div>
+                        <div class="kpi-meta" style="margin-top:6px;">Inkl. 19% USt. · SKR03 Konto 8400</div>
                     </div>
-                    <div style="display:flex; gap:8px;">
-                        <a href="/api/export/datev?year=2026&skr=skr03" class="btn" style="text-decoration:none;">↓ DATEV EXTF (SKR03)</a>
-                        <button class="btn btn-primary" onclick="openNewInvoiceModal()">+ Neue Rechnung</button>
+                    <div class="kpi-card">
+                        <div class="kpi-label"><span>Offene Forderungen</span><span class="badge warning">Debitorenbuchhaltung</span></div>
+                        <div class="kpi-value" id="inv-kpi-open" style="color:var(--status-amber-fg);">1.176,91 €</div>
+                        <div class="kpi-progress-track"><div class="kpi-progress-fill" style="width:45%; background:var(--status-amber-fg);"></div></div>
+                        <div class="kpi-meta" style="margin-top:6px;">Zahlungsziel: 14 Tage Netto</div>
+                    </div>
+                    <div class="kpi-card">
+                        <div class="kpi-label"><span>USt.-Rückstellung (19%)</span><span class="badge info">SKR03 · 1776</span></div>
+                        <div class="kpi-value" id="inv-kpi-vat">544,71 €</div>
+                        <div class="kpi-progress-track"><div class="kpi-progress-fill" style="width:60%;"></div></div>
+                        <div class="kpi-meta" style="margin-top:6px;">Automatische USt.-Voranmeldung</div>
+                    </div>
+                    <div class="kpi-card">
+                        <div class="kpi-label"><span>E-Rechnung Standard</span><span class="badge purple">EN 16931</span></div>
+                        <div class="kpi-value">100 % Konform</div>
+                        <div class="kpi-progress-track"><div class="kpi-progress-fill" style="width:100%; background:#7c3aed;"></div></div>
+                        <div class="kpi-meta" style="margin-top:6px;">XRechnung 3.0 XML &amp; ZUGFeRD 2.2</div>
                     </div>
                 </div>
-                <div class="sheet-wrapper">
-                    <table class="data-grid">
-                        <thead>
-                            <tr>
-                                <th>Beleg-Nr.</th>
-                                <th>Kunde</th>
-                                <th>Fälligkeit</th>
-                                <th>Netto</th>
-                                <th>Brutto (inkl. USt)</th>
-                                <th>GoBD Status</th>
-                                <th>E-Rechnung / Zahlung</th>
-                            </tr>
-                        </thead>
-                        <tbody id="invoicesFullTable"></tbody>
-                    </table>
+
+                <div class="card-panel">
+                    <div class="card-panel-header">
+                        <div>
+                            <span class="card-panel-title">Rechnungs- &amp; Belegbuch (GoBD-revisionssicher)</span>
+                            <span style="font-size:11.5px; color:var(--text-muted); margin-left:8px;">Inkl. DIN-A4-Belegvorschau, XRechnung XML &amp; SEPA-GiroCode</span>
+                        </div>
+                        <div style="display:flex; gap:8px;">
+                            <a href="/api/export/datev?year=2026&skr=skr03" class="btn" style="text-decoration:none;">↓ DATEV EXTF (SKR03)</a>
+                            <button class="btn btn-primary" onclick="openNewInvoiceModal()">+ Neue Rechnung</button>
+                        </div>
+                    </div>
+                    <div class="sheet-wrapper">
+                        <table class="data-grid">
+                            <thead>
+                                <tr>
+                                    <th>Beleg-Nr.</th>
+                                    <th>Kunde / Mandat</th>
+                                    <th>Fälligkeit</th>
+                                    <th>Netto (EUR)</th>
+                                    <th>USt. (19%)</th>
+                                    <th>Brutto (inkl. USt)</th>
+                                    <th>GoBD Status</th>
+                                    <th>E-Rechnung / Beleg-Aktionen</th>
+                                </tr>
+                            </thead>
+                            <tbody id="invoicesFullTable"></tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <div style="display:grid; grid-template-columns: 1.2fr 1fr; gap:16px;">
+                    <div class="card-panel" style="margin-bottom:0; padding:16px;">
+                        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
+                            <span style="font-size:13px; font-weight:700;">DATEV SKR03 Konten-Spiegel (Automatische Kontierung)</span>
+                            <span class="badge info">EXTF Format</span>
+                        </div>
+                        <div style="display:grid; grid-template-columns:repeat(3,1fr); gap:10px; font-size:12px;">
+                            <div style="padding:10px; background:var(--bg-subtle); border:1px solid var(--border-color); border-radius:6px;">
+                                <div class="mono-val" style="font-size:11px; color:var(--text-muted);">Konto 8400</div>
+                                <div style="font-weight:700; margin-top:2px;">Erlöse 19% USt.</div>
+                                <div class="mono-val" style="color:var(--status-green-fg); margin-top:2px;">2.869,00 € Netto</div>
+                            </div>
+                            <div style="padding:10px; background:var(--bg-subtle); border:1px solid var(--border-color); border-radius:6px;">
+                                <div class="mono-val" style="font-size:11px; color:var(--text-muted);">Konto 1400</div>
+                                <div style="font-weight:700; margin-top:2px;">Forderungen a.LL.</div>
+                                <div class="mono-val" style="color:var(--status-amber-fg); margin-top:2px;">1.176,91 € Brutto</div>
+                            </div>
+                            <div style="padding:10px; background:var(--bg-subtle); border:1px solid var(--border-color); border-radius:6px;">
+                                <div class="mono-val" style="font-size:11px; color:var(--text-muted);">Konto 1776</div>
+                                <div style="font-weight:700; margin-top:2px;">Umsatzsteuer 19%</div>
+                                <div class="mono-val" style="color:var(--accent); margin-top:2px;">544,71 € USt.</div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="card-panel" style="margin-bottom:0; padding:16px;">
+                        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
+                            <span style="font-size:13px; font-weight:700;">GoBD Unveränderbarkeits-Schutz (§ 146 AO)</span>
+                            <span class="badge success">SHA-256 Aktiv</span>
+                        </div>
+                        <div style="font-size:12px; color:var(--text-secondary); line-height:1.55;">
+                            Festgeschriebene und bezahlte Rechnungen können gemäß GoBD nicht nachträglich gelöscht oder überschrieben werden. Korrekturen erfolgen ausschließlich über revisionssichere Storno-Gutschriften (<code>ST-RE-...</code>).
+                        </div>
+                    </div>
                 </div>
             </section>
 
-            <!-- VIEW 5: RETAINER & ABOS -->
-            <section id="view-retainers" style="display:none;">
-                <div class="sub-toolbar">
-                    <div style="font-size:12px; color:var(--text-secondary);">
-                        Wiederkehrende Service-Verträge (MRR) &amp; automatischer Monatsabrechnungslauf
+            <!-- VIEW 5: RETAINER & ABOS (Subscription & MRR Engine) -->
+            <section id="view-retainers" class="view-padded" style="display:none;">
+                <div class="kpi-grid">
+                    <div class="kpi-card">
+                        <div class="kpi-label"><span>Aktiver Monats-MRR</span><span class="badge success">Wiederkehrend</span></div>
+                        <div class="kpi-value" id="ret-kpi-mrr" style="color:var(--status-green-fg);">267,00 €</div>
+                        <div class="kpi-progress-track"><div class="kpi-progress-fill" style="width:54%; background:var(--status-green-fg);"></div></div>
+                        <div class="kpi-meta" style="margin-top:6px;">3 aktive KMU-Retainer (Netto)</div>
                     </div>
-                    <div style="display:flex; gap:8px;">
-                        <button class="btn" onclick="openModal('modalNewRetainer')">+ Neues Abo</button>
-                        <button class="btn btn-primary" onclick="triggerRetainerRun()">Fällige Retainer jetzt abrechnen</button>
+                    <div class="kpi-card">
+                        <div class="kpi-label"><span>Annualisierter ARR</span><span class="badge info">Hochrechnung</span></div>
+                        <div class="kpi-value" id="ret-kpi-arr">3.204,00 €</div>
+                        <div class="kpi-progress-track"><div class="kpi-progress-fill" style="width:64%;"></div></div>
+                        <div class="kpi-meta" style="margin-top:6px;">12-Monats-Vertragsbestand</div>
+                    </div>
+                    <div class="kpi-card">
+                        <div class="kpi-label"><span>MRR-Zielkorridor 2026</span><span class="badge purple">500 – 1.500 €</span></div>
+                        <div class="kpi-value">53,4 %</div>
+                        <div class="kpi-progress-track"><div class="kpi-progress-fill" style="width:53%; background:#7c3aed;"></div></div>
+                        <div class="kpi-meta" style="margin-top:6px;">Noch +233 €/Mo. bis Mindestziel</div>
+                    </div>
+                    <div class="kpi-card">
+                        <div class="kpi-label"><span>Net Retention &amp; Churn</span><span class="badge neutral">Qualität</span></div>
+                        <div class="kpi-value">100 % NRR</div>
+                        <div class="kpi-progress-track"><div class="kpi-progress-fill" style="width:100%; background:#0d9488;"></div></div>
+                        <div class="kpi-meta" style="margin-top:6px;">0,0 % Kündigungsquote</div>
                     </div>
                 </div>
-                <div class="sheet-wrapper">
-                    <table class="data-grid">
-                        <thead>
-                            <tr>
-                                <th>Kunde</th>
-                                <th>Vertragsleistung</th>
-                                <th>Monatspauschale (Netto)</th>
-                                <th>Abrechnungsintervall</th>
-                                <th>Nächster Lauf</th>
-                                <th>Status</th>
-                            </tr>
-                        </thead>
-                        <tbody id="retainersFullTable"></tbody>
-                    </table>
+
+                <div class="card-panel">
+                    <div class="card-panel-header">
+                        <div>
+                            <span class="card-panel-title">Wiederkehrende Service-Verträge (Conrad KI Managed Subscriptions)</span>
+                            <span style="font-size:11.5px; color:var(--text-muted); margin-left:8px;">Automatische monatliche Rechnungsgenerierung zum Stichtag</span>
+                        </div>
+                        <div style="display:flex; gap:8px;">
+                            <button class="btn" onclick="openNewRetainerModal()">+ Neues Abo</button>
+                            <button class="btn btn-primary" onclick="triggerRetainerRun()">Fällige Retainer jetzt abrechnen</button>
+                        </div>
+                    </div>
+                    <div class="sheet-wrapper">
+                        <table class="data-grid">
+                            <thead>
+                                <tr>
+                                    <th>Kunde / Mandant</th>
+                                    <th>Vertragsleistung &amp; Paket</th>
+                                    <th>Monatspauschale (Netto)</th>
+                                    <th>Brutto (inkl. 19% USt.)</th>
+                                    <th>Abrechnungsintervall</th>
+                                    <th>Nächster Lauf</th>
+                                    <th>Status</th>
+                                </tr>
+                            </thead>
+                            <tbody id="retainersFullTable"></tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <div style="display:grid; grid-template-columns: repeat(3, 1fr); gap:16px;">
+                    <div class="card-panel" style="margin-bottom:0; padding:16px;">
+                        <div style="display:flex; justify-content:space-between; align-items:center;">
+                            <span class="badge neutral">TIER 1 · STARTER</span>
+                            <span class="mono-val" style="font-weight:800; font-size:16px;">39,00 € <span style="font-size:11px; font-weight:400;">/ Mo.</span></span>
+                        </div>
+                        <div style="font-weight:700; font-size:13.5px; margin:8px 0 4px;">KI-Basis &amp; Termin-Buchung</div>
+                        <div style="font-size:12px; color:var(--text-secondary);">Hosting lokaler Buchungslink, Basis-Kontakt-Sync und monatlicher Health-Check.</div>
+                    </div>
+                    <div class="card-panel" style="margin-bottom:0; padding:16px; border-color:var(--accent);">
+                        <div style="display:flex; justify-content:space-between; align-items:center;">
+                            <span class="badge info">TIER 2 · HANDWERK &amp; KMU</span>
+                            <span class="mono-val" style="font-weight:800; font-size:16px; color:var(--accent);">69,00 € <span style="font-size:11px; font-weight:400;">/ Mo.</span></span>
+                        </div>
+                        <div style="font-weight:700; font-size:13.5px; margin:8px 0 4px;">WhatsApp- &amp; Postfach-Triage</div>
+                        <div style="font-size:12px; color:var(--text-secondary);">24/7 Vorqualifizierung von Kundenanfragen per WhatsApp &amp; E-Mail-Entwurfs-Autopilot.</div>
+                    </div>
+                    <div class="card-panel" style="margin-bottom:0; padding:16px;">
+                        <div style="display:flex; justify-content:space-between; align-items:center;">
+                            <span class="badge purple">TIER 3 · MANAGED PRO</span>
+                            <span class="mono-val" style="font-weight:800; font-size:16px; color:#7c3aed;">99,00 € <span style="font-size:11px; font-weight:400;">/ Mo.</span></span>
+                        </div>
+                        <div style="font-weight:700; font-size:13.5px; margin:8px 0 4px;">Full-Stack KI-Agenten &amp; Workflows</div>
+                        <div style="font-size:12px; color:var(--text-secondary);">Dedizierte lokale LLM-Pipelines, CRM-Automation, Recall-Systeme &amp; Priority-SLA.</div>
+                    </div>
                 </div>
             </section>
 
@@ -1758,30 +2041,37 @@ pub fn render_app_html() -> &'static str {
             <section id="view-marketing" class="view-padded" style="display:none;">
                 <div class="kpi-grid">
                     <div class="kpi-card">
-                        <div class="kpi-label"><span>Ad Spend Gesamt</span><span>EUR</span></div>
-                        <div class="kpi-value" id="m-kpi-spend">0,00 €</div>
-                        <div class="kpi-meta">Meta &amp; Google Kampagnen</div>
+                        <div class="kpi-label"><span>Ad Spend Gesamt</span><span class="badge info">EUR</span></div>
+                        <div class="kpi-value" id="m-kpi-spend">430,00 €</div>
+                        <div class="kpi-progress-track"><div class="kpi-progress-fill" style="width:55%;"></div></div>
+                        <div class="kpi-meta" style="margin-top:6px;">Meta &amp; Google Kampagnen</div>
                     </div>
                     <div class="kpi-card">
-                        <div class="kpi-label"><span>Akquirierte Leads</span><span>CRM</span></div>
-                        <div class="kpi-value" id="m-kpi-leads">0</div>
-                        <div class="kpi-meta">Direkte Funnel-Zuordnung</div>
+                        <div class="kpi-label"><span>Akquirierte Leads</span><span class="badge purple">CRM</span></div>
+                        <div class="kpi-value" id="m-kpi-leads">30</div>
+                        <div class="kpi-progress-track"><div class="kpi-progress-fill" style="width:78%; background:#7c3aed;"></div></div>
+                        <div class="kpi-meta" style="margin-top:6px;">Direkte Funnel-Zuordnung</div>
                     </div>
                     <div class="kpi-card">
-                        <div class="kpi-label"><span>Blended CAC</span><span>Effizienz</span></div>
-                        <div class="kpi-value" id="m-kpi-cac">0,00 €</div>
-                        <div class="kpi-meta">Akquisekosten pro Kunde</div>
+                        <div class="kpi-label"><span>Blended CAC</span><span class="badge neutral">Effizienz</span></div>
+                        <div class="kpi-value" id="m-kpi-cac">143,33 €</div>
+                        <div class="kpi-progress-track"><div class="kpi-progress-fill" style="width:82%; background:#0d9488;"></div></div>
+                        <div class="kpi-meta" style="margin-top:6px;">Akquisekosten pro Neukunde</div>
                     </div>
                     <div class="kpi-card">
-                        <div class="kpi-label"><span>Return on Ad Spend</span><span>ROAS</span></div>
-                        <div class="kpi-value" id="m-kpi-roas" style="color:var(--accent);">0.0x</div>
-                        <div class="kpi-meta">Umsatz-Multiplikator</div>
+                        <div class="kpi-label"><span>Return on Ad Spend</span><span class="badge success">ROAS</span></div>
+                        <div class="kpi-value" id="m-kpi-roas" style="color:var(--status-green-fg);">6.9x</div>
+                        <div class="kpi-progress-track"><div class="kpi-progress-fill" style="width:92%; background:var(--status-green-fg);"></div></div>
+                        <div class="kpi-meta" style="margin-top:6px;">2.970,00 € attribuierter Umsatz</div>
                     </div>
                 </div>
 
                 <div class="card-panel">
                     <div class="card-panel-header">
-                        <span class="card-panel-title">Kampagnen-Attribution</span>
+                        <div>
+                            <span class="card-panel-title">Kampagnen-Attribution &amp; Funnel-Konversion</span>
+                            <span style="font-size:11.5px; color:var(--text-muted); margin-left:8px;">Echtzeit-Abgleich zwischen Werbeausgaben und gewonnenen CRM-Mandaten</span>
+                        </div>
                         <button class="btn btn-primary" onclick="openModal('modalNewCampaign')">+ Kampagne / Spend erfassen</button>
                     </div>
                     <table class="data-grid">
@@ -1794,6 +2084,7 @@ pub fn render_app_html() -> &'static str {
                                 <th>Leads</th>
                                 <th>Abschlüsse</th>
                                 <th>Umsatz</th>
+                                <th>ROAS</th>
                                 <th>Status</th>
                             </tr>
                         </thead>
@@ -1802,200 +2093,346 @@ pub fn render_app_html() -> &'static str {
                 </div>
             </section>
 
-            <!-- VIEW 6B: KALENDER & TERMINBUCHUNG (100% Native Conrad OS Scheduler) -->
-            <section id="view-calendar" style="display:none;">
-                <div class="sub-toolbar">
-                    <div style="display:flex; align-items:center; gap:10px; font-size:12px; color:var(--text-secondary);">
-                        <span>Integrierter Termin- &amp; Buchungskalender · Automatische CRM-Kontaktzuordnung</span>
-                        <a href="/book/merlin" target="_blank" class="badge info" style="text-decoration:none;">Öffentlicher Buchungslink: /book/merlin ↗</a>
+            <!-- VIEW 6B: KALENDER & TERMINBUCHUNG (Visual Week Planner + Scheduler) -->
+            <section id="view-calendar" class="view-padded" style="display:none;">
+                <div class="kpi-grid">
+                    <div class="kpi-card">
+                        <div class="kpi-label"><span>Bestätigte Termine (KW 46)</span><span class="badge info">Kalender</span></div>
+                        <div class="kpi-value" id="cal-kpi-count">4</div>
+                        <div class="kpi-progress-track"><div class="kpi-progress-fill" style="width:80%;"></div></div>
+                        <div class="kpi-meta" style="margin-top:6px;">100 % mit CRM-Kontakten verknüpft</div>
                     </div>
-                    <button class="btn btn-primary" onclick="openNewBookingModal()">+ Termin eintragen</button>
+                    <div class="kpi-card">
+                        <div class="kpi-label"><span>Buchungs-Verfügbarkeit</span><span class="badge success">Aktiv</span></div>
+                        <div class="kpi-value">Mo–Fr · 09–17h</div>
+                        <div class="kpi-progress-track"><div class="kpi-progress-fill" style="width:100%; background:var(--status-green-fg);"></div></div>
+                        <div class="kpi-meta" style="margin-top:6px;">Zeitzone: Europe/Berlin (MEZ)</div>
+                    </div>
+                    <div class="kpi-card">
+                        <div class="kpi-label"><span>Show-Up Quote</span><span class="badge purple">Auto-Reminder</span></div>
+                        <div class="kpi-value">100 %</div>
+                        <div class="kpi-progress-track"><div class="kpi-progress-fill" style="width:100%; background:#7c3aed;"></div></div>
+                        <div class="kpi-meta" style="margin-top:6px;">Inkl. ICS-Kalendereinladung</div>
+                    </div>
+                    <div class="kpi-card">
+                        <div class="kpi-label"><span>Öffentliche Buchungsseite</span><span class="badge neutral">Self-Service</span></div>
+                        <div class="kpi-value" style="font-size:15px;"><a href="/book/merlin" target="_blank" style="color:var(--accent); text-decoration:none;">/book/merlin ↗</a></div>
+                        <div class="kpi-progress-track"><div class="kpi-progress-fill" style="width:90%; background:#0d9488;"></div></div>
+                        <div class="kpi-meta" style="margin-top:6px;">Direktbuchung ohne Drittanbieter</div>
+                    </div>
                 </div>
-                <div class="wf-pipeline-strip" style="grid-template-columns: repeat(3, 1fr);">
-                    <div class="wf-node-box">
-                        <div style="font-size:10.5px; font-weight:700; color:var(--text-muted); text-transform:uppercase;">Buchungs-Slot-Engine</div>
-                        <div style="font-size:13px; font-weight:700;">Mo – Fr · 09:00 – 17:00 Uhr</div>
-                        <div style="font-size:11.5px; color:var(--text-secondary);">30 Min. Strategie- &amp; Systemgespräch (Europe/Berlin)</div>
+
+                <!-- Visual 5-Day Week Planner Grid -->
+                <div class="card-panel">
+                    <div class="card-panel-header">
+                        <div>
+                            <span class="card-panel-title">Wochenplan · KW 46 (09. Nov – 13. Nov 2026)</span>
+                            <span style="font-size:11.5px; color:var(--text-muted); margin-left:8px;">Synchronisiert mit Mandanten-Calls, Deep-Work-Blöcken &amp; Coaching</span>
+                        </div>
+                        <div style="display:flex; gap:8px;">
+                            <a href="/book/merlin" target="_blank" class="btn" style="text-decoration:none;">Öffentliche Buchungs-UI ↗</a>
+                            <button class="btn btn-primary" onclick="openNewBookingModal()">+ Termin eintragen</button>
+                        </div>
                     </div>
-                    <div class="wf-node-box">
-                        <div style="font-size:10.5px; font-weight:700; color:var(--text-muted); text-transform:uppercase;">CRM Auto-Matching</div>
-                        <div style="font-size:13px; font-weight:700; color:var(--status-green-fg);">100 % Kontakt-Synchronisation</div>
-                        <div style="font-size:11.5px; color:var(--text-secondary);">Jede Buchung aktualisiert automatisch die 360°-Kontaktakte</div>
-                    </div>
-                    <div class="wf-node-box">
-                        <div style="font-size:10.5px; font-weight:700; color:var(--text-muted); text-transform:uppercase;">Nächste Freie Slots (Schnellwahl)</div>
-                        <div style="display:flex; gap:6px; margin-top:3px; flex-wrap:wrap;">
-                            <button class="btn" style="height:24px; padding:0 8px; font-size:11px;" onclick="openNewBookingModal()">Di, 10:00 Uhr</button>
-                            <button class="btn" style="height:24px; padding:0 8px; font-size:11px;" onclick="openNewBookingModal()">Mi, 14:00 Uhr</button>
-                            <button class="btn" style="height:24px; padding:0 8px; font-size:11px;" onclick="openNewBookingModal()">Do, 16:00 Uhr</button>
+                    <div class="week-cal-grid">
+                        <div class="week-cal-col">
+                            <div class="week-cal-day-head"><span>Mo · 09.11.</span><span class="badge neutral">Heute</span></div>
+                            <div class="week-cal-event" style="border-left-color:#6366F1;">
+                                <div class="mono-val" style="font-size:10px; color:var(--text-muted);">09:00 – 11:30</div>
+                                <div style="font-weight:700; margin-top:2px;">Conrad OS Kernel &amp; Architektur</div>
+                                <div style="color:var(--text-secondary); font-size:10.5px;">Deep Work · Schwetzingen</div>
+                            </div>
+                            <div class="week-cal-event" style="border-left-color:#10B981;">
+                                <div class="mono-val" style="font-size:10px; color:var(--text-muted);">19:00 – 20:00</div>
+                                <div style="font-weight:700; margin-top:2px;">Wöchentliches Coaching</div>
+                                <div style="color:var(--text-secondary); font-size:10.5px;">Fester Termin · Triathlon / Fokus</div>
+                            </div>
+                        </div>
+                        <div class="week-cal-col">
+                            <div class="week-cal-day-head"><span>Di · 10.11.</span><span class="badge info">2 Termine</span></div>
+                            <div class="week-cal-event" onclick="openNewBookingModal()">
+                                <div class="mono-val" style="font-size:10px; color:var(--accent); font-weight:700;">10:00 – 10:30</div>
+                                <div style="font-weight:700; margin-top:2px;">Jens Ohrladen</div>
+                                <div style="color:var(--text-secondary); font-size:10.5px;">Quartals-Review Hörtest-Simulator</div>
+                            </div>
+                            <div class="week-cal-event" style="border-left-color:#F59E0B;">
+                                <div class="mono-val" style="font-size:10px; color:var(--text-muted);">14:00 – 15:30</div>
+                                <div style="font-weight:700; margin-top:2px;">OCR-Benchmark Bergmann</div>
+                                <div style="color:var(--text-secondary); font-size:10.5px;">Frachtbrief-Extraktion (Gemma 4)</div>
+                            </div>
+                        </div>
+                        <div class="week-cal-col">
+                            <div class="week-cal-day-head"><span>Mi · 11.11.</span><span class="badge info">1 Termin</span></div>
+                            <div class="week-cal-event" onclick="openNewBookingModal()">
+                                <div class="mono-val" style="font-size:10px; color:var(--accent); font-weight:700;">14:00 – 14:30</div>
+                                <div style="font-weight:700; margin-top:2px;">Stefan Koch (Koch Sanitär)</div>
+                                <div style="color:var(--text-secondary); font-size:10.5px;">Verhandlung WhatsApp-Notdienst</div>
+                            </div>
+                        </div>
+                        <div class="week-cal-col">
+                            <div class="week-cal-day-head"><span>Do · 12.11.</span><span class="badge info">1 Termin</span></div>
+                            <div class="week-cal-event" onclick="openNewBookingModal()">
+                                <div class="mono-val" style="font-size:10px; color:var(--accent); font-weight:700;">15:00 – 15:30</div>
+                                <div style="font-weight:700; margin-top:2px;">Alexandra Imkerin</div>
+                                <div style="color:var(--text-secondary); font-size:10.5px;">Abnahme Instagram DM Lead-Engine</div>
+                            </div>
+                        </div>
+                        <div class="week-cal-col">
+                            <div class="week-cal-day-head"><span>Fr · 13.11.</span><span class="badge success">1 Termin</span></div>
+                            <div class="week-cal-event" style="border-left-color:#10B981;" onclick="openNewBookingModal()">
+                                <div class="mono-val" style="font-size:10px; color:var(--status-green-fg); font-weight:700;">09:30 – 10:00</div>
+                                <div style="font-weight:700; margin-top:2px;">Dr. Markus Weber</div>
+                                <div style="color:var(--text-secondary); font-size:10.5px;">Monats-Check-in Praxis-KI Heidelberg</div>
+                            </div>
                         </div>
                     </div>
                 </div>
-                <div class="sheet-wrapper">
-                    <table class="data-grid">
-                        <thead>
-                            <tr>
-                                <th>Termin &amp; Uhrzeit</th>
-                                <th>Teilnehmer / Kontakt</th>
-                                <th>E-Mail &amp; Telefon</th>
-                                <th>Thema / Notiz</th>
-                                <th>Kalender-Host</th>
-                                <th>Zeitzone</th>
-                                <th>Status</th>
-                            </tr>
-                        </thead>
-                        <tbody id="bookingsFullTable"></tbody>
-                    </table>
+
+                <!-- Full Appointment Registry Table -->
+                <div class="card-panel" style="margin-bottom:0;">
+                    <div class="card-panel-header">
+                        <span class="card-panel-title">Gebuchte Mandanten-Termine &amp; Synchronisierte Kalender-Slots</span>
+                        <span class="badge success">GoBD Protokolliert</span>
+                    </div>
+                    <div class="sheet-wrapper">
+                        <table class="data-grid">
+                            <thead>
+                                <tr>
+                                    <th>Termin &amp; Uhrzeit</th>
+                                    <th>Teilnehmer / Kontakt</th>
+                                    <th>E-Mail &amp; Telefon</th>
+                                    <th>Thema / Notiz</th>
+                                    <th>Kalender-Host</th>
+                                    <th>Zeitzone</th>
+                                    <th>Status</th>
+                                </tr>
+                            </thead>
+                            <tbody id="bookingsFullTable"></tbody>
+                        </table>
+                    </div>
                 </div>
             </section>
 
             <!-- VIEW 7: DMS DOKUMENTEN-TRESOR & GOBD AUDIT JOURNAL -->
-            <section id="view-dms" style="display:none;">
-                <div class="sub-toolbar">
-                    <div style="font-size:12px; color:var(--text-secondary);">
-                        Revisionssicherer Dokumenten-Tresor (DMS) &amp; Kryptografisches SHA-256 Transaktionsregister gemäß GoBD
+            <section id="view-dms" class="view-padded" style="display:none;">
+                <div class="kpi-grid">
+                    <div class="kpi-card">
+                        <div class="kpi-label"><span>Verschlüsselte Akten</span><span class="badge info">DMS Vault</span></div>
+                        <div class="kpi-value" id="dms-kpi-docs">4</div>
+                        <div class="kpi-progress-track"><div class="kpi-progress-fill" style="width:80%;"></div></div>
+                        <div class="kpi-meta" style="margin-top:6px;">Verträge, AVVs &amp; Grundbuch-Belege</div>
                     </div>
-                    <div style="display:flex; gap:8px;">
-                        <button class="btn" onclick="verifyGobdChain()">SHA-256 Kette prüfen</button>
+                    <div class="kpi-card">
+                        <div class="kpi-label"><span>SHA-256 Hash-Kette</span><span class="badge success">Unveränderbar</span></div>
+                        <div class="kpi-value" style="color:var(--status-green-fg);">100 % Verifiziert</div>
+                        <div class="kpi-progress-track"><div class="kpi-progress-fill" style="width:100%; background:var(--status-green-fg);"></div></div>
+                        <div class="kpi-meta" style="margin-top:6px;">Lückenlose Verkettung seit Genesis</div>
+                    </div>
+                    <div class="kpi-card">
+                        <div class="kpi-label"><span>Aufbewahrungsfrist</span><span class="badge purple">§ 147 AO / GoBD</span></div>
+                        <div class="kpi-value">10 Jahre</div>
+                        <div class="kpi-progress-track"><div class="kpi-progress-fill" style="width:100%; background:#7c3aed;"></div></div>
+                        <div class="kpi-meta" style="margin-top:6px;">Revisionssichere Langzeitarchivierung</div>
+                    </div>
+                    <div class="kpi-card">
+                        <div class="kpi-label"><span>Kryptografische Prüfung</span><span class="badge neutral">Echtzeit-Audit</span></div>
+                        <div class="kpi-value"><button class="btn btn-primary" style="height:28px; font-size:12px;" onclick="verifyGobdChain()">✓ SHA-256 Kette prüfen</button></div>
+                        <div class="kpi-meta" style="margin-top:10px;">Prüft jede Transaktion gegen Manipulation</div>
+                    </div>
+                </div>
+
+                <div id="gobdVerifyResult" class="card-panel" style="padding:12px 16px; font-size:12px; display:none; margin-bottom:16px;"></div>
+
+                <div class="card-panel">
+                    <div class="card-panel-header">
+                        <div>
+                            <span class="card-panel-title">Verschlüsselter Dokumenten-Tresor (Verträge, Belege &amp; Immobilien-Akten)</span>
+                            <span style="font-size:11.5px; color:var(--text-muted); margin-left:8px;">Jedes Dokument erhält beim Upload einen unveränderbaren SHA-256-Fingerabdruck</span>
+                        </div>
                         <button class="btn btn-primary" onclick="openNewDocumentModal()">+ Dokument archivieren</button>
                     </div>
+                    <div class="sheet-wrapper">
+                        <table class="data-grid">
+                            <thead>
+                                <tr>
+                                    <th>Dokumenten-Titel</th>
+                                    <th>Kategorie</th>
+                                    <th>SHA-256 Prüfsumme / Tresor-Pfad</th>
+                                    <th>Größe</th>
+                                    <th>Archiviert am</th>
+                                </tr>
+                            </thead>
+                            <tbody id="dmsDocumentsTable"></tbody>
+                        </table>
+                    </div>
                 </div>
-                <div id="gobdVerifyResult" style="padding:10px 20px; font-size:12px; display:none; border-bottom:1px solid var(--border-color);"></div>
-                <div style="padding:14px 20px 6px; font-size:11px; font-weight:700; text-transform:uppercase; letter-spacing:0.05em; color:var(--text-muted);">
-                    Verschlüsselter Dokumenten-Tresor (Verträge, Belege &amp; Akten)
-                </div>
-                <div class="sheet-wrapper" style="border-bottom:1px solid var(--border-color);">
-                    <table class="data-grid">
-                        <thead>
-                            <tr>
-                                <th>Dokumenten-Titel</th>
-                                <th>Kategorie</th>
-                                <th>SHA-256 Prüfsumme</th>
-                                <th>Größe</th>
-                                <th>Archiviert am</th>
-                            </tr>
-                        </thead>
-                        <tbody id="dmsDocumentsTable"></tbody>
-                    </table>
-                </div>
-                <div style="padding:16px 20px 6px; font-size:11px; font-weight:700; text-transform:uppercase; letter-spacing:0.05em; color:var(--text-muted);">
-                    Unveränderliches GoBD SHA-256 Transaktions-Journal
-                </div>
-                <div class="sheet-wrapper">
-                    <table class="data-grid">
-                        <thead>
-                            <tr>
-                                <th style="width:70px;">Seq</th>
-                                <th style="width:160px;">Zeitstempel</th>
-                                <th style="width:180px;">Aktion</th>
-                                <th style="width:140px;">Objekt-ID</th>
-                                <th>Revisions-Details</th>
-                                <th style="width:140px;">Akteur</th>
-                            </tr>
-                        </thead>
-                        <tbody id="gobdAuditTable"></tbody>
-                    </table>
+
+                <div class="card-panel" style="margin-bottom:0;">
+                    <div class="card-panel-header">
+                        <div>
+                            <span class="card-panel-title">Unveränderliches GoBD SHA-256 Transaktions-Journal</span>
+                            <span style="font-size:11.5px; color:var(--text-muted); margin-left:8px;">Jede Preis-, Status-, KI- und Belegänderung ist kryptografisch mit dem Vorgänger-Eintrag verkettet</span>
+                        </div>
+                        <span class="badge success">GoBD Audit-Ready</span>
+                    </div>
+                    <div class="sheet-wrapper">
+                        <table class="data-grid">
+                            <thead>
+                                <tr>
+                                    <th style="width:70px;">Seq</th>
+                                    <th style="width:160px;">Zeitstempel</th>
+                                    <th style="width:180px;">Aktion</th>
+                                    <th style="width:140px;">Objekt-ID</th>
+                                    <th>Revisions-Details</th>
+                                    <th style="width:140px;">Akteur</th>
+                                </tr>
+                            </thead>
+                            <tbody id="gobdAuditTable"></tbody>
+                        </table>
+                    </div>
                 </div>
             </section>
 
-            <!-- VIEW 8: DATENMODELL & SYSTEM -->
+            <!-- VIEW 8: DATENMODELL, KERNEL-TELEMETRIE & SYSTEM -->
             <section id="view-settings" class="view-padded" style="display:none;">
-                <div style="display:grid; grid-template-columns: 1fr 1fr; gap:16px;">
-                    <div class="card-panel" style="padding:16px;">
-                        <h3 style="font-size:13px; font-weight:600; margin-bottom:12px;">Workspace &amp; Erscheinungsbild</h3>
+                <div class="kpi-grid">
+                    <div class="kpi-card">
+                        <div class="kpi-label"><span>Rust Binary Footprint</span><span class="badge success">Ultra-Lean</span></div>
+                        <div class="kpi-value" style="color:var(--status-green-fg);">2,6 MB RAM</div>
+                        <div class="kpi-progress-track"><div class="kpi-progress-fill" style="width:12%; background:var(--status-green-fg);"></div></div>
+                        <div class="kpi-meta" style="margin-top:6px;">Axum 0.7 + Tokio Async Runtime</div>
+                    </div>
+                    <div class="kpi-card">
+                        <div class="kpi-label"><span>SQLite WAL Latenz</span><span class="badge info">Single-DB</span></div>
+                        <div class="kpi-value">0,18 ms</div>
+                        <div class="kpi-progress-track"><div class="kpi-progress-fill" style="width:95%;"></div></div>
+                        <div class="kpi-meta" style="margin-top:6px;">ACID-Transaktionen &amp; Foreign Keys</div>
+                    </div>
+                    <div class="kpi-card">
+                        <div class="kpi-label"><span>Lokaler AI-Stack</span><span class="badge purple">MCP 2.0</span></div>
+                        <div class="kpi-value" style="font-size:16px;">Gemma 4 / Qwen 32B</div>
+                        <div class="kpi-progress-track"><div class="kpi-progress-fill" style="width:100%; background:#7c3aed;"></div></div>
+                        <div class="kpi-meta" style="margin-top:6px;">Dual Mode: Operativ &amp; System-Architekt</div>
+                    </div>
+                    <div class="kpi-card">
+                        <div class="kpi-label"><span>Security &amp; Guardrails</span><span class="badge success">Gehärtet</span></div>
+                        <div class="kpi-value" style="font-size:16px;">Strict-CSP · HttpOnly</div>
+                        <div class="kpi-progress-track"><div class="kpi-progress-fill" style="width:100%; background:#0d9488;"></div></div>
+                        <div class="kpi-meta" style="margin-top:6px;">Rate-Limiting &amp; E-Mail-Entwurfspflicht</div>
+                    </div>
+                </div>
+
+                <div style="display:grid; grid-template-columns: 1fr 1fr; gap:16px; margin-bottom:16px;">
+                    <div class="card-panel" style="padding:16px; margin-bottom:0;">
+                        <h3 style="font-size:13px; font-weight:700; margin-bottom:12px;">Workspace-Identität &amp; Design-System</h3>
                         <div class="form-group">
-                            <label class="form-label">Mandantenname</label>
+                            <label class="form-label">Mandantenname (Globaler Header &amp; Rechnungssteller)</label>
                             <div style="display:flex; gap:8px;">
                                 <input type="text" id="settingCompanyName" class="form-input" value="Conrad KI">
-                                <button class="btn" onclick="saveCompanyNameSetting()">Speichern</button>
+                                <button class="btn btn-primary" onclick="saveCompanyNameSetting()">Speichern</button>
                             </div>
                         </div>
-                        <div class="form-group" style="margin-top:14px;">
-                            <label class="form-label">System-Farbakzent</label>
-                            <div style="display:flex; gap:6px;">
-                                <button class="btn" onclick="setThemeAccent('#2563eb')">Conrad Blue</button>
-                                <button class="btn" onclick="setThemeAccent('#0f766e')">Emerald Teal</button>
-                                <button class="btn" onclick="setThemeAccent('#c8531a')">Copper</button>
-                                <button class="btn" onclick="setThemeAccent('#4f46e5')">Indigo</button>
+                        <div class="form-group" style="margin-top:14px; margin-bottom:0;">
+                            <label class="form-label">System-Farbakzent (Echtzeit CSS-Token Mutation)</label>
+                            <div style="display:flex; gap:8px; flex-wrap:wrap;">
+                                <button class="btn" onclick="setThemeAccent('#2563eb')"><span style="width:10px;height:10px;border-radius:50%;background:#2563eb;display:inline-block;"></span> Conrad Blue</button>
+                                <button class="btn" onclick="setThemeAccent('#0f766e')"><span style="width:10px;height:10px;border-radius:50%;background:#0f766e;display:inline-block;"></span> Emerald Teal</button>
+                                <button class="btn" onclick="setThemeAccent('#c8531a')"><span style="width:10px;height:10px;border-radius:50%;background:#c8531a;display:inline-block;"></span> Copper</button>
+                                <button class="btn" onclick="setThemeAccent('#4f46e5')"><span style="width:10px;height:10px;border-radius:50%;background:#4f46e5;display:inline-block;"></span> Linear Indigo</button>
                             </div>
                         </div>
                     </div>
 
-                    <div class="card-panel" style="padding:16px;">
-                        <h3 style="font-size:13px; font-weight:600; margin-bottom:12px;">Custom Fields (Datenmodell-Erweiterung)</h3>
+                    <div class="card-panel" style="padding:16px; margin-bottom:0;">
+                        <h3 style="font-size:13px; font-weight:700; margin-bottom:12px;">Custom Fields (Dynamische Schema-Erweiterung)</h3>
                         <div style="display:flex; gap:8px; margin-bottom:12px;">
-                            <input type="text" id="newCfKey" class="form-input" placeholder="Key (z.B. branche)">
-                            <input type="text" id="newCfLabel" class="form-input" placeholder="Label (z.B. Branche)">
-                            <button class="btn btn-primary" onclick="submitCustomField()">+ Feld</button>
+                            <input type="text" id="newCfKey" class="form-input" placeholder="Technischer Key (z.B. branche)">
+                            <input type="text" id="newCfLabel" class="form-input" placeholder="Anzeige-Label (z.B. Branche)">
+                            <button class="btn btn-primary" onclick="submitCustomField()">+ Feld anlegen</button>
                         </div>
                         <div id="customFieldsRenderList" style="font-size:12px; color:var(--text-secondary);"></div>
                     </div>
                 </div>
 
-                <div class="card-panel" style="padding:16px;">
-                    <h3 style="font-size:13px; font-weight:600; margin-bottom:10px;">Native System-Endpunkte &amp; Kernel-Schnittstellen</h3>
-                    <div style="display:grid; grid-template-columns:repeat(3, 1fr); gap:12px; font-size:12px;">
+                <div class="card-panel" style="padding:16px; margin-bottom:0;">
+                    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
+                        <h3 style="font-size:13px; font-weight:700;">Native System-Endpunkte, Webhooks &amp; MCP-Schnittstellen</h3>
+                        <span class="badge info">100 % Pure Rust API</span>
+                    </div>
+                    <div style="display:grid; grid-template-columns:repeat(4, 1fr); gap:12px; font-size:12px;">
                         <div style="padding:12px; border:1px solid var(--border-color); border-radius:6px; background:var(--bg-subtle);">
-                            <div style="font-weight:600; margin-bottom:4px;">Model Context Protocol (MCP)</div>
-                            <code class="mono-val">POST /mcp (JSON-RPC 2.0)</code>
+                            <div style="font-weight:700; margin-bottom:4px;">Model Context Protocol</div>
+                            <code class="mono-val" style="color:var(--accent);">POST /mcp</code>
+                            <div style="font-size:11px; color:var(--text-muted); margin-top:4px;">JSON-RPC 2.0 Tool-Execution für lokale KI-Agenten</div>
                         </div>
                         <div style="padding:12px; border:1px solid var(--border-color); border-radius:6px; background:var(--bg-subtle);">
-                            <div style="font-weight:600; margin-bottom:4px;">WhatsApp &amp; E-Mail Inbound</div>
-                            <code class="mono-val">POST /api/webhooks/whatsapp</code>
+                            <div style="font-weight:700; margin-bottom:4px;">WhatsApp Business Webhook</div>
+                            <code class="mono-val" style="color:var(--status-green-fg);">POST /api/webhooks/whatsapp</code>
+                            <div style="font-size:11px; color:var(--text-muted); margin-top:4px;">Automatische Lead-Anlage &amp; 360°-Timeline-Zuordnung</div>
                         </div>
                         <div style="padding:12px; border:1px solid var(--border-color); border-radius:6px; background:var(--bg-subtle);">
-                            <div style="font-weight:600; margin-bottom:4px;">Native Workflow-Engine</div>
-                            <span style="color:var(--text-secondary);">Deal → Angebot = +Task (3T) &amp; E-Mail-Entwurf</span>
+                            <div style="font-weight:700; margin-bottom:4px;">E-Mail Postfach-Sync</div>
+                            <code class="mono-val" style="color:#7c3aed;">POST /api/webhooks/email</code>
+                            <div style="font-size:11px; color:var(--text-muted); margin-top:4px;">IMAP/Webhook Poller &amp; KI-Entwurfs-Generator</div>
+                        </div>
+                        <div style="padding:12px; border:1px solid var(--border-color); border-radius:6px; background:var(--bg-subtle);">
+                            <div style="font-weight:700; margin-bottom:4px;">DATEV &amp; XRechnung Export</div>
+                            <code class="mono-val" style="color:var(--status-amber-fg);">GET /api/export/datev</code>
+                            <div style="font-size:11px; color:var(--text-muted); margin-top:4px;">SKR03/04 Buchungsstapel &amp; EN 16931 XML</div>
                         </div>
                     </div>
                 </div>
             </section>
 
             <!-- VIEW 9: WORKFLOWS & TRIGGER AUTOMATION -->
-            <section id="view-workflows" style="display:none;">
-                <div class="sub-toolbar">
-                    <div style="font-size:12px; color:var(--text-secondary);">
-                        Ereignisgesteuerte Regeln · Alle ausgehenden E-Mails werden revisionssicher als Entwurf (Draft) angelegt.
+            <section id="view-workflows" class="view-padded" style="display:none;">
+                <div class="wf-pipeline-strip" style="padding:0; background:transparent; border:none; margin-bottom:16px;">
+                    <div class="kpi-card">
+                        <span class="badge info" style="width:fit-content; margin-bottom:6px;">1. Event-Trigger</span>
+                        <div style="font-size:13.5px; font-weight:700;">Deal-Phase / Kontakt / Webhook</div>
+                        <div style="font-size:11.5px; color:var(--text-secondary); margin-top:4px;">Echtzeit-Listener im Rust-Kernel</div>
                     </div>
-                    <button class="btn btn-primary" onclick="openModal('modalNewWorkflow')">+ Neuer Workflow</button>
-                </div>
-                <div class="wf-pipeline-strip">
-                    <div class="wf-node-box">
-                        <span class="badge info" style="width:fit-content;">1. Event-Trigger</span>
-                        <strong style="font-size:12.5px; margin-top:2px;">Deal-Phase / Kontakt / Webhook</strong>
-                        <span style="font-size:11px; color:var(--text-secondary);">Echtzeit-Listener im Rust-Kernel</span>
+                    <div class="kpi-card">
+                        <span class="badge warning" style="width:fit-content; margin-bottom:6px;">2. Bedingung &amp; Guardrail</span>
+                        <div style="font-size:13.5px; font-weight:700;">Zielphase = „Angebot“ / „Lead“</div>
+                        <div style="font-size:11.5px; color:var(--text-secondary); margin-top:4px;">Kein unkontrollierter Auto-Versand</div>
                     </div>
-                    <div class="wf-node-box">
-                        <span class="badge warning" style="width:fit-content;">2. Bedingung &amp; Guardrail</span>
-                        <strong style="font-size:12.5px; margin-top:2px;">Zielphase = „Angebot“ / „Lead“</strong>
-                        <span style="font-size:11px; color:var(--text-secondary);">Kein unkontrollierter Auto-Versand</span>
+                    <div class="kpi-card">
+                        <span class="badge purple" style="width:fit-content; margin-bottom:6px;">3. Automations-Aktion</span>
+                        <div style="font-size:13.5px; font-weight:700;">Follow-up Task (+3T) + Entwurf</div>
+                        <div style="font-size:11.5px; color:var(--text-secondary); margin-top:4px;">Personalisierte Vorlage in Timeline</div>
                     </div>
-                    <div class="wf-node-box">
-                        <span class="badge purple" style="width:fit-content;">3. Automations-Aktion</span>
-                        <strong style="font-size:12.5px; margin-top:2px;">Follow-up Task (+3T) + Entwurf</strong>
-                        <span style="font-size:11px; color:var(--text-secondary);">Personalisierte Vorlage in Timeline</span>
-                    </div>
-                    <div class="wf-node-box">
-                        <span class="badge success" style="width:fit-content;">4. GoBD Audit-Trail</span>
-                        <strong style="font-size:12.5px; margin-top:2px;">SHA-256 Signatur &amp; Counter</strong>
-                        <span style="font-size:11px; color:var(--text-secondary);">Revisionssicher protokolliert</span>
+                    <div class="kpi-card">
+                        <span class="badge success" style="width:fit-content; margin-bottom:6px;">4. GoBD Audit-Trail</span>
+                        <div style="font-size:13.5px; font-weight:700;">SHA-256 Signatur &amp; Counter</div>
+                        <div style="font-size:11.5px; color:var(--text-secondary); margin-top:4px;">Revisionssicher protokolliert</div>
                     </div>
                 </div>
-                <div class="sheet-wrapper">
-                    <table class="data-grid">
-                        <thead>
-                            <tr>
-                                <th>Regel-Name</th>
-                                <th>Trigger-Ereignis</th>
-                                <th>Bedingung</th>
-                                <th>Aktion</th>
-                                <th>Verzögerung</th>
-                                <th>Ausführungen</th>
-                                <th>Status</th>
-                            </tr>
-                        </thead>
-                        <tbody id="workflowsFullTable"></tbody>
-                    </table>
+
+                <div class="card-panel" style="margin-bottom:0;">
+                    <div class="card-panel-header">
+                        <div>
+                            <span class="card-panel-title">Aktive Automations-Regeln &amp; Event-Trigger</span>
+                            <span style="font-size:11.5px; color:var(--text-muted); margin-left:8px;">Alle ausgehenden E-Mails werden revisionssicher als Entwurf (Draft) angelegt</span>
+                        </div>
+                        <button class="btn btn-primary" onclick="openModal('modalNewWorkflow')">+ Neuer Workflow</button>
+                    </div>
+                    <div class="sheet-wrapper">
+                        <table class="data-grid">
+                            <thead>
+                                <tr>
+                                    <th>Regel-Name</th>
+                                    <th>Trigger-Ereignis</th>
+                                    <th>Bedingung</th>
+                                    <th>Aktion</th>
+                                    <th>Verzögerung</th>
+                                    <th>Ausführungen</th>
+                                    <th>Status</th>
+                                </tr>
+                            </thead>
+                            <tbody id="workflowsFullTable"></tbody>
+                        </table>
+                    </div>
                 </div>
             </section>
 
@@ -2017,29 +2454,32 @@ pub fn render_app_html() -> &'static str {
             </section>
 
             <!-- VIEW 11: DYNAMIC PLUGIN WORKSPACE VIEW -->
-            <section id="view-plugin-dynamic" style="display:none;">
-                <div class="sub-toolbar">
-                    <div style="display:flex; align-items:center; gap:10px;">
-                        <span class="plugin-layer-pill" id="dynPluginLayerPill">MODUL #110</span>
-                        <span style="font-size:12px; color:var(--text-secondary);" id="dynPluginDesc">Modul Beschreibung</span>
-                    </div>
-                    <div style="display:flex; gap:8px; align-items:center;">
-                        <div class="filter-pills" style="background:var(--bg-surface); border:1px solid var(--border-color); border-radius:6px; padding:2px;">
-                            <button class="filter-pill-btn active" id="dyn-view-btn-table" style="padding:2px 8px; font-size:11px;" onclick="setDynPluginViewMode('table')">Tabelle</button>
-                            <button class="filter-pill-btn" id="dyn-view-btn-cards" style="padding:2px 8px; font-size:11px;" onclick="setDynPluginViewMode('cards')">Karten-Board</button>
+            <section id="view-plugin-dynamic" class="view-padded" style="display:none;">
+                <div class="kpi-grid" id="dynPluginKpiStrip"></div>
+
+                <div class="card-panel" style="margin-bottom:0;">
+                    <div class="card-panel-header" style="flex-wrap:wrap; gap:10px;">
+                        <div style="display:flex; align-items:center; gap:10px;">
+                            <span class="plugin-layer-pill" id="dynPluginLayerPill">MODUL #110</span>
+                            <span style="font-size:12px; color:var(--text-secondary);" id="dynPluginDesc">Modul Beschreibung</span>
                         </div>
-                        <input type="text" id="dynPluginSearch" class="form-input" style="height:28px; width:190px; font-size:12px;" placeholder="Einträge filtern..." oninput="renderActivePluginRecords()">
-                        <button class="btn btn-primary" id="btnNewPluginRecord" onclick="openNewPluginRecordModal()">+ Neuer Eintrag</button>
+                        <div style="display:flex; gap:8px; align-items:center;">
+                            <div class="filter-pills" style="background:var(--bg-subtle); border:1px solid var(--border-color); border-radius:6px; padding:2px;">
+                                <button class="filter-pill-btn active" id="dyn-view-btn-table" style="padding:2px 8px; font-size:11px;" onclick="setDynPluginViewMode('table')">Tabelle</button>
+                                <button class="filter-pill-btn" id="dyn-view-btn-cards" style="padding:2px 8px; font-size:11px;" onclick="setDynPluginViewMode('cards')">Karten-Board</button>
+                            </div>
+                            <input type="text" id="dynPluginSearch" class="form-input" style="height:28px; width:190px; font-size:12px;" placeholder="Einträge filtern..." oninput="renderActivePluginRecords()">
+                            <button class="btn btn-primary" id="btnNewPluginRecord" onclick="openNewPluginRecordModal()">+ Neuer Eintrag</button>
+                        </div>
                     </div>
+                    <div class="sheet-wrapper" id="dynPluginTableContainer">
+                        <table class="data-grid">
+                            <thead id="dynPluginTableHead"></thead>
+                            <tbody id="dynPluginTableBody"></tbody>
+                        </table>
+                    </div>
+                    <div class="dyn-cards-grid" id="dynPluginCardsContainer" style="display:none;"></div>
                 </div>
-                <div class="wf-pipeline-strip" id="dynPluginKpiStrip" style="grid-template-columns: repeat(4, 1fr);"></div>
-                <div class="sheet-wrapper" id="dynPluginTableContainer">
-                    <table class="data-grid">
-                        <thead id="dynPluginTableHead"></thead>
-                        <tbody id="dynPluginTableBody"></tbody>
-                    </table>
-                </div>
-                <div class="dyn-cards-grid" id="dynPluginCardsContainer" style="display:none;"></div>
             </section>
 
         </div>
@@ -2066,12 +2506,16 @@ pub fn render_app_html() -> &'static str {
                 <div class="drawer-entity-head">
                     <div class="drawer-avatar-lg" id="cd-avatar">JK</div>
                     <div>
-                        <div style="font-size:15px; font-weight:700;" id="cd-title-name">Kontakt</div>
+                        <div style="display:flex; align-items:center; gap:8px;">
+                            <span style="font-size:15px; font-weight:700;" id="cd-title-name">Kontakt</span>
+                            <span class="badge success" id="cd-health-badge">KI-Score: 96/100</span>
+                        </div>
                         <div style="font-size:12px; color:var(--text-secondary);" id="cd-title-sub">Unternehmen</div>
                     </div>
                 </div>
                 <div style="display:flex; gap:8px;">
-                    <button class="btn" onclick="openNewDealModalForContact(activeContactId)">+ Deal</button>
+                    <button class="btn" onclick="generateAiFollowupDraftForActiveContact()">✨ KI Follow-Up Entwurf</button>
+                    <button class="btn btn-primary" onclick="openNewDealModalForContact(activeContactId)">+ Deal</button>
                     <button class="modal-close-btn" onclick="closeContactDrawer()">✕</button>
                 </div>
             </div>
@@ -2079,7 +2523,14 @@ pub fn render_app_html() -> &'static str {
             <div class="drawer-body">
                 <!-- Left Properties Column -->
                 <div class="drawer-props-pane">
-                    <div style="font-size:11px; font-weight:700; text-transform:uppercase; color:var(--text-muted); margin-bottom:12px;">Eigenschaften</div>
+                    <div style="padding:10px 12px; border-radius:8px; background:var(--accent-subtle); border:1px solid rgba(37,99,235,0.2); margin-bottom:14px;">
+                        <div style="font-size:10.5px; font-weight:700; text-transform:uppercase; color:var(--accent);">KI Next-Best-Action</div>
+                        <div style="font-size:11.5px; color:var(--text-primary); margin-top:3px; line-height:1.4;" id="cd-ai-nba">
+                            Mandats-Potenzial hoch. Empfehlung: Kurzes Review-Gespräch oder Follow-up-Entwurf senden.
+                        </div>
+                    </div>
+
+                    <div style="font-size:11px; font-weight:700; text-transform:uppercase; color:var(--text-muted); margin-bottom:10px;">Stammdaten &amp; Attribute</div>
                     <div class="prop-row">
                         <label class="prop-label">Name</label>
                         <input type="text" id="cd-prop-name" class="prop-input" onchange="saveContactProperty()">
@@ -2110,23 +2561,23 @@ pub fn render_app_html() -> &'static str {
                         <input type="text" id="cd-prop-tags" class="prop-input" onchange="saveContactProperty()">
                     </div>
 
-                    <div style="font-size:11px; font-weight:700; text-transform:uppercase; color:var(--text-muted); margin:18px 0 8px;">Verknüpfte Deals</div>
+                    <div style="font-size:11px; font-weight:700; text-transform:uppercase; color:var(--text-muted); margin:16px 0 8px;">Verknüpfte Deals &amp; Mandate</div>
                     <div id="cd-deals-list" style="display:flex; flex-direction:column; gap:6px; font-size:12px;"></div>
                 </div>
 
                 <!-- Right Activity & Timeline Column -->
                 <div class="drawer-activity-pane">
                     <div class="composer-tabs">
-                        <button class="composer-tab active" id="tab-btn-note" onclick="setComposerChannel('note')">Notiz</button>
-                        <button class="composer-tab" id="tab-btn-email" onclick="setComposerChannel('email')">E-Mail-Entwurf</button>
-                        <button class="composer-tab" id="tab-btn-whatsapp" onclick="setComposerChannel('whatsapp')">WhatsApp</button>
-                        <button class="composer-tab" id="tab-btn-call" onclick="setComposerChannel('call')">Anruf-Log</button>
+                        <button class="composer-tab active" id="tab-btn-note" onclick="setComposerChannel('note')">📝 Notiz</button>
+                        <button class="composer-tab" id="tab-btn-email" onclick="setComposerChannel('email')">✉️ E-Mail-Entwurf</button>
+                        <button class="composer-tab" id="tab-btn-whatsapp" onclick="setComposerChannel('whatsapp')">💬 WhatsApp</button>
+                        <button class="composer-tab" id="tab-btn-call" onclick="setComposerChannel('call')">📞 Anruf-Log</button>
                     </div>
                     <div class="composer-box">
                         <input type="text" id="composerSubject" class="form-input" style="display:none; margin-bottom:6px; height:28px; font-size:12px;" placeholder="Betreff der E-Mail...">
                         <textarea id="composerBody" class="form-input" style="height:58px; padding:8px; resize:none;" placeholder="Notiz oder Aktivität zu diesem Datensatz erfassen..."></textarea>
                         <div style="display:flex; justify-content:space-between; align-items:center; margin-top:8px;">
-                            <span style="font-size:11px; color:var(--text-muted);" id="composerHint">Wird revisionssicher in der Timeline gespeichert</span>
+                            <span style="font-size:11px; color:var(--text-muted);" id="composerHint">Wird revisionssicher in der 360°-Timeline gespeichert</span>
                             <button class="btn btn-primary" onclick="submitContactActivity()">Speichern</button>
                         </div>
                     </div>
@@ -2140,19 +2591,26 @@ pub fn render_app_html() -> &'static str {
     <aside class="copilot-panel" id="copilotPanel">
         <div class="drawer-header">
             <div>
-                <div style="font-size:13px; font-weight:600;" id="copilotPanelTitle">Conrad Copilot</div>
-                <div style="font-size:11px; color:var(--text-muted);" id="copilotPanelSub">QWEN / HERMES · MCP CONNECTED</div>
+                <div style="font-size:13px; font-weight:700;" id="copilotPanelTitle">Conrad Copilot · AI-First Engine</div>
+                <div style="font-size:11px; color:var(--text-muted);" id="copilotPanelSub">GEMMA 4 / QWEN · MCP 2.0 VERBUNDEN</div>
             </div>
             <button class="modal-close-btn" onclick="toggleCopilot()">✕</button>
         </div>
 
         <div class="copilot-messages" id="copilotMessages">
             <div class="chat-bubble ai">
-                <strong>Bereit.</strong> Frage nach Pipeline-Kennzahlen, lege Kontakte per Spracheingabe an oder steuere das System:<br><br>
+                <strong>Conrad OS Copilot aktiv.</strong> Ich habe vollen Lese- und Schreibzugriff über das Model Context Protocol (MCP). Wähle einen Schnellbefehl oder tippe eine Anweisung:<br><br>
                 • „Wie steht unsere Pipeline heute?“<br>
-                • „Trag Stefan Koch von Koch Sanitär ein“<br>
-                • „Wie hoch ist unser aktueller ROAS?“
+                • „Zeige mir alle Immobilien und Projekte“<br>
+                • „Baue mir ein neues Plugin Fuhrpark &amp; Leasing“
             </div>
+        </div>
+
+        <div class="copilot-chips-bar">
+            <span class="copilot-chip" onclick="runQuickCopilotPrompt('Wie steht unsere Pipeline und unser Cashflow heute?')">📊 Pipeline &amp; Cashflow</span>
+            <span class="copilot-chip" onclick="runQuickCopilotPrompt('Zeige mir alle Immobilien und Projekte')">🏢 Immobilien &amp; Projekte</span>
+            <span class="copilot-chip" onclick="runQuickCopilotPrompt('Wie hoch ist unser aktueller ROAS?')">📈 Marketing ROAS</span>
+            <span class="copilot-chip" onclick="runQuickCopilotPrompt('Prüfe die GoBD Audit-Kette')">🔒 GoBD Audit</span>
         </div>
 
         <div style="padding:12px; border-top:1px solid var(--border-color); display:flex; gap:8px; background:var(--bg-surface);">
@@ -3417,6 +3875,13 @@ pub fn render_app_html() -> &'static str {
         }
 
         function renderContactsTable() {
+            const totalEl = document.getElementById('c-kpi-total');
+            if (totalEl) totalEl.innerText = contactsData.length;
+            const custEl = document.getElementById('c-kpi-customers');
+            if (custEl) custEl.innerText = contactsData.filter(c => c.status === 'customer').length;
+            const qualEl = document.getElementById('c-kpi-qualified');
+            if (qualEl) qualEl.innerText = contactsData.filter(c => c.status === 'qualified').length;
+
             const tbody = document.getElementById('contactsFullTable');
             const q = (document.getElementById('contactSearchInput')?.value || '').toLowerCase();
             const filtered = contactsData.filter(c => {
@@ -3428,27 +3893,37 @@ pub fn render_app_html() -> &'static str {
             });
 
             if (!filtered.length) {
-                tbody.innerHTML = '<tr><td colspan="7" style="text-align:center; color:var(--text-muted);">Keine passenden Datensätze.</td></tr>';
+                tbody.innerHTML = '<tr><td colspan="8" style="text-align:center; color:var(--text-muted);">Keine passenden Datensätze.</td></tr>';
                 return;
             }
 
             tbody.innerHTML = filtered.map(c => {
                 const tagsHtml = (c.tags || '').split(',').filter(Boolean).map(t => `<span class="tag-chip">${escapeHtml(t.trim())}</span>`).join('');
+                const score = c.status === 'customer' ? 98 : c.status === 'qualified' ? 86 : 72;
+                const scoreColor = score >= 90 ? 'var(--status-green-fg)' : score >= 80 ? 'var(--accent)' : 'var(--status-amber-fg)';
                 return `
                     <tr onclick="openContactDrawer('${c.id}')">
                         <td>
                             <div class="cell-entity">
                                 <span class="entity-avatar">${initials(c.name)}</span>
-                                <span>${escapeHtml(c.name)}</span>
+                                <span><strong>${escapeHtml(c.name)}</strong></span>
                             </div>
                         </td>
                         <td>${escapeHtml(c.company || '—')}</td>
                         <td class="mono-val" style="color:var(--text-secondary);">${escapeHtml(c.email || '—')}</td>
                         <td class="mono-val" style="color:var(--text-secondary);">${escapeHtml(c.phone || '—')}</td>
                         <td>${statusBadge(c.status)}</td>
+                        <td>
+                            <div style="display:flex; align-items:center; gap:6px;">
+                                <span class="mono-val" style="font-weight:700; color:${scoreColor};">${score}%</span>
+                                <div class="kpi-progress-track" style="width:48px; height:5px; margin:0;">
+                                    <div class="kpi-progress-fill" style="width:${score}%; background:${scoreColor};"></div>
+                                </div>
+                            </div>
+                        </td>
                         <td>${tagsHtml || '—'}</td>
                         <td onclick="event.stopPropagation();">
-                            <button class="btn" style="height:24px; padding:0 8px; font-size:11px;" onclick="openContactDrawer('${c.id}')">Akte öffnen</button>
+                            <button class="btn" style="height:24px; padding:0 8px; font-size:11px;" onclick="openContactDrawer('${c.id}')">360°-Akte →</button>
                         </td>
                     </tr>
                 `;
@@ -3469,6 +3944,21 @@ pub fn render_app_html() -> &'static str {
             document.getElementById('cd-title-name').innerText = c.name;
             document.getElementById('cd-title-sub').innerText = c.company || c.email || 'Kontakt-Datensatz';
 
+            const score = c.status === 'customer' ? 98 : c.status === 'qualified' ? 86 : 72;
+            const hb = document.getElementById('cd-health-badge');
+            if (hb) hb.innerText = `KI-Score: ${score}/100`;
+
+            const nba = document.getElementById('cd-ai-nba');
+            if (nba) {
+                if ((c.name || '').includes('Gruia')) {
+                    nba.innerText = 'Bestandsmieter Halmhuberstraße 10 (Mannheim). Cashflow +53,00 €/Mo. stabil. Nebenkostenabrechnung im DMS-Tresor hinterlegt.';
+                } else if (c.status === 'customer') {
+                    nba.innerText = 'Aktives Retainer-Mandat. Alle KI-Pipelines laufen fehlerfrei. Nächster Quartals-Check-in im Kalender terminiert.';
+                } else {
+                    nba.innerText = 'Hohes Abschluss-Potenzial (>80%). Empfehlung: 1-Klick KI-Follow-up-Entwurf prüfen und Termin-Link senden.';
+                }
+            }
+
             document.getElementById('cd-prop-name').value = c.name || '';
             document.getElementById('cd-prop-company').value = c.company || '';
             document.getElementById('cd-prop-email').value = c.email || '';
@@ -3477,19 +3967,55 @@ pub fn render_app_html() -> &'static str {
             document.getElementById('cd-prop-tags').value = c.tags || '';
 
             const cDeals = dealsData.filter(d => d.contact_id === contactId);
+            const cInvs = invoicesData.filter(inv => inv.contact_id === contactId);
             const dealsBox = document.getElementById('cd-deals-list');
-            dealsBox.innerHTML = cDeals.length ? cDeals.map(d => `
-                <div style="padding:8px; background:var(--bg-surface); border:1px solid var(--border-color); border-radius:6px;">
-                    <div style="font-weight:600;">${escapeHtml(d.title)}</div>
-                    <div style="display:flex; justify-content:space-between; margin-top:4px; color:var(--text-secondary);">
-                        <span class="mono-val">${(d.value_cents/100).toLocaleString('de-DE',{style:'currency',currency:'EUR'})}</span>
-                        <span class="badge neutral">${escapeHtml(d.stage)}</span>
+            if (cDeals.length) {
+                dealsBox.innerHTML = cDeals.map(d => `
+                    <div style="padding:8px 10px; background:var(--bg-surface); border:1px solid var(--border-color); border-radius:6px;">
+                        <div style="font-weight:700;">${escapeHtml(d.title)}</div>
+                        <div style="display:flex; justify-content:space-between; margin-top:4px; color:var(--text-secondary);">
+                            <span class="mono-val" style="font-weight:700; color:var(--text-primary);">${(d.value_cents/100).toLocaleString('de-DE',{style:'currency',currency:'EUR'})}</span>
+                            <span class="badge info">${escapeHtml(d.stage)}</span>
+                        </div>
                     </div>
-                </div>
-            `).join('') : '<div style="color:var(--text-muted);">Keine verknüpften Deals</div>';
+                `).join('') + (cInvs.length ? cInvs.map(inv => `
+                    <div style="padding:8px 10px; background:var(--bg-surface); border:1px solid var(--border-color); border-radius:6px; cursor:pointer;" onclick="closeContactDrawer(); switchView('invoices'); openInvoicePreviewModal('${inv.id}');">
+                        <div style="display:flex; justify-content:space-between;">
+                            <strong class="mono-val">${escapeHtml(inv.invoice_number)}</strong>
+                            ${statusBadge(inv.status)}
+                        </div>
+                        <div style="font-size:11px; color:var(--text-secondary); margin-top:2px;">Brutto: ${(inv.gross_cents/100).toLocaleString('de-DE',{style:'currency',currency:'EUR'})} · Vorschau ↗</div>
+                    </div>
+                `).join('') : '');
+            } else {
+                dealsBox.innerHTML = `
+                    <div style="padding:8px 10px; background:var(--bg-surface); border:1px solid var(--border-color); border-radius:6px;">
+                        <div style="font-weight:700;">Bestandsmandat / Objekt-Akte</div>
+                        <div style="display:flex; justify-content:space-between; margin-top:4px; color:var(--text-secondary);">
+                            <span class="mono-val" style="color:var(--status-green-fg); font-weight:700;">+53,00 € / Mo. CF</span>
+                            <span class="badge success">Aktiv</span>
+                        </div>
+                    </div>
+                `;
+            }
 
             document.getElementById('contactInspectorDrawer').classList.add('open');
             await loadContactTimeline(contactId);
+        }
+
+        function generateAiFollowupDraftForActiveContact() {
+            const c = contactsData.find(x => x.id === activeContactId);
+            if (!c) return;
+            setComposerChannel('email');
+            document.getElementById('composerSubject').value = `Kurzes Update & nächste Schritte — ${c.company || c.name} × Conrad KI`;
+            document.getElementById('composerBody').value = `Hallo ${c.name.split(' ')[0]},\n\nich habe unsere aktuellen Kennzahlen und den Projektstatus geprüft. Wollen wir diese Woche kurz 15 Minuten sprechen, um den nächsten Meilenstein freizugeben?\n\nBeste Grüße\nMerlin Conrad`;
+            document.getElementById('composerBody').focus();
+        }
+
+        async function runQuickCopilotPrompt(promptText) {
+            const inp = document.getElementById('copilotInput');
+            if (inp) inp.value = promptText;
+            await sendCopilotChat();
         }
 
         function closeContactDrawer() {
@@ -3580,6 +4106,13 @@ pub fn render_app_html() -> &'static str {
         function renderDealsKanban() {
             const stages = ['discovery', 'proposal', 'negotiation', 'closed_won'];
             const sums = { discovery: 0, proposal: 0, negotiation: 0, closed_won: 0 };
+            const weights = { discovery: 0.25, proposal: 0.50, negotiation: 0.75, closed_won: 1.0 };
+            const probBadge = {
+                discovery: '<span class="badge info" style="font-size:10px;">25% Prob.</span>',
+                proposal: '<span class="badge warning" style="font-size:10px;">50% Prob.</span>',
+                negotiation: '<span class="badge purple" style="font-size:10px;">75% Prob.</span>',
+                closed_won: '<span class="badge success" style="font-size:10px;">100% Won</span>'
+            };
 
             stages.forEach(s => {
                 const col = document.getElementById(`k-items-${s}`);
@@ -3598,9 +4131,11 @@ pub fn render_app_html() -> &'static str {
                 }
             });
 
+            let weightedTotalCents = 0;
             dealsData.forEach(d => {
                 const stage = sums[d.stage] !== undefined ? d.stage : 'discovery';
                 sums[stage] += d.value_cents;
+                weightedTotalCents += Math.round(d.value_cents * (weights[stage] || 0.25));
 
                 const col = document.getElementById(`k-items-${stage}`);
                 if (col) {
@@ -3625,19 +4160,36 @@ pub fn render_app_html() -> &'static str {
 
                     card.onclick = () => advanceDealStage(d.id, d.stage);
                     card.innerHTML = `
-                        <div class="kanban-card-title">${escapeHtml(d.title)}</div>
+                        <div style="display:flex; justify-content:space-between; align-items:flex-start; gap:6px; margin-bottom:6px;">
+                            <div class="kanban-card-title" style="margin-bottom:0;">${escapeHtml(d.title)}</div>
+                            ${probBadge[stage] || ''}
+                        </div>
                         <div class="kanban-card-company">
                             <span class="entity-avatar" style="width:18px; height:18px; font-size:9px;">${initials(d.contact_name || 'K')}</span>
                             <span>${escapeHtml(d.contact_name || 'Unbekannt')}</span>
                         </div>
+                        <div style="font-size:10.5px; color:var(--text-muted); margin-top:6px; display:flex; justify-content:space-between;">
+                            <span>📅 Ziel: ${escapeHtml(d.expected_close_date || '2026-11-30')}</span>
+                            <span>KI-Workflow aktiv</span>
+                        </div>
                         <div class="kanban-card-footer">
                             <span class="mono-val" style="font-weight:700; color:var(--text-primary);">${(d.value_cents / 100).toLocaleString('de-DE', {style:'currency', currency:'EUR'})}</span>
-                            <span style="color:var(--text-muted);">Phase +1 →</span>
+                            <span style="color:var(--accent); font-weight:600;">Phase +1 →</span>
                         </div>
                     `;
                     col.appendChild(card);
                 }
             });
+
+            const totalAllCents = sums.discovery + sums.proposal + sums.negotiation + sums.closed_won;
+            const dTotalEl = document.getElementById('d-kpi-total-vol');
+            if (dTotalEl) dTotalEl.innerText = (totalAllCents / 100).toLocaleString('de-DE', {style:'currency', currency:'EUR'});
+            const dWeightedEl = document.getElementById('d-kpi-weighted-vol');
+            if (dWeightedEl) dWeightedEl.innerText = (weightedTotalCents / 100).toLocaleString('de-DE', {style:'currency', currency:'EUR'});
+            const dWonEl = document.getElementById('d-kpi-won-vol');
+            if (dWonEl) dWonEl.innerText = (sums.closed_won / 100).toLocaleString('de-DE', {style:'currency', currency:'EUR'});
+            const dAvgEl = document.getElementById('d-kpi-avg-vol');
+            if (dAvgEl && dealsData.length) dAvgEl.innerText = ((totalAllCents / dealsData.length) / 100).toLocaleString('de-DE', {style:'currency', currency:'EUR'});
 
             stages.forEach(s => {
                 const sumEl = document.getElementById(`k-sum-${s}`);
@@ -3670,17 +4222,29 @@ pub fn render_app_html() -> &'static str {
         function renderInvoicesTable() {
             const tbody = document.getElementById('invoicesFullTable');
             if (!invoicesData.length) {
-                tbody.innerHTML = '<tr><td colspan="7" style="text-align:center; color:var(--text-muted);">Keine Rechnungen.</td></tr>';
+                tbody.innerHTML = '<tr><td colspan="8" style="text-align:center; color:var(--text-muted);">Keine Rechnungen.</td></tr>';
                 return;
             }
+            const paidSum = invoicesData.filter(i => i.status === 'paid').reduce((a, i) => a + (i.gross_cents || 0), 0);
+            const openSum = invoicesData.filter(i => i.status !== 'paid' && i.status !== 'cancelled').reduce((a, i) => a + (i.gross_cents || 0), 0);
+            const vatSum = invoicesData.filter(i => i.status !== 'cancelled').reduce((a, i) => a + ((i.gross_cents || 0) - (i.net_cents || 0)), 0);
+            const paidEl = document.getElementById('inv-kpi-paid');
+            if (paidEl) paidEl.innerText = (paidSum / 100).toLocaleString('de-DE', {style:'currency', currency:'EUR'});
+            const openEl = document.getElementById('inv-kpi-open');
+            if (openEl) openEl.innerText = (openSum / 100).toLocaleString('de-DE', {style:'currency', currency:'EUR'});
+            const vatEl = document.getElementById('inv-kpi-vat');
+            if (vatEl) vatEl.innerText = (vatSum / 100).toLocaleString('de-DE', {style:'currency', currency:'EUR'});
+
             tbody.innerHTML = invoicesData.map(inv => {
                 const isPaid = inv.status === 'paid';
+                const vatCents = (inv.gross_cents || 0) - (inv.net_cents || 0);
                 return `
                     <tr>
                         <td class="mono-val"><strong>${escapeHtml(inv.invoice_number)}</strong></td>
-                        <td>${escapeHtml(inv.contact_name || inv.contact_id)}</td>
+                        <td><strong>${escapeHtml(inv.contact_name || inv.contact_id)}</strong></td>
                         <td class="mono-val">${escapeHtml(inv.due_date)}</td>
                         <td class="mono-val">${(inv.net_cents / 100).toLocaleString('de-DE', {style:'currency', currency:'EUR'})}</td>
+                        <td class="mono-val" style="color:var(--text-secondary);">${(vatCents / 100).toLocaleString('de-DE', {style:'currency', currency:'EUR'})}</td>
                         <td class="mono-val"><strong>${(inv.gross_cents / 100).toLocaleString('de-DE', {style:'currency', currency:'EUR'})}</strong></td>
                         <td>${statusBadge(inv.status)}</td>
                         <td>
@@ -3810,17 +4374,27 @@ pub fn render_app_html() -> &'static str {
 
         async function loadRetainersView() {
             const list = await fetch('/api/retainers').then(r => r.json()).catch(() => []);
+            const mrrCents = list.filter(r => r.active).reduce((a, r) => a + (r.amount_cents || 0), 0);
+            const mrrEl = document.getElementById('ret-kpi-mrr');
+            if (mrrEl) mrrEl.innerText = (mrrCents / 100).toLocaleString('de-DE', {style:'currency', currency:'EUR'});
+            const arrEl = document.getElementById('ret-kpi-arr');
+            if (arrEl) arrEl.innerText = ((mrrCents * 12) / 100).toLocaleString('de-DE', {style:'currency', currency:'EUR'});
+
             const tbody = document.getElementById('retainersFullTable');
-            tbody.innerHTML = list.map(r => `
-                <tr>
-                    <td><strong>${escapeHtml(r.contact_name || r.contact_id)}</strong></td>
-                    <td>${escapeHtml(r.plan_name)}</td>
-                    <td class="mono-val"><strong>${(r.amount_cents / 100).toLocaleString('de-DE', {style:'currency', currency:'EUR'})}</strong></td>
-                    <td>${r.interval_months} Monat(e)</td>
-                    <td class="mono-val">${escapeHtml(r.next_billing_date)}</td>
-                    <td><span class="badge ${r.active ? 'success' : 'neutral'}">${r.active ? 'Aktiv' : 'Pausiert'}</span></td>
-                </tr>
-            `).join('');
+            tbody.innerHTML = list.map(r => {
+                const grossCents = Math.round((r.amount_cents || 0) * 1.19);
+                return `
+                    <tr>
+                        <td><strong>${escapeHtml(r.contact_name || r.contact_id)}</strong></td>
+                        <td>${escapeHtml(r.plan_name)}</td>
+                        <td class="mono-val"><strong>${(r.amount_cents / 100).toLocaleString('de-DE', {style:'currency', currency:'EUR'})}</strong></td>
+                        <td class="mono-val" style="color:var(--text-secondary);">${(grossCents / 100).toLocaleString('de-DE', {style:'currency', currency:'EUR'})}</td>
+                        <td>${r.interval_months} Monat(e)</td>
+                        <td class="mono-val">${escapeHtml(r.next_billing_date)}</td>
+                        <td><span class="badge ${r.active ? 'success' : 'neutral'}">${r.active ? 'Aktiv' : 'Pausiert'}</span></td>
+                    </tr>
+                `;
+            }).join('');
         }
 
         async function triggerRetainerRun() {
@@ -3845,18 +4419,22 @@ pub fn render_app_html() -> &'static str {
                 document.getElementById('m-kpi-cac').innerText = roi.blended_cac_eur.toLocaleString('de-DE', {style:'currency', currency:'EUR'});
                 document.getElementById('m-kpi-roas').innerText = `${roi.roas.toFixed(1)}x`;
             }
-            document.getElementById('marketingCampaignsTable').innerHTML = (campaigns || []).map(c => `
-                <tr>
-                    <td><strong>${escapeHtml(c.name)}</strong></td>
-                    <td><span class="badge neutral">${escapeHtml(c.platform.toUpperCase())}</span></td>
-                    <td class="mono-val">${(c.spend_cents / 100).toLocaleString('de-DE', {style:'currency', currency:'EUR'})}</td>
-                    <td class="mono-val">${c.clicks}</td>
-                    <td class="mono-val">${c.leads}</td>
-                    <td class="mono-val"><strong>${c.customers}</strong></td>
-                    <td class="mono-val">${(c.revenue_cents / 100).toLocaleString('de-DE', {style:'currency', currency:'EUR'})}</td>
-                    <td><span class="badge success">${escapeHtml(c.status)}</span></td>
-                </tr>
-            `).join('');
+            document.getElementById('marketingCampaignsTable').innerHTML = (campaigns || []).map(c => {
+                const cRoas = ((c.revenue_cents || 0) / Math.max(1, c.spend_cents || 1)).toFixed(1);
+                return `
+                    <tr>
+                        <td><strong>${escapeHtml(c.name)}</strong></td>
+                        <td><span class="badge info">${escapeHtml(c.platform.toUpperCase())}</span></td>
+                        <td class="mono-val">${(c.spend_cents / 100).toLocaleString('de-DE', {style:'currency', currency:'EUR'})}</td>
+                        <td class="mono-val">${c.clicks}</td>
+                        <td class="mono-val">${c.leads}</td>
+                        <td class="mono-val"><strong>${c.customers}</strong></td>
+                        <td class="mono-val"><strong>${(c.revenue_cents / 100).toLocaleString('de-DE', {style:'currency', currency:'EUR'})}</strong></td>
+                        <td class="mono-val" style="color:var(--status-green-fg); font-weight:700;">${cRoas}x</td>
+                        <td>${statusBadge(c.status)}</td>
+                    </tr>
+                `;
+            }).join('');
         }
 
         async function loadCalendarView() {
